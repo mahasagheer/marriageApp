@@ -1,4 +1,3 @@
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -6,7 +5,13 @@ module.exports = {
     "./public/index.html"
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        marriagePink: '#FFDEDE',
+        marriageHotPink: '#FF0B55',
+        marriageRed: '#CF0F47',
+      },
+    },
   },
   plugins: [],
 }

@@ -1,8 +1,69 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "./Layout/Button";
+import { Input } from "./Layout/Input";
+import { Dropdown } from "./Layout/Dropdown";
+import { useDispatch, useSelector } from "react-redux";
+import { signup, login } from "../slice/authSlice";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export const LoginModal = ({ onClose, onSwitch }) => {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    role: "user",
+  });
+  const dispatch = useDispatch();
+  const { loading, error, success } = useSelector((state) => state.auth);
+  const { login: contextLogin } = useAuth();
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (isSignUp) {
+      if (form.password !== form.confirmPassword) {
+        alert("Passwords do not match");
+        return;
+      }
+      dispatch(signup({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        role: form.role,
+      }));
+    } else {
+      dispatch(login({
+        email: form.email,
+        password: form.password,
+      })).then((action) => {
+        if (action.type === "auth/login/fulfilled") {
+          const { user, token } = action.payload;
+          contextLogin(user, token);
+          // Redirect based on role
+          if (user.role === "hall-owner") navigate("/owner");
+          else if (user.role === "admin") navigate("/admin");
+          else if (user.role === "manager") navigate("/manager");
+          else navigate("/");
+          onClose && onClose();
+        }
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (success && isSignUp) {
+      setIsSignUp(false);
+    }
+  }, [success, isSignUp]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
@@ -22,40 +83,79 @@ export const LoginModal = ({ onClose, onSwitch }) => {
           {isSignUp ? "Sign up to find your perfect match" : "Login to your account"}
         </p>
         {/* Form */}
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           {isSignUp && (
-            <input
-              type="text"
-              placeholder="Full Name"
-              className="w-full px-4 py-2 rounded-lg border border-marriagePink focus:outline-none focus:ring-2 focus:ring-marriageHotPink"
+            <>
+              <Input
+                type="text"
+                name="name"
+                placeholder="Full Name"
+                value={form.name}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                type="text"
+                name="phone"
+                placeholder="Phone Number"
+                value={form.phone}
+                onChange={handleChange}
+                required
+              />
+              <Dropdown
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+                options={[
+                  { value: "user", label: "User" },
+                  { value: "hall-owner", label: "Hall Owner" },
+                  { value: "manager", label: "Manager" },
+                ]}
+                required
+              />
+            </>
+          )}
+          <Input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+          <Input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
+          {isSignUp && (
+            <Input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm Password"
+              value={form.confirmPassword}
+              onChange={handleChange}
               required
             />
           )}
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full px-4 py-2 rounded-lg border border-marriagePink focus:outline-none focus:ring-2 focus:ring-marriageHotPink"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full px-4 py-2 rounded-lg border border-marriagePink focus:outline-none focus:ring-2 focus:ring-marriageHotPink"
-            required
-          />
-          {isSignUp && (
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              className="w-full px-4 py-2 rounded-lg border border-marriagePink focus:outline-none focus:ring-2 focus:ring-marriageHotPink"
-              required
-            />
+          {error && (
+            <div className="text-marriageRed text-sm text-center">{error}</div>
+          )}
+          {success && isSignUp && (
+            <div className="text-green-600 text-sm text-center">Signup successful!</div>
+          )}
+          {success && !isSignUp && (
+            <div className="text-green-600 text-sm text-center">Login successful!</div>
           )}
           <Button
-            btnText={isSignUp ? "Sign Up" : "Login"}
+            btnText={loading ? (isSignUp ? "Signing Up..." : "Logging In...") : isSignUp ? "Sign Up" : "Login"}
             btnColor="marriageHotPink"
             padding="w-full py-3"
             type="submit"
+            disabled={loading}
           />
         </form>
         {/* Switch Mode */}

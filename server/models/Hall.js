@@ -8,6 +8,11 @@ const hallSchema = new mongoose.Schema({
   capacity: { type: Number, required: true },
   price: { type: Number, required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  owner: {
+    type: require('mongoose').Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Hall', hallSchema); 

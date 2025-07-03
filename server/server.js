@@ -15,6 +15,9 @@ app.use(express.json());
 
 // Routes
 app.use('/api/sample', require('./routes/sample'));
+app.use('/api/auth', require('./routes/auth'));
+const hallRoutes = require('./routes/halls');
+app.use('/api/halls', hallRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

@@ -45,4 +45,46 @@ exports.deleteHall = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+// Update a hall by ID (only if owned by the user)
+exports.updateHall = async (req, res) => {
+  try {
+    const { name, price, capacity, description, location } = req.body;
+    let updateData = { name, price, capacity, description, location };
+
+    // Handle images if provided
+    if (req.files && req.files.length > 0) {
+      updateData.images = req.files.map(file => file.path);
+    }
+
+    // Remove undefined fields (in case some are not sent)
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+    const hall = await Hall.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user._id },
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!hall) {
+      return res.status(404).json({ message: 'Hall not found or not authorized' });
+    }
+    res.json(hall);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get a single hall by ID (only if owned by the user)
+exports.getHallById = async (req, res) => {
+  try {
+    const hall = await Hall.findOne({ _id: req.params.id, owner: req.user._id });
+    if (!hall) {
+      return res.status(404).json({ message: 'Hall not found or not authorized' });
+    }
+    res.json(hall);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 }; 

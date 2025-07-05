@@ -5,11 +5,11 @@ const Hall = require('../models/Hall');
 exports.addAvailableDate = async (req, res) => {
   try {
     const { hallId } = req.params;
-    const { dates } = req.body; // dates: array of ISO strings or a single date
+    const { dates, isBooked } = req.body; // dates: array of ISO strings or a single date
     const hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
     if (!hall) return res.status(403).json({ message: 'Not authorized or hall not found' });
     const dateArr = Array.isArray(dates) ? dates : [dates];
-    const created = await AvailableDate.insertMany(dateArr.map(date => ({ hallId, date })));
+    const created = await AvailableDate.insertMany(dateArr.map(date => ({ hallId, date, isBooked: isBooked !== undefined ? isBooked : false })));
     res.status(201).json(created);
   } catch (err) {
     res.status(500).json({ message: err.message });

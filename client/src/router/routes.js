@@ -5,8 +5,7 @@ import OwnerDashboard from "../pages/OwnerDashboard";
 import OwnerHalls from "../pages/OwnerHalls";
 import OwnerLayout from "../components/OwnerLayout";
 import HallDetail from '../pages/HallDetail';
-import MyBookings from '../pages/MyBookings';
-import Profile from '../pages/Profile';
+import { MyBookings } from "../pages/MyBooking";
 
 export const router = createBrowserRouter([
   {
@@ -38,19 +37,8 @@ export const router = createBrowserRouter([
     element: <HallDetail />,
   },
   {
-    path: '/my-bookings',
-    element: <MyBookings />,
+    path: '/owner/my-bookings',
+    element: <MyBookings/>,
   },
-  {
-    path: '/owner/bookings',
-    element: <MyBookings />,
-  },
-  {
-    path: '/profile',
-    element: <Profile />,
-  },
-  {
-    path: '/owner/profile',
-    element: <Profile />,
-  },
+
 ]);

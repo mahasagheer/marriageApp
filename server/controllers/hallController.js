@@ -1,8 +1,11 @@
 const Hall = require('../models/Hall');
+const AvailableDate = require('../models/AvailableDate');
+const Menu = require('../models/Menu');
+const Decoration = require('../models/Decoration');
 
 exports.createHall = async (req, res) => {
   try {
-    const { name, price, capacity, description, location } = req.body;
+    const { name, price, capacity, description, location, facilities, phone } = req.body;
     const images = req.files ? req.files.map(file => file.path) : [];
 
     const hall = new Hall({
@@ -11,6 +14,8 @@ exports.createHall = async (req, res) => {
       capacity,
       description,
       location,
+      phone,
+      facilities: facilities || [],
       images,
       owner: req.user._id,
       createdBy: req.user._id
@@ -40,8 +45,21 @@ exports.deleteHall = async (req, res) => {
     if (!hall) {
       return res.status(404).json({ message: 'Hall not found or not authorized' });
     }
+
+    // Delete all associated data before deleting the hall
+    await Promise.all([
+      // Delete all available dates for this hall
+      AvailableDate.deleteMany({ hallId: req.params.id }),
+      // Delete all menus for this hall
+      Menu.deleteMany({ hallId: req.params.id }),
+      // Delete all decorations for this hall
+      Decoration.deleteMany({ hallId: req.params.id })
+    ]);
+
+    // Delete the hall
     await hall.deleteOne();
-    res.json({ message: 'Hall deleted successfully' });
+    
+    res.json({ message: 'Hall and all associated data deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -50,8 +68,8 @@ exports.deleteHall = async (req, res) => {
 // Update a hall by ID (only if owned by the user)
 exports.updateHall = async (req, res) => {
   try {
-    const { name, price, capacity, description, location } = req.body;
-    let updateData = { name, price, capacity, description, location };
+    const { name, price, capacity, description, location, facilities, phone } = req.body;
+    let updateData = { name, price, capacity, description, location, facilities, phone };
 
     // Handle images if provided
     if (req.files && req.files.length > 0) {

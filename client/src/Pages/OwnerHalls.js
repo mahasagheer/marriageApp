@@ -90,7 +90,11 @@ const OwnerHalls = () => {
           </div>
         ) : (
           halls.map((hall) => (
-            <div key={hall._id} className="flex flex-col md:flex-row bg-white rounded-xl shadow border border-gray-200 overflow-hidden hover:shadow-lg transition">
+            <div 
+              key={hall._id} 
+              className="flex flex-col md:flex-row bg-white rounded-xl shadow border border-gray-200 overflow-hidden hover:shadow-lg transition cursor-pointer"
+              onClick={() => navigate(`/halls/${hall._id}`)}
+            >
               {/* Hall Image */}
               <div className="md:w-56 w-full h-40 md:h-auto flex-shrink-0 bg-gray-200 flex items-center justify-center">
                 {/* Show first hall image if available, else placeholder */}
@@ -114,13 +118,14 @@ const OwnerHalls = () => {
                   <div className="flex items-center text-gray-500 text-sm mb-2">
                     <FiMapPin className="mr-1" /> {hall.location}
                   </div>
-                  <div className="text-gray-600 text-sm mb-2 truncate">{hall.description}</div>
+                  <div className="text-gray-600 text-sm mb-2">
+                    {hall.description && hall.description.length > 250 
+                      ? `${hall.description.substring(0, 100)}...` 
+                      : hall.description}
+                  </div>
                   <div className="flex items-center gap-4 text-gray-500 text-xs mb-2">
                     <span className="flex items-center gap-1"><FiUsers /> {hall.capacity || 0} Guests</span>
                     <span className="flex items-center gap-1"><FiDollarSign /> {hall.price || 0} PKR</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-gray-400 text-xs">ID: {hall._id.slice(-6)}</span>
                   </div>
                 </div>
                 {/* Actions */}
@@ -129,7 +134,10 @@ const OwnerHalls = () => {
                     btnText={<span className="flex items-center gap-2"><FiEdit2 className="text-marriageHotPink" /></span>}
                     btnColor="marriagePink"
                     padding="px-2 py-2"
-                    onClick={() => handleEdit(hall)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(hall);
+                    }}
                   />
                   <Button
                     btnText={
@@ -139,20 +147,11 @@ const OwnerHalls = () => {
                     }
                     btnColor="marriageRed"
                     padding="px-2 py-2"
-                    onClick={() => handleDelete(hall._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(hall._id);
+                    }}
                   />
-                  <button
-                    className="flex items-center gap-2 text-marriageHotPink hover:underline text-sm mt-2"
-                    onClick={() => navigate(`/halls/${hall._id}`)}
-                  >
-                    <FiMessageCircle /> View Details
-                  </button>
-                  <button
-                    className="flex items-center gap-2 text-gray-500 hover:text-marriageHotPink text-sm"
-                    onClick={() => window.open(`tel:${hall.phone || ''}`)}
-                  >
-                    <FiPhone /> Call
-                  </button>
                 </div>
               </div>
             </div>

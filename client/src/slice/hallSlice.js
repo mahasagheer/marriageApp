@@ -11,6 +11,12 @@ export const addHall = createAsyncThunk(
       formData.append('description', hallData.description);
       formData.append('capacity', hallData.capacity);
       formData.append('price', hallData.price);
+      if (hallData.phone) formData.append('phone', hallData.phone);
+      if (hallData.facilities && hallData.facilities.length > 0) {
+        hallData.facilities.forEach((facility) => {
+          formData.append('facilities', facility);
+        });
+      }
       if (hallData.images && hallData.images.length > 0) {
         hallData.images.forEach((file) => {
           formData.append('images', file);
@@ -83,6 +89,12 @@ export const updateHall = createAsyncThunk(
       if (hallData.description) formData.append('description', hallData.description);
       if (hallData.capacity) formData.append('capacity', hallData.capacity);
       if (hallData.price) formData.append('price', hallData.price);
+      if (hallData.phone) formData.append('phone', hallData.phone);
+      if (hallData.facilities && hallData.facilities.length > 0) {
+        hallData.facilities.forEach((facility) => {
+          formData.append('facilities', facility);
+        });
+      }
       if (hallData.images && hallData.images.length > 0) {
         hallData.images.forEach((file) => {
           formData.append('images', file);

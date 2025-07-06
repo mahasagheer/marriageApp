@@ -1,18 +1,103 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { fetchSingleHall } from "../slice/hallSlice";
+import { fetchMenusByHall, createMenu, updateMenu, deleteMenu, resetSuccess as resetMenuSuccess } from "../slice/menuSlice";
+import { fetchDecorationsByHall, createDecoration, updateDecoration, deleteDecoration, resetSuccess as resetDecorationSuccess } from "../slice/decorationSlice";
 import OwnerLayout from "../components/OwnerLayout";
-import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle } from "react-icons/fi";
+import AddMenuModal from "../components/AddMenuModal";
+import EditMenuModal from "../components/EditMenuModal";
+import AddDecorationModal from "../components/AddDecorationModal";
+import EditDecorationModal from "../components/EditDecorationModal";
+import { Button } from "../components/Layout/Button";
+import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPlus, FiEdit2, FiTrash2, FiX, FiPhone } from "react-icons/fi";
 
 const HallDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { singleHall, loading, error } = useSelector((state) => state.halls);
+  const { menus, loading: menuLoading, success: menuSuccess, error: menuError } = useSelector((state) => state.menus);
+  const { decorations, loading: decorationLoading, success: decorationSuccess, error: decorationError } = useSelector((state) => state.decorations);
+  
+  const [addMenuModalOpen, setAddMenuModalOpen] = useState(false);
+  const [editMenuModalOpen, setEditMenuModalOpen] = useState(false);
+  const [selectedMenu, setSelectedMenu] = useState(null);
+  
+  const [addDecorationModalOpen, setAddDecorationModalOpen] = useState(false);
+  const [editDecorationModalOpen, setEditDecorationModalOpen] = useState(false);
+  const [selectedDecoration, setSelectedDecoration] = useState(null);
+
+  const [imagePreview, setImagePreview] = useState({ open: false, src: null });
 
   useEffect(() => {
-    if (id) dispatch(fetchSingleHall(id));
+    if (id) {
+      dispatch(fetchSingleHall(id));
+      dispatch(fetchMenusByHall(id));
+      dispatch(fetchDecorationsByHall(id));
+    }
   }, [id, dispatch]);
+
+  useEffect(() => {
+    if (menuSuccess) {
+      setAddMenuModalOpen(false);
+      setEditMenuModalOpen(false);
+      setSelectedMenu(null);
+      setTimeout(() => {
+        dispatch(resetMenuSuccess());
+      }, 2000);
+    }
+  }, [menuSuccess, dispatch]);
+
+  useEffect(() => {
+    if (decorationSuccess) {
+      setAddDecorationModalOpen(false);
+      setEditDecorationModalOpen(false);
+      setSelectedDecoration(null);
+      setTimeout(() => {
+        dispatch(resetDecorationSuccess());
+      }, 2000);
+    }
+  }, [decorationSuccess, dispatch]);
+
+  const handleAddMenu = (menuData) => {
+    dispatch(createMenu(menuData));
+  };
+
+  const handleEditMenu = (menu) => {
+    setSelectedMenu(menu);
+    setEditMenuModalOpen(true);
+  };
+
+  const handleUpdateMenu = (menuData) => {
+    if (!selectedMenu) return;
+    dispatch(updateMenu({ menuId: selectedMenu._id, menuData }));
+  };
+
+  const handleDeleteMenu = (menuId) => {
+    if (window.confirm("Are you sure you want to delete this menu?")) {
+      dispatch(deleteMenu(menuId));
+    }
+  };
+
+  const handleAddDecoration = (decorationData) => {
+    dispatch(createDecoration(decorationData));
+  };
+
+  const handleEditDecoration = (decoration) => {
+    setSelectedDecoration(decoration);
+    setEditDecorationModalOpen(true);
+  };
+
+  const handleUpdateDecoration = (decorationData) => {
+    if (!selectedDecoration) return;
+    dispatch(updateDecoration({ decorationId: selectedDecoration._id, decorationData }));
+  };
+
+  const handleDeleteDecoration = (decorationId) => {
+    if (window.confirm("Are you sure you want to delete this decoration package?")) {
+      dispatch(deleteDecoration(decorationId));
+    }
+  };
 
   return (
     <OwnerLayout>
@@ -22,92 +107,242 @@ const HallDetail = () => {
         ) : error ? (
           <div className="text-center text-red-500">{error}</div>
         ) : singleHall ? (
-          <div className="bg-white rounded-xl shadow p-6">
-            {/* Image Gallery */}
-            {singleHall.images && singleHall.images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                {singleHall.images.slice(0, 6).map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={`http://localhost:5000/${img.replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}`}
-                    alt="hall"
-                    className="w-full h-40 object-cover rounded-lg border"
-                  />
-                ))}
-              </div>
-            )}
-            {/* Hall Title & Location */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
-              <div>
-                <h2 className="text-3xl font-bold text-marriageHotPink mb-1 font-mono">{singleHall.name}</h2>
-                <div className="flex items-center text-gray-500 text-sm mb-2">
-                  <FiMapPin className="mr-1" /> {singleHall.location}
+          <div className="space-y-6">
+            {/* Hall Details */}
+            <div className="bg-white rounded-xl shadow p-6">
+              {/* Image Gallery */}
+              {singleHall.images && singleHall.images.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                  {singleHall.images.slice(0, 6).map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={`http://localhost:5000/${img.replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}`}
+                      alt="hall"
+                      className="w-full h-40 object-cover rounded-lg border cursor-pointer hover:shadow-lg transition"
+                      onClick={() => setImagePreview({ open: true, src: `http://localhost:5000/${img.replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}` })}
+                    />
+                  ))}
+                </div>
+              )}
+              {/* Image Preview Modal */}
+              {imagePreview.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+                  <div className="relative max-w-3xl w-full flex flex-col items-center">
+                    <button
+                      onClick={() => setImagePreview({ open: false, src: null })}
+                      className="absolute top-2 right-2 text-marriageRed text-3xl font-bold hover:text-marriageHotPink z-10"
+                    >
+                      <FiX />
+                    </button>
+                    <img
+                      src={imagePreview.src}
+                      alt="Preview"
+                      className="max-h-[80vh] w-auto rounded-xl shadow-lg border"
+                    />
+                  </div>
+                </div>
+              )}
+              {/* Hall Title & Location */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+                <div>
+                  <h2 className="text-3xl font-bold text-marriageHotPink mb-1 font-mono">{singleHall.name}</h2>
+                  <div className="flex items-center text-gray-500 text-sm mb-2">
+                    <FiMapPin className="mr-1" /> {singleHall.location}
+                  </div>
+                  {singleHall.phone && (
+                    <div className="flex items-center text-gray-500 text-sm mb-2">
+                      <FiPhone className="mr-1" /> 
+                      <span>{singleHall.phone}</span>
+                      <button
+                        onClick={() => window.open(`tel:${singleHall.phone}`)}
+                        className="ml-2 text-marriageHotPink hover:text-marriageHotPink/80 font-semibold"
+                      >
+                        Call Now
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-4 items-center">
+                  <div className="flex items-center gap-2 bg-marriagePink/10 px-4 py-2 rounded-lg">
+                    <FiUsers className="text-marriageHotPink" />
+                    <span className="font-semibold text-gray-700">{singleHall.capacity} Guests</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-marriagePink/10 px-4 py-2 rounded-lg">
+                    <FiDollarSign className="text-marriageHotPink" />
+                    <span className="font-semibold text-gray-700">{singleHall.price} PKR</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-4 items-center">
-                <div className="flex items-center gap-2 bg-marriagePink/10 px-4 py-2 rounded-lg">
-                  <FiUsers className="text-marriageHotPink" />
-                  <span className="font-semibold text-gray-700">{singleHall.capacity} Guests</span>
-                </div>
-                <div className="flex items-center gap-2 bg-marriagePink/10 px-4 py-2 rounded-lg">
-                  <FiDollarSign className="text-marriageHotPink" />
-                  <span className="font-semibold text-gray-700">{singleHall.price} PKR</span>
-                </div>
+              {/* Description */}
+              <div className="text-gray-700 mb-6 text-lg">
+                {singleHall.description}
               </div>
+              {/* Facilities Section */}
+              {singleHall.facilities && singleHall.facilities.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">Facilities</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {singleHall.facilities.map((facility, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-2 bg-marriagePink/10 text-marriageHotPink px-4 py-2 rounded-full text-sm font-semibold">
+                        <FiCheckCircle className="text-green-500" /> {facility}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            {/* Description */}
-            <div className="text-gray-700 mb-6 text-lg">
-              {singleHall.description}
-            </div>
-            {/* Amenities/Features Section */}
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-3">Amenities</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Example amenities, replace with real data if available */}
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3 border">
-                  <FiCheckCircle className="text-green-500" />
-                  <span>Parking</span>
-                </div>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3 border">
-                  <FiCheckCircle className="text-green-500" />
-                  <span>WiFi</span>
-                </div>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3 border">
-                  <FiCheckCircle className="text-green-500" />
-                  <span>Air Conditioning</span>
-                </div>
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3 border">
-                  <FiCheckCircle className="text-green-500" />
-                  <span>Sound System</span>
-                </div>
+
+            {/* Menu Section */}
+            <div className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold flex items-center gap-2">
+                  <FiUsers className="text-marriageHotPink" /> Menu Packages
+                </h3>
+                <Button
+                  btnText={<span className="flex items-center gap-2"><FiPlus /> Add Menu</span>}
+                  btnColor="marriageHotPink"
+                  padding="px-6 py-3"
+                  onClick={() => setAddMenuModalOpen(true)}
+                />
               </div>
+              {menuSuccess && (
+                <div className="mb-4 text-green-600 text-center font-semibold">
+                  {selectedMenu ? 'Menu updated successfully!' : 'Menu added successfully!'}
+                </div>
+              )}
+              {menuError && (
+                <div className="mb-4 text-red-600 text-center font-semibold">{menuError}</div>
+              )}
+              {menuLoading ? (
+                <div className="text-center text-gray-400">Loading menus...</div>
+              ) : menus.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  No menus added yet. Add your first menu package!
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {menus.map((menu) => (
+                    <div key={menu._id} className="bg-white rounded-2xl shadow p-6 relative hover:shadow-lg transition">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="text-xl font-semibold">{menu.name}</h4>
+                        <span className="text-lg font-bold text-marriageHotPink">{menu.basePrice} PKR</span>
+                      </div>
+                      <div className="mb-2">
+                        <span className="block text-gray-500 font-medium mb-1">Items:</span>
+                        <ul className="flex flex-wrap gap-2">
+                          {menu.items.map((item, idx) => (
+                            <li key={idx} className="bg-gray-100 rounded-full px-3 py-1 text-sm">{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      {menu.addOns?.length > 0 && (
+                        <div className="mb-2">
+                          <span className="block text-gray-500 font-medium mb-1">Add-ons:</span>
+                          <ul className="flex flex-wrap gap-2">
+                            {menu.addOns.map((addon, idx) => (
+                              <li key={idx} className="bg-marriagePink/10 text-marriageHotPink rounded-full px-3 py-1 text-sm">
+                                {addon.name} (+{addon.price} PKR)
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="flex gap-2 mt-4">
+                        <Button btnText={<FiEdit2 />} btnColor="marriagePink" padding="px-3 py-2" onClick={() => handleEditMenu(menu)} />
+                        <Button btnText={<FiTrash2 />} btnColor="marriageRed" padding="px-3 py-2" onClick={() => handleDeleteMenu(menu._id)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* Room Details Section (example) */}
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-3">Where you'll stay</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4 border flex flex-col items-center">
-                  <img
-                    src={singleHall.images && singleHall.images[0] ? `http://localhost:5000/${singleHall.images[0].replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}` : 'https://via.placeholder.com/220x160?text=Room+1'}
-                    alt="Room 1"
-                    className="w-full h-32 object-cover rounded mb-2"
-                  />
-                  <div className="font-semibold text-gray-700">Main Hall</div>
-                  <div className="text-gray-500 text-sm">Spacious and well-lit</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 border flex flex-col items-center">
-                  <img
-                    src={singleHall.images && singleHall.images[1] ? `http://localhost:5000/${singleHall.images[1].replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}` : 'https://via.placeholder.com/220x160?text=Room+2'}
-                    alt="Room 2"
-                    className="w-full h-32 object-cover rounded mb-2"
-                  />
-                  <div className="font-semibold text-gray-700">VIP Room</div>
-                  <div className="text-gray-500 text-sm">Private and comfortable</div>
-                </div>
+
+            {/* Decoration Section */}
+            <div className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold flex items-center gap-2">
+                  <FiCheckCircle className="text-marriageHotPink" /> Decoration Packages
+                </h3>
+                <Button
+                  btnText={<span className="flex items-center gap-2"><FiPlus /> Add Decoration</span>}
+                  btnColor="marriageHotPink"
+                  padding="px-6 py-3"
+                  onClick={() => setAddDecorationModalOpen(true)}
+                />
               </div>
+              {decorationSuccess && (
+                <div className="mb-4 text-green-600 text-center font-semibold">
+                  {selectedDecoration ? 'Decoration updated successfully!' : 'Decoration added successfully!'}
+                </div>
+              )}
+              {decorationError && (
+                <div className="mb-4 text-red-600 text-center font-semibold">{decorationError}</div>
+              )}
+              {decorationLoading ? (
+                <div className="text-center text-gray-400">Loading decorations...</div>
+              ) : decorations.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  No decoration packages added yet. Add your first decoration package!
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {decorations.map((decoration) => (
+                    <div key={decoration._id} className="bg-white rounded-2xl shadow p-6 relative hover:shadow-lg transition">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="text-xl font-semibold">{decoration.name}</h4>
+                        <span className="text-lg font-bold text-marriageHotPink">{decoration.price} PKR</span>
+                      </div>
+                      {decoration.addOns?.length > 0 && (
+                        <div className="mb-2">
+                          <span className="block text-gray-500 font-medium mb-1">Add-ons:</span>
+                          <ul className="flex flex-wrap gap-2">
+                            {decoration.addOns.map((addon, idx) => (
+                              <li key={idx} className="bg-marriagePink/10 text-marriageHotPink rounded-full px-3 py-1 text-sm">
+                                {addon.name} (+{addon.price} PKR)
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="flex gap-2 mt-4">
+                        <Button btnText={<FiEdit2 />} btnColor="marriagePink" padding="px-3 py-2" onClick={() => handleEditDecoration(decoration)} />
+                        <Button btnText={<FiTrash2 />} btnColor="marriageRed" padding="px-3 py-2" onClick={() => handleDeleteDecoration(decoration._id)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : null}
+
+        {/* Menu Modals */}
+        <AddMenuModal 
+          open={addMenuModalOpen} 
+          onClose={() => setAddMenuModalOpen(false)} 
+          onSubmit={handleAddMenu}
+          hallId={id}
+        />
+        <EditMenuModal
+          open={editMenuModalOpen}
+          onClose={() => setEditMenuModalOpen(false)}
+          onSubmit={handleUpdateMenu}
+          initialValues={selectedMenu}
+        />
+
+        {/* Decoration Modals */}
+        <AddDecorationModal 
+          open={addDecorationModalOpen} 
+          onClose={() => setAddDecorationModalOpen(false)} 
+          onSubmit={handleAddDecoration}
+          hallId={id}
+        />
+        <EditDecorationModal
+          open={editDecorationModalOpen}
+          onClose={() => setEditDecorationModalOpen(false)}
+          onSubmit={handleUpdateDecoration}
+          initialValues={selectedDecoration}
+        />
       </div>
     </OwnerLayout>
   );

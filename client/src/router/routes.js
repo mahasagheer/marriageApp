@@ -6,6 +6,8 @@ import OwnerDashboard from "../Pages/OwnerDashboard";
 import OwnerHalls from "../Pages/OwnerHalls";
 import HallDetail from "../Pages/HallDetail";
 import { MyBookings } from "../Pages/MyBooking";
+import UserLayout from "../Components/UserLayout";
+import UserProfileForm from "../Pages/UserProfileForm";
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +21,16 @@ export const router = createBrowserRouter([
         <OwnerLayout>
           <OwnerDashboard />
         </OwnerLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/user",
+    element: (
+      <ProtectedRoute allowedRoles={["user"]}>
+        <UserLayout>
+          <UserProfileForm />
+        </UserLayout>
       </ProtectedRoute>
     ),
   },

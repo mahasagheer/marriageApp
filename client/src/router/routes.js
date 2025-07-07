@@ -1,11 +1,11 @@
 import { createBrowserRouter } from "react-router-dom";
-import { Home } from "../pages/Home";
-import ProtectedRoute from "../components/ProtectedRoute";
-import OwnerDashboard from "../pages/OwnerDashboard";
-import OwnerHalls from "../pages/OwnerHalls";
-import OwnerLayout from "../components/OwnerLayout";
-import HallDetail from '../pages/HallDetail';
-import { MyBookings } from "../pages/MyBooking";
+import Home from "../Pages/Home";
+import ProtectedRoute from "../Components/ProtectedRoute";
+import OwnerLayout from "../Components/OwnerLayout";
+import OwnerDashboard from "../Pages/OwnerDashboard";
+import OwnerHalls from "../Pages/OwnerHalls";
+import HallDetail from "../Pages/HallDetail";
+import { MyBookings } from "../Pages/MyBooking";
 
 export const router = createBrowserRouter([
   {
@@ -38,7 +38,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/owner/my-bookings',
-    element: <MyBookings/>,
+    element: <MyBookings />,
   },
 
 ]);

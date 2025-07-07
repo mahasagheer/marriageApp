@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { NavBar } from '../components/Layout/navbar';
+import { NavBar } from '../Components/Layout/navbar';
 import landingImage from "../assets/landing.png";
-import { Button } from '../components/Layout/Button';
-import { Footer } from '../components/Layout/Footer';
-import { LoginModal } from '../components/loginModal';
+import { Button } from '../Components/Layout/Button';
+import { Footer } from '../Components/Layout/Footer';
+import { LoginModal } from '../Components/loginModal';
 
-export const Home = () => {
+export default function Home () {
   const [showLogin, setShowLogin] = useState(false);
 
   return (

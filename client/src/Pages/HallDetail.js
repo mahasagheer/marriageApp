@@ -4,13 +4,13 @@ import { useParams } from "react-router-dom";
 import { fetchSingleHall } from "../slice/hallSlice";
 import { fetchMenusByHall, createMenu, updateMenu, deleteMenu, resetSuccess as resetMenuSuccess } from "../slice/menuSlice";
 import { fetchDecorationsByHall, createDecoration, updateDecoration, deleteDecoration, resetSuccess as resetDecorationSuccess } from "../slice/decorationSlice";
-import OwnerLayout from "../components/OwnerLayout";
-import AddMenuModal from "../components/AddMenuModal";
-import EditMenuModal from "../components/EditMenuModal";
-import AddDecorationModal from "../components/AddDecorationModal";
-import EditDecorationModal from "../components/EditDecorationModal";
-import { Button } from "../components/Layout/Button";
+import AddMenuModal from "../Components/AddMenuModal";
+import EditMenuModal from "../Components/EditMenuModal";
+import AddDecorationModal from "../Components/AddDecorationModal";
+import EditDecorationModal from "../Components/EditDecorationModal";
 import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPlus, FiEdit2, FiTrash2, FiX, FiPhone } from "react-icons/fi";
+import OwnerLayout from "../Components/OwnerLayout";
+import { Button } from "../Components/Layout/Button";
 
 const HallDetail = () => {
   const { id } = useParams();

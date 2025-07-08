@@ -1,8 +1,8 @@
 // components/UserProfileForm.jsx
 
 import { useState } from "react";
-import { Input } from "../Components/Layout/Input";
-import { Button } from "../Components/Layout/Button";
+import { Input } from "../components/Layout/Input";
+import { Button } from "../components/Layout/Button";
 import { FiAlignLeft, FiCalendar, FiUser } from "react-icons/fi";
 
 export default function UserProfileForm() {

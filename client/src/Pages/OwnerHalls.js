@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FiPlus, FiTrash2, FiMapPin, FiUsers, FiDollarSign, FiEdit2, FiMessageCircle, FiPhone } from "react-icons/fi";
-import { Button } from "../Components/Layout/Button";
-import AddHallModal from "../Components/AddHallModal";
-import EditHallModal from "../Components/EditHallModal";
+import { Button } from "../components/Layout/Button";
+import AddHallModal from "../components/AddHallModal";
+import EditHallModal from "../components/EditHallModal";
 import { useDispatch, useSelector } from "react-redux";
 import { addHall, resetSuccess, fetchHalls, deleteHall, updateHall } from "../slice/hallSlice";
 import { useNavigate } from "react-router-dom";

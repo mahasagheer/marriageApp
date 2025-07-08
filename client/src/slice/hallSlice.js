@@ -201,6 +201,24 @@ export const addAvailableDates = createAsyncThunk(
   }
 );
 
+// Async thunk for searching halls
+export const searchHalls = createAsyncThunk(
+  'halls/searchHalls',
+  async ({ name, location }, { rejectWithValue }) => {
+    try {
+      let url = 'http://localhost:5000/api/halls/search?';
+      if (name) url += `name=${encodeURIComponent(name)}&`;
+      if (location) url += `location=${encodeURIComponent(location)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to search halls');
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
 const hallSlice = createSlice({
   name: 'halls',
   initialState: {
@@ -210,6 +228,7 @@ const hallSlice = createSlice({
     halls: [],
     singleHall: null,
     ownerAvailableDates: [],
+    searchResults: [],
   },
   reducers: {
     resetSuccess: (state) => {
@@ -290,6 +309,20 @@ const hallSlice = createSlice({
       .addCase(fetchOwnerAvailableDates.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Failed to fetch available dates';
+      })
+      .addCase(searchHalls.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.searchResults = [];
+      })
+      .addCase(searchHalls.fulfilled, (state, action) => {
+        state.loading = false;
+        state.searchResults = action.payload;
+      })
+      .addCase(searchHalls.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to search halls';
+        state.searchResults = [];
       });
   },
 });

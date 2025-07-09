@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPhone, FiShoppingCart, FiX, FiArrowRight, FiCalendar, FiClock } from "react-icons/fi";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMessages, sendMessage as sendMessageThunk, addMessage, markMessagesRead } from '../slice/chatSlice';
+import { io } from 'socket.io-client';
+import { v4 as uuidv4 } from 'uuid';
 
 const PublicHallDetail = () => {
   const { id } = useParams();
@@ -19,7 +23,6 @@ const PublicHallDetail = () => {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showCartDrawer, setShowCartDrawer] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiList = ["😀", "😂", "😍", "👍", "🙏", "🎉", "🥳", "😎", "😢", "❤️", "🔥", "👏", "🤔", "😃", "😇", "😜"];
@@ -28,6 +31,40 @@ const PublicHallDetail = () => {
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
+  const dispatch = useDispatch();
+  const chatState = useSelector(state => state.chat);
+  const [socket, setSocket] = useState(null);
+  const [bookingId, setBookingId] = useState(null); // Set this to the booking id if available
+  const [guestId, setGuestId] = useState(() => {
+    let id = localStorage.getItem('guestId');
+    if (!id) {
+      id = uuidv4();
+      localStorage.setItem('guestId', id);
+    }
+    return id;
+  });
+  // Replace bookingId state with chatSessionId logic
+  const [chatSessionId, setChatSessionId] = useState(() => {
+    let id = localStorage.getItem('chatSessionId');
+    if (!id) {
+      id = uuidv4();
+      localStorage.setItem('chatSessionId', id);
+    }
+    return id;
+  });
+  const messagesEndRef = useRef(null);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [formStep, setFormStep] = useState(0);
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', date: '', time: '', menu: '', notes: '' });
+  const bookingFormQuestions = [
+    { key: 'name', label: "What's your full name?", type: 'text' },
+    { key: 'email', label: "What's your email address?", type: 'email' },
+    { key: 'phone', label: "What's your phone number?", type: 'tel' },
+    { key: 'date', label: "What date do you want to book?", type: 'date' },
+    { key: 'time', label: "What time?", type: 'time' },
+    { key: 'menu', label: "Which menu package would you like?", type: 'text' },
+    { key: 'notes', label: "Any special notes or requests?", type: 'text', optional: true },
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,13 +98,51 @@ const PublicHallDetail = () => {
   }, 0);
   const totalPrice = selectedMenuBasePrice + selectedMenuAddOnsPrice + selectedDecorationAddOnsPrice;
 
+  // Socket.io setup
+  useEffect(() => {
+    if (!showChatbot || !hall) return;
+    const s = io('http://localhost:5000');
+    setSocket(s);
+    // Join room (use hallId and bookingId if available)
+    s.emit('joinRoom', { hallId: hall._id, bookingId: bookingId || chatSessionId });
+    s.on('receiveMessage', (msg) => {
+      console.log('Received message:', msg); // Debug log
+      if (msg.type === 'requestBookingDetails') {
+        dispatch(addMessage(msg));
+        setTimeout(() => {
+          setShowBookingForm(true);
+          setFormStep(0);
+          setFormData({ name: '', email: '', phone: '', date: '', time: '', menu: '', notes: '' });
+        }, 500);
+      } else {
+        dispatch(addMessage(msg));
+      }
+    });
+    return () => s.disconnect();
+  }, [showChatbot, hall, bookingId, chatSessionId, dispatch]);
+
+  // Fetch messages when chat opens
+  useEffect(() => {
+    if (showChatbot && (bookingId || chatSessionId)) {
+      dispatch(fetchMessages(bookingId || chatSessionId));
+      dispatch(markMessagesRead({ bookingId: bookingId || chatSessionId, reader: 'client' }));
+    }
+  }, [showChatbot, bookingId, chatSessionId, dispatch]);
+
+  // After chatState.messages changes, scroll to bottom
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatState.messages]);
+
   if (loading) return <div className="text-center text-gray-400 py-10">Loading...</div>;
   if (error) return <div className="text-center text-marriageRed py-10">{error}</div>;
   if (!hall) return <div className="text-center text-gray-400 py-10">Hall not found.</div>;
 
   return (
     <div className="min-h-screen bg-white font-sans px-4 py-10">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto">
         {/* Hall Details */}
         <div className="bg-white rounded-xl shadow p-6">
           {/* Image Gallery */}
@@ -283,106 +358,226 @@ const PublicHallDetail = () => {
         </button>
         {/* Support Popover (bottom right, above chatbot button) */}
         {showSupportModal && (
-          <div className="fixed inset-0 z-50 pointer-events-none">
-            <div className="absolute bottom-20 right-3 w-80 pointer-events-auto">
-              <div className="bg-white rounded-2xl shadow-2xl p-0 relative border-2 border-marriagePink flex flex-col h-[32rem]">
-                <button
-                  onClick={() => { setShowSupportModal(false); setShowChatbot(false); }}
-                  className="absolute top-4 right-4 text-marriageRed text-2xl font-bold hover:text-marriageHotPink z-10"
-                >
-                  &times;
-                </button>
-                <div className="bg-marriageHotPink rounded-t-2xl px-6 py-4 flex items-center gap-2">
-                  <span className="text-white text-2xl">💬</span>
-                  <h2 className="text-xl font-extrabold text-white font-serif flex-1">Event Support</h2>
+          <div className="fixed inset-0 z-50 flex items-end justify-end pointer-events-none">
+            <div className="absolute bottom-20 right-3 w-full max-w-sm md:max-w-md pointer-events-auto animate-fadeInUp">
+              <div className="bg-white rounded-3xl shadow-2xl border-2 border-marriagePink flex flex-col h-[36rem] overflow-hidden relative">
+                {/* Header */}
+                <div className="sticky top-0 z-10 bg-marriageHotPink px-6 py-4 flex items-center gap-3 shadow-md">
+                  <span className="text-white text-2xl bg-white/20 rounded-full p-2"><FiUsers /></span>
+                  <div className="flex-1">
+                    <h2 className="text-lg md:text-xl font-extrabold text-white font-serif">Event Support</h2>
+                    <div className="text-xs text-white/80">Ask us anything about this hall!</div>
+                  </div>
+                  <button
+                    onClick={() => { setShowSupportModal(false); setShowChatbot(false); }}
+                    className="text-white text-2xl font-bold hover:text-marriageRed transition-colors ml-2"
+                    aria-label="Close chat"
+                  >
+                    <FiX />
+                  </button>
                 </div>
-                <div className="flex-1 flex flex-col gap-4 p-4">
+                {/* Chat Body */}
+                <div className="flex-1 flex flex-col gap-2 px-3 py-2 bg-gradient-to-br from-white via-marriagePink/10 to-marriagePink/5 overflow-y-auto custom-scrollbar" style={{scrollbarColor:'#f472b6 #fff', scrollbarWidth:'thin'}}>
                   {!showChatbot ? (
-                    <>
+                    <div className="flex flex-col gap-4 justify-center items-center h-full">
                       <button
-                        className="w-full py-3 rounded bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition"
+                        className="w-full py-3 rounded-xl bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition text-lg shadow-lg"
                         onClick={() => setShowChatbot(true)}
                       >
-                        Chat with Support
+                        <span className="inline-flex items-center gap-2"><FiUsers /> Chat with Support</span>
                       </button>
                       <a
                         href={`tel:${supportPhone}`}
-                        className="w-full py-3 rounded bg-marriagePink text-marriageHotPink font-bold text-center border border-marriageHotPink hover:bg-marriageHotPink hover:text-white transition"
+                        className="w-full py-3 rounded-xl bg-marriagePink text-marriageHotPink font-bold text-center border-2 border-marriageHotPink hover:bg-marriageHotPink hover:text-white transition text-lg shadow"
                       >
-                        Call Support ({supportPhone})
+                        <span className="inline-flex items-center gap-2"><FiPhone /> Call Support ({supportPhone})</span>
                       </a>
-                    </>
+                    </div>
                   ) : (
-                    <div className="flex flex-col h-full">
-                      <div className="flex-1 overflow-y-auto bg-gray-50 rounded p-2 mb-2 custom-scrollbar">
-                        {chatMessages.length === 0 ? (
+                    <div className="flex flex-col h-full w-full">
+                      <div className="flex-1 overflow-y-auto pb-2 custom-scrollbar" >
+                        {(chatState.messages || []).length === 0 ? (
                           <div className="text-gray-400 text-center mt-8">No messages yet. Start the conversation!</div>
                         ) : (
-                          chatMessages.map((msg, idx) => (
-                            <div key={idx} className={`mb-2 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[75%] px-4 py-2 rounded-2xl shadow ${msg.sender === 'user' ? 'bg-marriageHotPink text-white rounded-br-none' : 'bg-marriagePink text-marriageHotPink rounded-bl-none'} whitespace-pre-line break-words`}>
-                                {msg.text}
+                          <>
+                            {(chatState.messages || []).map((msg, idx) => (
+                              <div key={idx} className={`mb-2 flex items-end ${msg.sender === 'client' ? 'justify-end' : 'justify-start'}`}>
+                                {msg.sender !== 'client' && (
+                                  <div className="flex-shrink-0 mr-2">
+                                    <div className="w-8 h-8 rounded-full bg-marriagePink flex items-center justify-center text-marriageHotPink font-bold shadow"><FiUsers /></div>
+                                  </div>
+                                )}
+                                <div className={`relative max-w-[75%] px-4 py-2 rounded-2xl shadow-lg animate-fadeIn ${msg.sender === 'client' ? 'bg-marriageHotPink text-white rounded-br-none' : 'bg-white text-marriageHotPink border border-marriagePink rounded-bl-none'}`}
+                                  style={{ transition: 'box-shadow 0.2s' }}
+                                >
+                                  <div className="whitespace-pre-line break-words text-base">{msg.text}</div>
+                                  <div className="text-xs text-right mt-1 opacity-60">
+                                    {msg.sender === 'client' ? 'You' : 'Support'}
+                                    {msg.createdAt && (
+                                      <span className="ml-2">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    )}
+                                    {!msg.read && msg.sender !== 'client' && <span className="ml-2 text-marriageRed">● Unread</span>}
+                                  </div>
+                                </div>
+                                {msg.sender === 'client' && (
+                                  <div className="flex-shrink-0 ml-2">
+                                    <div className="w-8 h-8 rounded-full bg-marriageHotPink flex items-center justify-center text-white font-bold shadow"><FiUsers /></div>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ))
+                            ))}
+                            {showBookingForm && (
+                              <div className="mb-2 flex justify-end animate-fadeIn">
+                                <div
+                                  className="w-full max-w-[75%] px-4 py-4 rounded-2xl shadow-lg bg-gradient-to-br from-marriageHotPink to-marriagePink text-white rounded-br-none"
+                                  style={{ boxSizing: 'border-box', wordBreak: 'break-word' }}
+                                >
+                                  <form
+                                    className="flex flex-col gap-4"
+                                    onSubmit={async e => {
+                                      e.preventDefault();
+                                      if (formStep < bookingFormQuestions.length - 1) {
+                                        setFormStep(formStep + 1);
+                                      } else {
+                                        // Submit booking to backend
+                                        const bookingPayload = {
+                                          hallId: hall._id,
+                                          bookingId: bookingId || chatSessionId,
+                                          guestName: formData.name,
+                                          guestEmail: formData.email,
+                                          guestPhone: formData.phone,
+                                          selectedAddOns: selectedMenuAddOns || [],
+                                          decorationIds: Object.keys(selectedDecorationAddOns),
+                                          bookingDate: formData.date,
+                                          bookingTime: formData.time,
+                                        };
+                                        if (selectedMenuId) {
+                                          bookingPayload.menuId = selectedMenuId;
+                                        }
+                                        let bookingSuccess = false;
+                                        let bookingError = null;
+                                        try {
+                                          const res = await fetch('http://localhost:5000/api/halls/confirm-booking-from-chat', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(bookingPayload),
+                                          });
+                                          const data = await res.json();
+                                          if (!res.ok) throw new Error(data.message || 'Booking failed');
+                                          bookingSuccess = true;
+                                        } catch (err) {
+                                          bookingError = err.message;
+                                        }
+                                        // Send chat message with booking details as before
+                                        if (socket) {
+                                          socket.emit('sendMessage', {
+                                            hallId: hall._id,
+                                            bookingId: bookingId || chatSessionId,
+                                            sender: 'client',
+                                            type: 'bookingDetails',
+                                            text: bookingError
+                                              ? `❌ Booking failed: ${bookingError}`
+                                              : '✅ Booking details submitted! Your booking request has been sent to the hall owner.',
+                                            data: formData,
+                                          });
+                                        }
+                                        setShowBookingForm(false);
+                                        setFormStep(0);
+                                        setFormData({ name: '', email: '', phone: '', date: '', time: '', menu: '', notes: '' });
+                                      }
+                                    }}
+                                  >
+                                    <label className="font-bold text-white mb-2">{bookingFormQuestions[formStep].label}</label>
+                                    <input
+                                      type={bookingFormQuestions[formStep].type}
+                                      className="px-3 py-2 rounded-lg border-2 border-white focus:ring-2 focus:ring-white focus:outline-none text-marriageHotPink bg-white/90 shadow"
+                                      value={formData[bookingFormQuestions[formStep].key]}
+                                      onChange={e => setFormData({ ...formData, [bookingFormQuestions[formStep].key]: e.target.value })}
+                                      required={!bookingFormQuestions[formStep].optional}
+                                    />
+                                    <button className="mt-2 px-4 py-2 rounded-lg bg-white text-marriageHotPink font-bold hover:bg-marriagePink transition shadow" type="submit">
+                                      {formStep < bookingFormQuestions.length - 1 ? 'Next' : 'Submit'}
+                                    </button>
+                                  </form>
+                                </div>
+                              </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                          </>
                         )}
                       </div>
-                      <form
-                        className="flex gap-2 items-end mt-auto"
-                        onSubmit={e => {
-                          e.preventDefault();
-                          if (!chatInput.trim()) return;
-                          setChatMessages([...chatMessages, { sender: 'user', text: chatInput }]);
-                          setChatInput("");
-                          setShowEmojiPicker(false);
-                          setTimeout(() => {
-                            setChatMessages(msgs => [...msgs, { sender: 'owner', text: 'Thank you for your message! The hall owner will reply soon.' }]);
-                          }, 1000);
-                        }}
-                      >
-                        <div className="relative flex items-center w-full">
-                          <button
-                            type="button"
-                            className="text-2xl py-1 rounded hover:bg-marriagePink/30"
-                            onClick={() => setShowEmojiPicker(v => !v)}
-                            tabIndex={-1}
-                          >
-                            😊
-                          </button>
-                          <input
-                            className="flex-1 px-3 py-2 rounded border border-gray-300 focus:ring-2 focus:ring-marriageHotPink focus:outline-none mx-2"
-                            placeholder="Type your message..."
-                            value={chatInput}
-                            onChange={e => setChatInput(e.target.value)}
-                          />
-                          <button
-                            type="submit"
-                            className="px-2 py-3 rounded bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition"
-                          >
-                            <FiArrowRight/>
-                          </button>
-                          {showEmojiPicker && (
-                            <div
-                              className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg p-2 flex flex-wrap gap-1 z-20 max-w-[250px] w-max"
-                              style={{ maxHeight: 180, overflowY: 'auto' }}
+                      {/* Footer Input */}
+                      {!showBookingForm && (
+                        <form
+                          className="flex gap-2 items-end mt-auto sticky bottom-0 bg-white/80 py-3 px-2 rounded-b-3xl shadow-inner animate-fadeIn"
+                          onSubmit={e => {
+                            e.preventDefault();
+                            if (!chatInput.trim()) return;
+                            if (socket) {
+                              const msg = {
+                                hallId: hall._id,
+                                bookingId: bookingId || chatSessionId,
+                                sender: 'client',
+                                senderEmail: guestEmail || guestId,
+                                text: chatInput,
+                              };
+                              socket.emit('sendMessage', msg);
+                            } else {
+                              dispatch(sendMessageThunk({ hallId: hall._id, bookingId: bookingId || chatSessionId, sender: 'client', senderEmail: guestEmail || guestId, text: chatInput }));
+                            }
+                            setChatInput("");
+                            setShowEmojiPicker(false);
+                          }}
+                          aria-label="Send message"
+                        >
+                          <div className="relative flex items-center w-full">
+                            <button
+                              type="button"
+                              className="text-2xl py-1 rounded hover:bg-marriagePink/30 focus:outline-none focus:ring-2 focus:ring-marriageHotPink"
+                              onClick={() => setShowEmojiPicker(v => !v)}
+                              tabIndex={-1}
+                              aria-label="Pick emoji"
                             >
-                              {emojiList.map((emoji, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  className="text-xl p-1 hover:bg-marriagePink/20 rounded"
-                                  onClick={() => {
-                                    setChatInput(chatInput + emoji);
-                                    setShowEmojiPicker(false);
-                                  }}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </form>
+                              😊
+                            </button>
+                            <input
+                              className="flex-1 px-4 py-2 rounded-full border-2 border-marriagePink focus:ring-2 focus:ring-marriageHotPink focus:outline-none mx-2 bg-white text-marriageHotPink shadow"
+                              placeholder="Type your message..."
+                              value={chatInput}
+                              onChange={e => setChatInput(e.target.value)}
+                              aria-label="Message input"
+                            />
+                            <button
+                              type="submit"
+                              className="px-4 py-2 rounded-full bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition shadow text-lg"
+                              aria-label="Send"
+                            >
+                              <FiArrowRight/>
+                            </button>
+                            {showEmojiPicker && (
+                              <div
+                                className="absolute bottom-full left-0 mb-2 bg-white border-2 border-marriagePink rounded-2xl shadow-lg p-2 flex flex-wrap gap-1 z-20 max-w-[250px] w-max animate-fadeIn"
+                                style={{ maxHeight: 180, overflowY: 'auto' }}
+                              >
+                                {emojiList.map((emoji, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    className="text-xl p-1 hover:bg-marriagePink/20 rounded focus:outline-none"
+                                    onClick={() => {
+                                      setChatInput(chatInput + emoji);
+                                      setShowEmojiPicker(false);
+                                    }}
+                                    aria-label={`Add emoji ${emoji}`}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </form>
+                      )}
                     </div>
                   )}
                 </div>

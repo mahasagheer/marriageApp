@@ -17,5 +17,10 @@ router.post('/:hallId/available-dates', auth, availableDateController.addAvailab
 router.get('/:hallId/available-dates', auth, availableDateController.getAvailableDatesForHall);
 router.get('/owner/bookings', auth, bookingController.getOwnerBookings);
 router.patch('/bookings/:id/status', auth, bookingController.updateBookingStatus);
+router.post('/messages/send', bookingController.sendMessage);
+router.get('/messages/:bookingId', bookingController.getMessages);
+router.patch('/messages/:bookingId/read', bookingController.markMessagesRead);
+router.get('/messages/all-sessions/:hallId', bookingController.getAllChatSessions);
+router.post('/confirm-booking-from-chat', bookingController.confirmBookingFromChat);
 
 module.exports = router; 

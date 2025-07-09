@@ -6,13 +6,18 @@ import OwnerDashboard from "../Pages/OwnerDashboard";
 import OwnerHalls from "../Pages/OwnerHalls";
 import HallDetail from "../Pages/HallDetail";
 import { MyBookings } from "../Pages/MyBooking";
-import UserLayout from "../Components/UserLayout";
-import UserProfileForm from "../Pages/UserProfileForm";
+import UserLayout from "../Components/Phase_2/UserLayout";
+import UserProfileForm from "../Pages/Phase_2/UserProfileForm";
+import RishtaDhondoHome from "../Pages/Phase_2/Home";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <Home />,
+  },
+  {
+    path:"/rishta",
+    element:<RishtaDhondoHome/>
   },
   {
     path: "/owner",
@@ -25,7 +30,7 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/user",
+    path: "/rishta",
     element: (
       <ProtectedRoute allowedRoles={["user"]}>
         <UserLayout>

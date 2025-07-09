@@ -20,6 +20,8 @@
     "axios": "^1.10.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.0.1",
+    "framer-motion": "^12.23.0",
+    "lucide-react": "^0.525.0",
     "postcss": "^8.4.31",
     "react": "^19.1.0",
     "react-big-calendar": "^1.19.4",

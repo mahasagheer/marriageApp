@@ -4,9 +4,15 @@ import landingImage from "../assets/landing.png";
 import { Button } from '../Components/Layout/Button';
 import { Footer } from '../Components/Layout/Footer';
 import { LoginModal } from '../Components/loginModal';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home () {
   const [showLogin, setShowLogin] = useState(false);
+
+  const navigate=useNavigate()
+  const handleRedirect=()=>{
+    navigate("/rishta")
+  }
 
   return (
     <div className="font-sans text-gray-800 bg-white min-h-screen flex flex-col">
@@ -25,6 +31,8 @@ export default function Home () {
             </p>
             <div className="flex gap-4 mb-4">
               <Button btnText={"Register"} btnColor={"marriageHotPink"} />
+              <Button btnText={"Rishta Dhondo"} btnColor={"marriageHotPink"}  onClick={()=>handleRedirect()}/>
+
             </div>
           </div>
           {/* Right: Illustration */}

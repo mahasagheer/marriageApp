@@ -14,7 +14,6 @@ export default function Home () {
     navigate("/rishta")
   }
   const [search, setSearch] = useState({ name: '', location: '' });
-  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     setSearch({ ...search, [e.target.name]: e.target.value });

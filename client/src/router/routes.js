@@ -9,6 +9,8 @@ import { MyBookings } from "../Pages/MyBooking";
 import UserLayout from "../Components/Phase_2/UserLayout";
 import UserProfileForm from "../Pages/Phase_2/UserProfileForm";
 import RishtaDhondoHome from "../Pages/Phase_2/Home";
+import SearchResults from "../Pages/SearchResults";
+import PublicHallDetail from "../Pages/PublicHallDetail";
 
 export const router = createBrowserRouter([
   {

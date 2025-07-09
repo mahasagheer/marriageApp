@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { NavBar } from '../components/Layout/navbar';
 import landingImage from "../assets/landing.png";
-import { Button } from '../components/Layout/Button';
-import { Footer } from '../components/Layout/Footer';
-import { LoginModal } from '../components/loginModal';
+import { Button } from '../Components/Layout/Button';
+import { Footer } from '../Components/Layout/Footer';
+import { LoginModal } from '../Components/loginModal';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home () {
   const [showLogin, setShowLogin] = useState(false);
+
+  const navigate=useNavigate()
+  const handleRedirect=()=>{
+    navigate("/rishta")
+  }
   const [search, setSearch] = useState({ name: '', location: '' });
-  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     setSearch({ ...search, [e.target.name]: e.target.value });
@@ -62,6 +66,8 @@ export default function Home () {
             </form>
           {/**  <div className="flex gap-4 mb-4">
               <Button btnText={"Register"} btnColor={"marriageHotPink"} />
+              <Button btnText={"Rishta Dhondo"} btnColor={"marriageHotPink"}  onClick={()=>handleRedirect()}/>
+
             </div>*/} 
           </div>
           {/* Right: Illustration */}

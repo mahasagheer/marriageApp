@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
-import { NavBar } from '../Components/Layout/navbar';
+import { NavBar } from '../components/Layout/navbar';
 import landingImage from "../assets/landing.png";
-import { Button } from '../Components/Layout/Button';
-import { Footer } from '../Components/Layout/Footer';
-import { LoginModal } from '../Components/loginModal';
+import { Button } from '../components/Layout/Button';
+import { Footer } from '../components/Layout/Footer';
+import { LoginModal } from '../components/loginModal';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home () {
   const [showLogin, setShowLogin] = useState(false);
+  const [search, setSearch] = useState({ name: '', location: '' });
+  const navigate = useNavigate();
+
+  const handleInputChange = (e) => {
+    setSearch({ ...search, [e.target.name]: e.target.value });
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    navigate(`/search-results?name=${encodeURIComponent(search.name)}&location=${encodeURIComponent(search.location)}`);
+  };
 
   return (
     <div className="font-sans text-gray-800 bg-white min-h-screen flex flex-col">
@@ -23,9 +35,34 @@ export default function Home () {
             <p className="text-lg text-gray-700 mb-4">
               Download Our App, Browse Member Profiles And Find Your Life Partner!
             </p>
-            <div className="flex gap-4 mb-4">
+            {/* Search Form */}
+            <form className="flex flex-col md:flex-row gap-4 mb-4" onSubmit={handleSearch}>
+              <input
+                type="text"
+                name="name"
+                value={search.name}
+                onChange={handleInputChange}
+                placeholder="Hall Name"
+                className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-marriageHotPink focus:outline-none w-full md:w-56"
+              />
+              <input
+                type="text"
+                name="location"
+                value={search.location}
+                onChange={handleInputChange}
+                placeholder="Location"
+                className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-marriageHotPink focus:outline-none w-full md:w-56"
+              />
+              <Button
+                btnText={"Search"}
+                btnColor={"marriageHotPink"}
+                padding="px-8 py-3"
+                type="submit"
+              />
+            </form>
+          {/**  <div className="flex gap-4 mb-4">
               <Button btnText={"Register"} btnColor={"marriageHotPink"} />
-            </div>
+            </div>*/} 
           </div>
           {/* Right: Illustration */}
           <div className="flex-1 flex justify-center md:justify-end mt-10 md:mt-0">

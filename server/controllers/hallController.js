@@ -28,10 +28,10 @@ exports.createHall = async (req, res) => {
   }
 };
 
-// Get all halls for the logged-in owner
+// Get all halls (public)
 exports.getHalls = async (req, res) => {
   try {
-    const halls = await Hall.find({ owner: req.user._id });
+    const halls = await Hall.find();
     res.json(halls);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -102,6 +102,35 @@ exports.getHallById = async (req, res) => {
       return res.status(404).json({ message: 'Hall not found or not authorized' });
     }
     res.json(hall);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Public search for halls by name/location
+exports.searchHalls = async (req, res) => {
+  try {
+    const { name, location } = req.query;
+    const query = {};
+    if (name) query.name = { $regex: name, $options: 'i' };
+    if (location) query.location = { $regex: location, $options: 'i' };
+    const halls = await Hall.find(query);
+    res.json(halls);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Public get hall detail by ID (with menus and decorations)
+exports.getPublicHallDetail = async (req, res) => {
+  try {
+    const hall = await Hall.findById(req.params.id);
+    if (!hall) {
+      return res.status(404).json({ message: 'Hall not found' });
+    }
+    const menus = await Menu.find({ hallId: hall._id });
+    const decorations = await Decoration.find({ hallId: hall._id });
+    res.json({ hall, menus, decorations });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

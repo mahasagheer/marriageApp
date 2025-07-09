@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const http = require('http');
+const socketio = require('socket.io');
+const Message = require('./models/Message');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,6 +30,22 @@ app.get('/', (req, res) => {
   res.send('Server is running');
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+const server = http.createServer(app);
+const io = socketio(server, { cors: { origin: '*' } });
+
+io.on('connection', (socket) => {
+  // Join a room for a specific booking
+  socket.on('joinRoom', ({ hallId, bookingId }) => {
+    socket.join(`${hallId}-${bookingId}`);
+  });
+
+  // Handle sending a message
+  socket.on('sendMessage', async (msg) => {
+    // Save to DB
+    const message = await Message.create(msg);
+    // Emit to room
+    io.to(`${msg.hallId}-${msg.bookingId}`).emit('receiveMessage', message);
+  });
 });
+
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

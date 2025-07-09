@@ -11,10 +11,15 @@ import UserProfileForm from "../Pages/Phase_2/UserProfileForm";
 import RishtaDhondoHome from "../Pages/Phase_2/Home";
 import SearchResults from "../Pages/SearchResults";
 import PublicHallDetail from "../Pages/PublicHallDetail";
+import CoverPage from "../Pages/CoverPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
+    element: <CoverPage />,
+  },
+  {
+    path: "/hall",
     element: <Home />,
   },
   {

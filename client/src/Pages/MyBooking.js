@@ -4,9 +4,9 @@ import { fetchHalls } from "../slice/hallSlice";
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
-import OwnerLayout from "../components/OwnerLayout";
-import { Dropdown } from "../components/Layout/Dropdown";
-import { Button } from "../components/Layout/Button";
+import OwnerLayout from "../Components/OwnerLayout";
+import { Dropdown } from "../Components/Layout/Dropdown";
+import { Button } from "../Components/Layout/Button";
 
 const locales = {
   'en-US': require('date-fns/locale/en-US'),

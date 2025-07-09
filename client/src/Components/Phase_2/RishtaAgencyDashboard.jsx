@@ -1,4 +1,4 @@
-// components/AgencyDashboard.jsx
+// Components/AgencyDashboard.jsx
 
 import { useState } from "react";
 import { FaBuilding, FaUserPlus, FaTrashAlt } from "react-icons/fa";

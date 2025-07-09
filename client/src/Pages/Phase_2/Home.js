@@ -7,7 +7,7 @@ import logo from "../../assets/logo.png";
 import match from "../../assets/match.png";
 import { motion } from "framer-motion";
 
-const HeroSection = () => (
+const HeroSection = ({handleProfileModal}) => (
   <div className="h-[60vh] relative bg-gradient-to-br from-red-700 via-pink-600 to-rose-600 text-white py-10 md:py-18 px-4 overflow-hidden">
     {/* Floating Hearts Animation */}
     <div className="absolute inset-0 overflow-hidden">
@@ -52,17 +52,6 @@ const HeroSection = () => (
         </h1>
       </motion.div>
 
-      {/* Tagline
-      <motion.p 
-        className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto leading-relaxed"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.8 }}
-      >
-        Pakistan's <span className="font-bold">#1</span> Matrimonial Service with{" "}
-        <span className="text-yellow-200 font-semibold">3 Million+</span> Verified Profiles
-      </motion.p> */}
-
       {/* Call to Action */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -70,14 +59,16 @@ const HeroSection = () => (
         transition={{ delay: 0.6, duration: 0.8 }}
       >
         <h2 className="text-2xl md:text-3xl font-medium mb-8">
-          Find your <span className="text-yellow-300 font-bold">perfect match</span> today!
+        Your <span className="text-yellow-300 font-bold">Perfect Partner </span> a few
+        clicks away !
         </h2>
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="inline-block"
         >
-          <button className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold px-10 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center mx-auto">
+          <button className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold px-10 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center mx-auto"
+          onClick={()=>handleProfileModal()}>
             <Heart className="mr-2" fill="currentColor" />
             Create Profile
           </button>
@@ -286,9 +277,9 @@ const RishtaDhondoHome = () => {
 
       {/* Main Content */}
       <main className="flex-grow container mx-auto px-4 py-8">
-        <HeroSection />
+        <HeroSection {...{handleProfileModal}} />
 
-        <MatchmakingSection />
+        {/* <MatchmakingSection /> */}
         <ProfileShowcase />
         <FeaturesSection />
       </main>

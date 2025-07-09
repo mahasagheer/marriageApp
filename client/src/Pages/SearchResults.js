@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { FiMapPin, FiUsers, FiDollarSign } from "react-icons/fi";
-import { Button } from "../components/Layout/Button";
+import { Button } from "../Components/Layout/Button";
 import { useDispatch, useSelector } from "react-redux";
 import { searchHalls } from "../slice/hallSlice";
 

@@ -3,6 +3,7 @@ import authReducer from './slice/authSlice';
 import hallReducer from './slice/hallSlice';
 import menuReducer from './slice/menuSlice';
 import decorationReducer from './slice/decorationSlice';
+import chatReducer from './slice/chatSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     halls: hallReducer,
     menus: menuReducer,
     decorations: decorationReducer,
+    chat: chatReducer,
   },
 }); 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "../Components/Layout/Button";
+import { Button } from "../components/Layout/Button";
 import { FiUpload, FiX } from "react-icons/fi";
 
 const EditHallModal = ({ open, onClose, onSubmit, initialValues }) => {

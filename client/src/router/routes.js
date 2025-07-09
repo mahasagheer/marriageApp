@@ -57,5 +57,12 @@ export const router = createBrowserRouter([
     path: '/owner/my-bookings',
     element: <MyBookings />,
   },
-
+  {
+    path: '/search-results',
+    element: <SearchResults />,
+  },
+  {
+    path: '/public-halls/:id',
+    element: <PublicHallDetail />,
+  },
 ]);

@@ -1,21 +1,20 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPhone, FiShoppingCart, FiX, FiArrowRight, FiCalendar, FiClock } from "react-icons/fi";
+import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPhone, FiShoppingCart, FiX, FiArrowRight, FiCalendar, FiClock, FiPlus } from "react-icons/fi";
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchMessages, sendMessage as sendMessageThunk, addMessage, markMessagesRead } from '../slice/chatSlice';
-import { io } from 'socket.io-client';
+import { fetchMessages, sendMessageThunk, addMessage, markMessagesRead } from '../slice/chatSlice';
+import { fetchPublicHallDetails } from '../slice/hallSlice';
+import { getSocket, disconnectSocket } from '../socket';
 import { v4 as uuidv4 } from 'uuid';
 
 const PublicHallDetail = () => {
   const { id } = useParams();
-  const [hall, setHall] = useState(null);
-  const [menus, setMenus] = useState([]);
-  const [decorations, setDecorations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { publicHall: hall, publicMenus: menus, publicDecorations: decorations, publicLoading: loading, publicError: error } = useSelector(state => state.halls);
   const [imagePreview, setImagePreview] = useState({ open: false, src: null });
   const [selectedMenuId, setSelectedMenuId] = useState(null);
   const [selectedMenuAddOns, setSelectedMenuAddOns] = useState([]);
+  const [selectedDecorationIds, setSelectedDecorationIds] = useState([]);
   const [selectedDecorationAddOns, setSelectedDecorationAddOns] = useState({});
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
@@ -31,8 +30,7 @@ const PublicHallDetail = () => {
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
-  const dispatch = useDispatch();
-  const chatState = useSelector(state => state.chat);
+  const messages = useSelector(state => state.chat.messages);
   const [socket, setSocket] = useState(null);
   const [bookingId, setBookingId] = useState(null); // Set this to the booking id if available
   const [guestId, setGuestId] = useState(() => {
@@ -67,24 +65,8 @@ const PublicHallDetail = () => {
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`http://localhost:5000/api/halls/public/${id}`);
-        if (!res.ok) throw new Error("Failed to fetch hall details");
-        const data = await res.json();
-        setHall(data.hall);
-        setMenus(data.menus);
-        setDecorations(data.decorations);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [id]);
+    dispatch(fetchPublicHallDetails(id));
+  }, [id, dispatch]);
 
   // Helper to get selected menu object
   const selectedMenu = menus.find((m) => m._id === selectedMenuId);
@@ -101,7 +83,7 @@ const PublicHallDetail = () => {
   // Socket.io setup
   useEffect(() => {
     if (!showChatbot || !hall) return;
-    const s = io('http://localhost:5000');
+    const s = getSocket();
     setSocket(s);
     // Join room (use hallId and bookingId if available)
     s.emit('joinRoom', { hallId: hall._id, bookingId: bookingId || chatSessionId });
@@ -118,7 +100,10 @@ const PublicHallDetail = () => {
         dispatch(addMessage(msg));
       }
     });
-    return () => s.disconnect();
+    return () => {
+      s.off('receiveMessage');
+      // Optionally: disconnectSocket();
+    };
   }, [showChatbot, hall, bookingId, chatSessionId, dispatch]);
 
   // Fetch messages when chat opens
@@ -134,7 +119,7 @@ const PublicHallDetail = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatState.messages]);
+  }, [messages]);
 
   if (loading) return <div className="text-center text-gray-400 py-10">Loading...</div>;
   if (error) return <div className="text-center text-marriageRed py-10">{error}</div>;
@@ -250,13 +235,21 @@ const PublicHallDetail = () => {
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-lg font-bold text-marriageHotPink">{menu.name}</h4>
                     <button
-                      className={`px-3 py-1 rounded ${selectedMenuId === menu._id ? 'bg-marriageHotPink text-white' : 'bg-white text-marriageHotPink border border-marriageHotPink'}`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                        selectedMenuId === menu._id 
+                          ? 'bg-marriageHotPink text-white shadow-lg scale-105' 
+                          : 'bg-white text-marriageHotPink border-2 border-marriageHotPink hover:bg-marriagePink/10 hover:scale-105'
+                      }`}
                       onClick={() => {
                         setSelectedMenuId(menu._id);
                         setSelectedMenuAddOns([]);
                       }}
+                      title={selectedMenuId === menu._id ? 'Menu in cart' : 'Add menu to cart'}
                     >
-                      {selectedMenuId === menu._id ? 'Selected' : 'Select'}
+                      <FiShoppingCart className="text-lg" />
+                      <span className="font-semibold">
+                        {selectedMenuId === menu._id ? 'In Cart' : 'Add to Cart'}
+                      </span>
                     </button>
                   </div>
                   <div className="text-gray-700 mb-2">{menu.description}</div>
@@ -311,11 +304,38 @@ const PublicHallDetail = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {decorations.map((decoration) => (
-                <div key={decoration._id} className="bg-marriagePink/10 rounded-lg p-4 shadow">
-                  <h4 className="text-lg font-bold text-marriageHotPink mb-2">{decoration.name}</h4>
+                <div key={decoration._id} className={`bg-marriagePink/10 rounded-lg p-4 shadow ${selectedDecorationIds.includes(decoration._id) ? 'ring-2 ring-marriageHotPink' : ''}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-lg font-bold text-marriageHotPink">{decoration.name}</h4>
+                    <button
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                        selectedDecorationIds.includes(decoration._id)
+                          ? 'bg-marriageHotPink text-white shadow-lg scale-105' 
+                          : 'bg-white text-marriageHotPink border-2 border-marriageHotPink hover:bg-marriagePink/10 hover:scale-105'
+                      }`}
+                      onClick={() => {
+                        if (selectedDecorationIds.includes(decoration._id)) {
+                          setSelectedDecorationIds(selectedDecorationIds.filter(id => id !== decoration._id));
+                          setSelectedDecorationAddOns(prev => {
+                            const newState = { ...prev };
+                            delete newState[decoration._id];
+                            return newState;
+                          });
+                        } else {
+                          setSelectedDecorationIds([...selectedDecorationIds, decoration._id]);
+                        }
+                      }}
+                      title={selectedDecorationIds.includes(decoration._id) ? 'Decoration in cart' : 'Add decoration to cart'}
+                    >
+                      <FiShoppingCart className="text-lg" />
+                      <span className="font-semibold">
+                        {selectedDecorationIds.includes(decoration._id) ? 'In Cart' : 'Add to Cart'}
+                      </span>
+                    </button>
+                  </div>
                   <div className="text-gray-700 mb-2">{decoration.description}</div>
                   <div className="text-gray-800 font-semibold mb-2">Price: {decoration.price} PKR</div>
-                  {decoration.addOns && decoration.addOns.length > 0 && (
+                  {decoration.addOns && decoration.addOns.length > 0 && selectedDecorationIds.includes(decoration._id) && (
                     <div className="mb-2">
                       <div className="font-semibold text-marriageHotPink">Add-Ons:</div>
                       <ul className="list-disc pl-5 text-gray-700">
@@ -396,11 +416,11 @@ const PublicHallDetail = () => {
                   ) : (
                     <div className="flex flex-col h-full w-full">
                       <div className="flex-1 overflow-y-auto pb-2 custom-scrollbar" >
-                        {(chatState.messages || []).length === 0 ? (
+                        {(messages || []).length === 0 ? (
                           <div className="text-gray-400 text-center mt-8">No messages yet. Start the conversation!</div>
                         ) : (
                           <>
-                            {(chatState.messages || []).map((msg, idx) => (
+                            {(messages || []).map((msg, idx) => (
                               <div key={idx} className={`mb-2 flex items-end ${msg.sender === 'client' ? 'justify-end' : 'justify-start'}`}>
                                 {msg.sender !== 'client' && (
                                   <div className="flex-shrink-0 mr-2">
@@ -447,7 +467,7 @@ const PublicHallDetail = () => {
                                           guestEmail: formData.email,
                                           guestPhone: formData.phone,
                                           selectedAddOns: selectedMenuAddOns || [],
-                                          decorationIds: Object.keys(selectedDecorationAddOns),
+                                          decorationIds: selectedDecorationIds,
                                           bookingDate: formData.date,
                                           bookingTime: formData.time,
                                         };
@@ -703,6 +723,20 @@ const PublicHallDetail = () => {
                   </div>
                 )}
                 <div className="mb-4">
+                  <span className="font-semibold">Selected Decorations:</span> {
+                    selectedDecorationIds.length > 0 
+                      ? decorations.filter(d => selectedDecorationIds.includes(d._id)).map(d => d.name).join(', ')
+                      : 'None'
+                  }
+                </div>
+                <div className="mb-4">
+                  <span className="font-semibold">Selected Decorations:</span> {
+                    selectedDecorationIds.length > 0 
+                      ? decorations.filter(d => selectedDecorationIds.includes(d._id)).map(d => d.name).join(', ')
+                      : 'None'
+                  }
+                </div>
+                <div className="mb-4">
                   <span className="font-semibold">Decoration Add-Ons:</span> {
                     Object.entries(selectedDecorationAddOns).flatMap(([decId, addOns]) =>
                       addOns.map(name => {
@@ -724,28 +758,34 @@ const PublicHallDetail = () => {
                 <button
                   className="mt-6 px-6 py-3 rounded bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition w-full"
                   onClick={async () => {
+                    console.log("Confirm Booking clicked");
                     setBookingStatus(null);
+                    const payload = {
+                      hallId: hall._id,
+                      bookingDate: bookingDate + (bookingTime ? ('T' + bookingTime) : ''),
+                      menuId: selectedMenuId,
+                      selectedAddOns: selectedMenuAddOns,
+                      decorationIds: selectedDecorationIds,
+                      guestName,
+                      guestEmail,
+                      guestPhone,
+                    };
+                    console.log("Booking payload:", payload);
                     try {
                       const res = await fetch('http://localhost:5000/api/sample/public-booking', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          hallId: hall._id,
-                              bookingDate: bookingDate + (bookingTime ? ('T' + bookingTime) : ''),
-                          menuId: selectedMenuId,
-                          selectedAddOns: selectedMenuAddOns,
-                          decorationIds: Object.keys(selectedDecorationAddOns),
-                              guestName,
-                              guestEmail,
-                              guestPhone,
-                        }),
+                        body: JSON.stringify(payload),
                       });
                       const data = await res.json();
+                      console.log("Booking response:", data);
                       if (!res.ok) throw new Error(data.message || 'Booking failed');
                       setBookingStatus({ success: 'Booking successful! We will contact you soon.' });
                     } catch (err) {
+                      console.error("Booking error:", err);
                       setBookingStatus({ error: err.message });
                     }
+                    console.log("bookingStatus after set:", bookingStatus);
                   }}
                       disabled={!bookingDate || !bookingTime || !selectedMenuId || !guestName || !guestEmail || !guestPhone}
                 >

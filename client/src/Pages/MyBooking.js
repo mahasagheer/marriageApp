@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
-import { fetchHalls } from "../slice/hallSlice";
+import { fetchHalls, fetchHallCalendarData, addAvailableDate, updateAvailableDate } from "../slice/hallSlice";
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
@@ -19,49 +19,32 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const fetchAvailableDates = async (hallId) => {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`http://localhost:5000/api/halls/${hallId}/available-dates`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  // Map to calendar event format
-  return data.map(dateObj => ({
-    id: dateObj._id,
-    title: dateObj.isBooked ? 'Reserved' : 'Available',
-    start: new Date(dateObj.date),
-    end: new Date(dateObj.date),
-    isBooked: dateObj.isBooked,
-    allDay: true,
-    raw: dateObj,
-  }));
-};
-
 // Custom Event badge component
 const StatusBadge = ({ event }) => (
   <span
     className={
-      event.isBooked
-        ? "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-marriageHotPink text-white border-2 border-marriageHotPink shadow"
-        : "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow"
+      event.status === 'approved'
+        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-400 shadow'
+        : event.status === 'pending'
+        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow'
+        : event.status === 'rejected'
+        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-400 shadow'
+        : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
     }
     style={{ pointerEvents: 'none' }}
   >
-    {event.isBooked ? 'Reserved' : 'Available'}
+    {event.title}
   </span>
 );
 
 export const MyBookings = () => {
   const dispatch = useDispatch();
-  const { halls, loading } = useSelector((state) => state.halls);
+  const { halls, loading, hallCalendarEvents, hallCalendarLoading, hallCalendarError } = useSelector((state) => state.halls);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedHall, setSelectedHall] = useState(null);
   const [reservedStatus, setReservedStatus] = useState('not_reserved');
-  const [hallEvents, setHallEvents] = useState({}); // { hallId: [events] }
-  const [eventsLoading, setEventsLoading] = useState({}); // { hallId: bool }
   const [saveLoading, setSaveLoading] = useState(false);
   const [modalError, setModalError] = useState("");
 
@@ -71,71 +54,20 @@ export const MyBookings = () => {
 
   useEffect(() => {
     if (!halls || halls.length === 0) return;
-    halls.forEach(async (hall) => {
-      setEventsLoading(prev => ({ ...prev, [hall._id]: true }));
-      const events = await fetchAvailableDates(hall._id);
-      setHallEvents(prev => ({ ...prev, [hall._id]: events }));
-      setEventsLoading(prev => ({ ...prev, [hall._id]: false }));
+    halls.forEach((hall) => {
+      dispatch(fetchHallCalendarData(hall._id));
     });
-  }, [halls]);
+  }, [halls, dispatch]);
 
   const handleDateClick = (slotInfo, hall) => {
     setSelectedDate(slotInfo.start);
     setSelectedHall(hall);
-    // Check if this date is already reserved in hallEvents
-    const event = (hallEvents[hall._id] || []).find(ev =>
+    // Check if this date is already reserved in hallCalendarEvents
+    const event = (hallCalendarEvents[hall._id] || []).find(ev =>
       ev.start.toDateString() === slotInfo.start.toDateString()
     );
     setReservedStatus(event && event.isBooked ? 'reserved' : 'not_reserved');
     setModalOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!selectedHall || !selectedDate) return;
-    setSaveLoading(true);
-    setModalError("");
-    const hallId = selectedHall._id;
-    const dateStr = selectedDate.toISOString();
-    // Check if event exists for this date
-    const event = (hallEvents[hallId] || []).find(ev =>
-      ev.start.toDateString() === selectedDate.toDateString()
-    );
-    const token = localStorage.getItem('token');
-    try {
-      if (!event) {
-        // Add new available date
-        const res = await fetch(`http://localhost:5000/api/halls/${hallId}/available-dates`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ dates: [dateStr], isBooked: reservedStatus === 'reserved' }),
-        });
-        if (!res.ok) throw new Error('Failed to add date');
-      } else {
-        // Update existing available date
-        const res = await fetch(`http://localhost:5000/api/sample/available-dates/${event.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ isBooked: reservedStatus === 'reserved' }),
-        });
-        if (!res.ok) throw new Error('Failed to update date');
-      }
-      // Refresh events for this hall
-      setEventsLoading(prev => ({ ...prev, [hallId]: true }));
-      const events = await fetchAvailableDates(hallId);
-      setHallEvents(prev => ({ ...prev, [hallId]: events }));
-      setEventsLoading(prev => ({ ...prev, [hallId]: false }));
-      setModalOpen(false);
-    } catch (err) {
-      setModalError(err.message || 'Error saving date');
-    } finally {
-      setSaveLoading(false);
-    }
   };
 
   // Custom event style getter for coloring badges
@@ -157,9 +89,34 @@ export const MyBookings = () => {
   const dayPropGetter = (date, selected) => {
     // Check if this date is reserved for the current hall
     if (!selectedHall) return {};
-    const events = hallEvents[selectedHall._id] || [];
+    const events = hallCalendarEvents[selectedHall._id] || [];
     const isReserved = events.some(ev => ev.isBooked && ev.start.toDateString() === date.toDateString());
     return {};
+  };
+
+  // You may want to refetch after save, but keep the save logic as is for now
+  const handleSave = async () => {
+    if (!selectedHall || !selectedDate) return;
+    setSaveLoading(true);
+    setModalError("");
+    const hallId = selectedHall._id;
+    const dateStr = selectedDate.toISOString();
+    const event = (hallCalendarEvents[hallId] || []).find(ev =>
+      ev.start.toDateString() === selectedDate.toDateString()
+    );
+    try {
+      if (!event) {
+        await dispatch(addAvailableDate({ hallId, date: dateStr, isBooked: reservedStatus === 'reserved' })).unwrap();
+      } else {
+        await dispatch(updateAvailableDate({ dateId: event.id, isBooked: reservedStatus === 'reserved' })).unwrap();
+      }
+      dispatch(fetchHallCalendarData(hallId));
+      setModalOpen(false);
+    } catch (err) {
+      setModalError(err.message || 'Error saving date');
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   return (
@@ -180,12 +137,12 @@ export const MyBookings = () => {
                   {hall.name} - Bookings Calendar
                 </h3>
             
-                {eventsLoading[hall._id] ? (
+                {hallCalendarLoading[hall._id] ? (
                   <div className="text-center text-gray-400">Loading calendar...</div>
                 ) : (
                   <Calendar
                     localizer={localizer}
-                    events={hallEvents[hall._id] || []}
+                    events={hallCalendarEvents[hall._id] || []}
                     startAccessor="start"
                     endAccessor="end"
                     style={{ height: 400 }}

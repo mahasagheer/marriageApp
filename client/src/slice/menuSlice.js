@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+const apiUrl = process.env.REACT_APP_API_URL;
 
 // Async thunk for creating a menu
 export const createMenu = createAsyncThunk(
@@ -6,7 +7,7 @@ export const createMenu = createAsyncThunk(
   async (menuData, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/menus/', {
+      const response = await fetch(`${apiUrl}/menus/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,7 +32,7 @@ export const fetchMenusByHall = createAsyncThunk(
   async (hallId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/menus/hall/${hallId}`, {
+      const response = await fetch(`${apiUrl}/menus/hall/${hallId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -49,7 +50,7 @@ export const updateMenu = createAsyncThunk(
   async ({ menuId, menuData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/menus/${menuId}`, {
+      const response = await fetch(`${apiUrl}/menus/${menuId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ export const deleteMenu = createAsyncThunk(
   async (menuId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/menus/${menuId}`, {
+      const response = await fetch(`${apiUrl}/menus/${menuId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

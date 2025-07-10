@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+const apiUrl = process.env.REACT_APP_API_URL;
 
 // Async thunk for adding a hall
 export const addHall = createAsyncThunk(
@@ -23,7 +24,7 @@ export const addHall = createAsyncThunk(
         });
       }
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/halls/', {
+      const response = await fetch(`${apiUrl}/halls/`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -47,7 +48,7 @@ export const fetchHalls = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/halls/', {
+      const response = await fetch(`${apiUrl}/halls/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -65,7 +66,7 @@ export const deleteHall = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/halls/${id}`, {
+      const response = await fetch(`${apiUrl}/halls/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -101,7 +102,7 @@ export const updateHall = createAsyncThunk(
         });
       }
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/halls/${id}`, {
+      const response = await fetch(`${apiUrl}/halls/${id}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -125,7 +126,7 @@ export const fetchSingleHall = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/halls/${id}`, {
+      const response = await fetch(`${apiUrl}/halls/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -143,7 +144,7 @@ export const fetchOwnerAvailableDates = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/sample/owner/available-dates', {
+      const response = await fetch(`${apiUrl}/sample/owner/available-dates`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -161,7 +162,7 @@ export const updateHallAvailableDate = createAsyncThunk(
   async ({ id, date }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/sample/available-dates/${id}`, {
+      const response = await fetch(`${apiUrl}/sample/available-dates/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -184,7 +185,7 @@ export const addAvailableDates = createAsyncThunk(
   async ({ hallId, dates }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/halls/${hallId}/available-dates`, {
+      const response = await fetch(`${apiUrl}/halls/${hallId}/available-dates`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -206,13 +207,130 @@ export const searchHalls = createAsyncThunk(
   'halls/searchHalls',
   async ({ name, location }, { rejectWithValue }) => {
     try {
-      let url = 'http://localhost:5000/api/halls/search?';
+      let url = `${apiUrl}/halls/search?`;
       if (name) url += `name=${encodeURIComponent(name)}&`;
       if (location) url += `location=${encodeURIComponent(location)}`;
       const response = await fetch(url);
       const data = await response.json();
       if (!response.ok) return rejectWithValue(data.message || 'Failed to search halls');
       return data;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Async thunk for fetching public hall details (with menus and decorations)
+export const fetchPublicHallDetails = createAsyncThunk(
+  'halls/fetchPublicHallDetails',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${apiUrl}/halls/public/${id}`);
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to fetch public hall details');
+      return data; // expects { hall, menus, decorations }
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Thunk to fetch both bookings and available dates for a hall and merge for calendar
+export const fetchHallCalendarData = createAsyncThunk(
+  'halls/fetchHallCalendarData',
+  async (hallId, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      // Fetch bookings
+      const bookingsRes = await fetch(`${apiUrl}/halls/${hallId}/bookings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!bookingsRes.ok) throw new Error('Failed to fetch bookings');
+      const bookingsData = await bookingsRes.json();
+      // Fetch available dates
+      const datesRes = await fetch(`${apiUrl}/halls/${hallId}/available-dates`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!datesRes.ok) throw new Error('Failed to fetch available dates');
+      const datesData = await datesRes.json();
+      // Map bookings to calendar events
+      const bookingEvents = bookingsData.bookings.map(booking => {
+        const dateObj = new Date(booking.bookingDate);
+        const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        let color = '';
+        if (booking.status === 'approved') color = 'bg-green-100 text-green-700 border-green-400';
+        else if (booking.status === 'pending') color = 'bg-yellow-100 text-yellow-700 border-yellow-400';
+        else if (booking.status === 'rejected') color = 'bg-red-100 text-red-700 border-red-400';
+        return {
+          id: booking._id,
+          title: `${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}${timeStr ? ' (' + timeStr + ')' : ''}`,
+          start: dateObj,
+          end: dateObj,
+          status: booking.status,
+          time: timeStr,
+          allDay: false,
+          color,
+          raw: booking,
+        };
+      });
+      // Map available dates to calendar events
+      const availableEvents = datesData.map(dateObj => ({
+        id: dateObj._id,
+        title: dateObj.isBooked ? 'Reserved' : 'Available',
+        start: new Date(dateObj.date),
+        end: new Date(dateObj.date),
+        isBooked: dateObj.isBooked,
+        allDay: true,
+        raw: dateObj,
+      }));
+      // Merge: if a booking exists for a date, use the booking event; else, use available event
+      const mergedEvents = [
+        ...bookingEvents,
+        ...availableEvents.filter(av => !bookingEvents.some(be => be.start.toDateString() === av.start.toDateString() && be.time === av.time)),
+      ];
+      return { hallId, events: mergedEvents };
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+export const addAvailableDate = createAsyncThunk(
+  'halls/addAvailableDate',
+  async ({ hallId, date, isBooked }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/halls/${hallId}/available-dates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ dates: [date], isBooked }),
+      });
+      if (!res.ok) throw new Error('Failed to add date');
+      return { hallId };
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+export const updateAvailableDate = createAsyncThunk(
+  'halls/updateAvailableDate',
+  async ({ dateId, isBooked }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/sample/available-dates/${dateId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isBooked }),
+      });
+      if (!res.ok) throw new Error('Failed to update date');
+      return { dateId };
     } catch (error) {
       return rejectWithValue(error.message || 'Network error');
     }
@@ -229,6 +347,18 @@ const hallSlice = createSlice({
     singleHall: null,
     ownerAvailableDates: [],
     searchResults: [],
+    publicHall: null,
+    publicMenus: [],
+    publicDecorations: [],
+    publicLoading: false,
+    publicError: null,
+    hallCalendarEvents: {}, // { [hallId]: [events] }
+    hallCalendarLoading: {}, // { [hallId]: bool }
+    hallCalendarError: {}, // { [hallId]: string }
+    addDateLoading: false,
+    addDateError: null,
+    updateDateLoading: false,
+    updateDateError: null,
   },
   reducers: {
     resetSuccess: (state) => {
@@ -323,6 +453,67 @@ const hallSlice = createSlice({
         state.loading = false;
         state.error = action.payload || 'Failed to search halls';
         state.searchResults = [];
+      })
+      .addCase(fetchPublicHallDetails.pending, (state) => {
+        state.publicLoading = true;
+        state.publicError = null;
+        state.publicHall = null;
+        state.publicMenus = [];
+        state.publicDecorations = [];
+      })
+      .addCase(fetchPublicHallDetails.fulfilled, (state, action) => {
+        state.publicLoading = false;
+        state.publicError = null;
+        state.publicHall = action.payload.hall;
+        state.publicMenus = action.payload.menus;
+        state.publicDecorations = action.payload.decorations;
+      })
+      .addCase(fetchPublicHallDetails.rejected, (state, action) => {
+        state.publicLoading = false;
+        state.publicError = action.payload || 'Failed to fetch public hall details';
+        state.publicHall = null;
+        state.publicMenus = [];
+        state.publicDecorations = [];
+      })
+      .addCase(fetchHallCalendarData.pending, (state, action) => {
+        const hallId = action.meta.arg;
+        state.hallCalendarLoading[hallId] = true;
+        state.hallCalendarError[hallId] = null;
+      })
+      .addCase(fetchHallCalendarData.fulfilled, (state, action) => {
+        const { hallId, events } = action.payload;
+        state.hallCalendarLoading[hallId] = false;
+        state.hallCalendarEvents[hallId] = events;
+        state.hallCalendarError[hallId] = null;
+      })
+      .addCase(fetchHallCalendarData.rejected, (state, action) => {
+        const hallId = action.meta.arg;
+        state.hallCalendarLoading[hallId] = false;
+        state.hallCalendarError[hallId] = action.payload || 'Failed to fetch calendar data';
+      })
+      .addCase(addAvailableDate.pending, (state) => {
+        state.addDateLoading = true;
+        state.addDateError = null;
+      })
+      .addCase(addAvailableDate.fulfilled, (state) => {
+        state.addDateLoading = false;
+        state.addDateError = null;
+      })
+      .addCase(addAvailableDate.rejected, (state, action) => {
+        state.addDateLoading = false;
+        state.addDateError = action.payload || 'Failed to add date';
+      })
+      .addCase(updateAvailableDate.pending, (state) => {
+        state.updateDateLoading = true;
+        state.updateDateError = null;
+      })
+      .addCase(updateAvailableDate.fulfilled, (state) => {
+        state.updateDateLoading = false;
+        state.updateDateError = null;
+      })
+      .addCase(updateAvailableDate.rejected, (state, action) => {
+        state.updateDateLoading = false;
+        state.updateDateError = action.payload || 'Failed to update date';
       });
   },
 });

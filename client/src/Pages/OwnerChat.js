@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchMessages, sendMessage as sendMessageThunk, addMessage, markMessagesRead } from '../slice/chatSlice';
-import { io } from 'socket.io-client';
+import { fetchChatSessions, fetchMessages, sendMessageThunk, addMessage, markMessagesRead } from '../slice/chatSlice';
+import { getSocket, disconnectSocket } from '../socket';
 import { FiFileText } from 'react-icons/fi';
 
 const OwnerChat = ({ hallId, booking }) => {
-  const [sessions, setSessions] = useState([]); // All chat sessions (bookingId or chatSessionId)
+  // Remove local sessions state
+  // const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [chatInput, setChatInput] = useState('');
   const [socket, setSocket] = useState(null);
@@ -16,54 +17,56 @@ const OwnerChat = ({ hallId, booking }) => {
   const [requestingDetails, setRequestingDetails] = useState(false);
   const dispatch = useDispatch();
   const chatState = useSelector(state => state.chat);
+  const sessions = useSelector(state => state.chat.sessions);
+  const sessionsLoading = useSelector(state => state.chat.sessionsLoading);
+  const sessionsError = useSelector(state => state.chat.sessionsError);
   const ownerEmail = localStorage.getItem('ownerEmail'); // or get from Redux/auth
 
-  // Fetch all unique chat sessions for this hall
+  // Fetch all unique chat sessions for this hall using Redux
   useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        const res = await fetch(`http://localhost:5000/api/halls/messages/all-sessions/${hallId}`);
-        if (!res.ok) throw new Error('Failed to fetch chat sessions');
-        const data = await res.json();
-        setSessions(data.sessions);
-        setFetchError(null);
-        // If a booking prop is provided, try to select the matching session
-        if (booking) {
-          let match = null;
-          if (booking.guestEmail) {
-            match = data.sessions.find(s => s.guestEmail === booking.guestEmail);
-          } else if (booking.guestName) {
-            match = data.sessions.find(s => s.guestName === booking.guestName);
-          } else if (booking.guestId) {
-            match = data.sessions.find(s => s.guestId === booking.guestId);
-          }
-          if (match) {
-            setSelectedSession(match);
-          } else {
-            setSelectedSession(null); // No chat for this client
-          }
-        } else {
-          // No booking prop: auto-select most recent session
-          if (data.sessions.length > 0) setSelectedSession(data.sessions[0]);
+    if (hallId) {
+      dispatch(fetchChatSessions(hallId));
+    }
+  }, [dispatch, hallId]);
+
+  // Select session based on booking or default to most recent
+  useEffect(() => {
+    if (sessions && sessions.length > 0) {
+      if (booking) {
+        let match = null;
+        if (booking.guestEmail) {
+          match = sessions.find(s => s.guestEmail === booking.guestEmail);
+        } else if (booking.guestName) {
+          match = sessions.find(s => s.guestName === booking.guestName);
+        } else if (booking.guestId) {
+          match = sessions.find(s => s.guestId === booking.guestId);
         }
-      } catch (err) {
-        setFetchError('Failed to load chat sessions. Please check your connection and hallId.');
-        console.error('Chat session fetch error:', err);
+        if (match) {
+          setSelectedSession(match);
+        } else {
+          setSelectedSession(null);
+        }
+      } else {
+        setSelectedSession(sessions[0]);
       }
-    };
-    if (hallId) fetchSessions();
-  }, [hallId, booking]);
+    } else {
+      setSelectedSession(null);
+    }
+  }, [sessions, booking]);
 
   // Socket.io setup
   useEffect(() => {
     if (!selectedSession) return;
-    const s = io('http://localhost:5000');
+    const s = getSocket();
     setSocket(s);
     s.emit('joinRoom', { hallId, bookingId: selectedSession.bookingId });
     s.on('receiveMessage', (msg) => {
       dispatch(addMessage(msg));
     });
-    return () => s.disconnect();
+    return () => {
+      s.off('receiveMessage');
+      // Optionally: disconnectSocket();
+    };
   }, [selectedSession, hallId, dispatch]);
 
   // Fetch messages when session is selected
@@ -101,16 +104,24 @@ const OwnerChat = ({ hallId, booking }) => {
         </div>
         {/* Sidebar: Remove avatars, just show name and time */}
         <ul className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-marriagePink/10">
-          {sessions.map(s => (
-            <li
-              key={s.bookingId}
-              className={`px-6 py-4 cursor-pointer hover:bg-marriagePink/10 transition ${selectedSession && selectedSession.bookingId === s.bookingId ? 'bg-marriagePink/20' : ''}`}
-              onClick={() => setSelectedSession(s)}
-            >
-              <div className="font-bold truncate text-marriageHotPink">{s.guestName || s.guestEmail || s.guestId || 'Anonymous Guest'}</div>
-              <div className="text-xs text-gray-500 truncate">{s.lastMessage ? new Date(s.lastMessage.createdAt).toLocaleString() : ''}</div>
-            </li>
-          ))}
+          {sessionsLoading ? (
+            <li className="px-6 py-4 text-gray-400">Loading...</li>
+          ) : sessionsError ? (
+            <li className="px-6 py-4 text-marriageRed">{sessionsError}</li>
+          ) : sessions.length === 0 ? (
+            <li className="px-6 py-4 text-gray-400">No chat sessions found.</li>
+          ) : (
+            sessions.map(s => (
+              <li
+                key={s.bookingId}
+                className={`px-6 py-4 cursor-pointer hover:bg-marriagePink/10 transition ${selectedSession && selectedSession.bookingId === s.bookingId ? 'bg-marriagePink/20' : ''}`}
+                onClick={() => setSelectedSession(s)}
+              >
+                <div className="font-bold truncate text-marriageHotPink">{s.guestName || s.guestEmail || s.guestId || 'Anonymous Guest'}</div>
+                <div className="text-xs text-gray-500 truncate">{s.lastMessage ? new Date(s.lastMessage.createdAt).toLocaleString() : ''}</div>
+              </li>
+            ))
+          )}
         </ul>
       </div>
       {/* Chat Area */}

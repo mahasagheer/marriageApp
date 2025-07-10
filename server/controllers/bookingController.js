@@ -3,6 +3,8 @@ const Hall = require('../models/Hall');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const Message = require('../models/Message');
+const Menu = require('../models/Menu');
+const Decoration = require('../models/Decoration');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -192,6 +194,30 @@ exports.confirmBookingFromChat = async (req, res) => {
     await booking.save();
     // Do not send email here; email is sent when owner approves/rejects
     res.json({ booking });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getBookingById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id)
+      .populate('hallId')
+      .populate('menuId')
+      .populate('decorationIds');
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    res.json({ booking });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getBookingsByHall = async (req, res) => {
+  try {
+    const { hallId } = req.params;
+    const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
+    res.json({ bookings });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

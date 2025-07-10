@@ -22,5 +22,7 @@ router.get('/messages/:bookingId', bookingController.getMessages);
 router.patch('/messages/:bookingId/read', bookingController.markMessagesRead);
 router.get('/messages/all-sessions/:hallId', bookingController.getAllChatSessions);
 router.post('/confirm-booking-from-chat', bookingController.confirmBookingFromChat);
+router.get('/bookings/:id', auth, bookingController.getBookingById);
+router.get('/:hallId/bookings', auth, bookingController.getBookingsByHall);
 
 module.exports = router; 

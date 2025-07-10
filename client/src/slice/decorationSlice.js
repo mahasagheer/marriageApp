@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+const apiUrl = process.env.REACT_APP_API_URL;
 
 // Async thunk for creating a decoration
 export const createDecoration = createAsyncThunk(
@@ -6,7 +7,7 @@ export const createDecoration = createAsyncThunk(
   async (decorationData, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/decorations/', {
+      const response = await fetch(`${apiUrl}/decorations/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,7 +32,7 @@ export const fetchDecorationsByHall = createAsyncThunk(
   async (hallId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/decorations/hall/${hallId}`, {
+      const response = await fetch(`${apiUrl}/decorations/hall/${hallId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -49,7 +50,7 @@ export const updateDecoration = createAsyncThunk(
   async ({ decorationId, decorationData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/decorations/${decorationId}`, {
+      const response = await fetch(`${apiUrl}/decorations/${decorationId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ export const deleteDecoration = createAsyncThunk(
   async (decorationId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/decorations/${decorationId}`, {
+      const response = await fetch(`${apiUrl}/decorations/${decorationId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

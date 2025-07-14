@@ -5,6 +5,7 @@ const nodemailer = require('nodemailer');
 const Message = require('../models/Message');
 const Menu = require('../models/Menu');
 const Decoration = require('../models/Decoration');
+const crypto = require('crypto');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -13,6 +14,83 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+
+// Utility to generate a unique token
+function generateToken() {
+  return crypto.randomBytes(20).toString('hex');
+}
+
+// Owner creates a custom deal and sends email
+exports.createCustomDeal = async (req, res) => {
+  try {
+    const { hallId, guestName, guestEmail, guestPhone, menuId, selectedAddOns, decorationIds, bookingDate, price, message, menuItems, decorationItems } = req.body;
+    if (!hallId || !guestEmail || !bookingDate) {
+      return res.status(400).json({ message: 'hallId, guestEmail, and bookingDate are required' });
+    }
+    const token = generateToken();
+    // Save as status 'custom-offer' (not shown in bookings table)
+    const booking = new Booking({
+      hallId,
+      bookingDate,
+      menuId,
+      selectedAddOns,
+      decorationIds,
+      isCustom: true,
+      status: 'custom-offer',
+      guestName,
+      guestEmail,
+      guestPhone,
+      customDealToken: token,
+      price,
+      message,
+      menuItems: menuItems || [],
+      decorationItems: decorationItems || [],
+    });
+    await booking.save();
+
+    // Send email with booking link
+    const bookingLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/custom-booking/${token}`;
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: guestEmail,
+      subject: `Custom Deal for Your Event at Our Hall`,
+      text: `Dear ${guestName},\n\nA custom deal has been created for you. Please review and confirm your booking here: ${bookingLink}\n\nDetails: ${message || ''}\n\nThank you!`,
+    });
+
+    res.status(201).json({ message: 'Custom deal created and email sent', booking });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Fetch custom deal by token
+exports.getCustomDealByToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const booking = await Booking.findOne({ customDealToken: token }).populate('hallId menuId decorationIds');
+    if (!booking) return res.status(404).json({ message: 'Custom deal not found' });
+    res.json({ booking });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Confirm custom deal booking
+exports.confirmCustomDeal = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const booking = await Booking.findOne({ customDealToken: token });
+    if (!booking) return res.status(404).json({ message: 'Custom deal not found' });
+    // Only add to bookings table if not already confirmed
+    if (booking.status !== 'pending') {
+      booking.status = 'pending';
+      await booking.save();
+    }
+    res.json({ message: 'Booking confirmed', booking });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 exports.createPublicBooking = async (req, res) => {
   try {
@@ -39,12 +117,13 @@ exports.createPublicBooking = async (req, res) => {
   }
 };
 
+// In getOwnerBookings, only return bookings with status 'pending', 'approved', or 'rejected'
 exports.getOwnerBookings = async (req, res) => {
   try {
     const ownerId = req.user._id;
     const halls = await Hall.find({ owner: ownerId });
     const hallIds = halls.map(h => h._id);
-    const bookings = await Booking.find({ hallId: { $in: hallIds } }).populate('hallId');
+    const bookings = await Booking.find({ hallId: { $in: hallIds }, status: { $in: ['pending', 'approved', 'rejected'] } }).populate('hallId');
     res.json({ bookings });
   } catch (error) {
     res.status(500).json({ message: error.message });

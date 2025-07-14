@@ -12,6 +12,7 @@ import RishtaDhondoHome from "../Pages/Phase_2/Home";
 import SearchResults from "../Pages/SearchResults";
 import PublicHallDetail from "../Pages/PublicHallDetail";
 import CoverPage from "../Pages/CoverPage";
+import CustomDealBooking from '../Pages/CustomDealBooking';
 
 export const router = createBrowserRouter([
   {
@@ -71,5 +72,9 @@ export const router = createBrowserRouter([
   {
     path: '/public-halls/:id',
     element: <PublicHallDetail />,
+  },
+  {
+    path: '/custom-booking/:token',
+    element: <CustomDealBooking />,
   },
 ]);

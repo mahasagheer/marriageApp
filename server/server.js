@@ -24,6 +24,8 @@ const hallRoutes = require('./routes/halls');
 app.use('/api/halls', hallRoutes);
 app.use('/api/menus', require('./routes/menus'));
 app.use('/api/decorations', require('./routes/decorations'));
+const bookingRoutes = require('./routes/booking');
+app.use('/api/bookings', bookingRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

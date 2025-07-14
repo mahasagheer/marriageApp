@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchOwnerBookings, fetchBookingById, updateBookingStatus, clearSelectedBooking } from "../slice/bookingSlice";
 import { fetchUnreadCount } from "../slice/chatSlice";
-import { FiUser, FiMessageSquare, FiList, FiCheckCircle, FiXCircle, FiClock, FiUsers, FiX, FiMail, FiPhone, FiCalendar } from "react-icons/fi";
+import { FiUser, FiMessageSquare, FiList, FiCheckCircle, FiXCircle, FiClock, FiUsers, FiX, FiMail, FiPhone, FiCalendar, FiGift } from "react-icons/fi";
 import OwnerChat from './OwnerChat';
+import CreateCustomDealModal from '../Components/CreateCustomDealModal';
 
 const OwnerDashboard = () => {
   const dispatch = useDispatch();
@@ -17,6 +18,8 @@ const OwnerDashboard = () => {
 
   const [showChat, setShowChat] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [showCustomDealModal, setShowCustomDealModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('menu');
 
   let ownerId = null;
   try {
@@ -62,6 +65,10 @@ const OwnerDashboard = () => {
   } catch (e) {
     // fallback to 'Owner'
   }
+
+  // Determine hallId for custom deal (use first booking's hallId if available)
+  const hallId = bookings.length > 0 ? bookings[0].hallId?._id || bookings[0].hallId : null;
+
   return (
     <div className="ml-[15%] p-4 md:p-8 bg-gray-50 min-h-screen">
       {/* Dashboard Header */}
@@ -77,6 +84,20 @@ const OwnerDashboard = () => {
             <div className="text-gray-500 text-sm">Manage your hall bookings and chat with clients.</div>
           </div>
         </div>
+  {/* Create Custom Deal Button */}
+  <div>
+  <button
+        className="mb-4 px-5 mr-5 py-2 rounded-lg bg-marriageHotPink text-white font-bold shadow hover:bg-marriageRed transition text-lg"
+        onClick={() => setShowCustomDealModal(true)}
+        disabled={!hallId}
+        title={!hallId ? 'No hall available for custom deal' : ''}
+      >
+        Custom Deal
+      </button>
+      {showCustomDealModal && (
+        <CreateCustomDealModal hallId={hallId} onClose={() => setShowCustomDealModal(false)} />
+      )}
+
         <button
           className="relative px-5 py-2 rounded-lg bg-marriageHotPink text-white font-bold shadow hover:bg-marriageRed transition text-lg"
           onClick={() => setShowChat(true)}
@@ -89,6 +110,7 @@ const OwnerDashboard = () => {
             </span>
           )}
         </button>
+        </div>
       </div>
       {/* Booking Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -113,6 +135,7 @@ const OwnerDashboard = () => {
           <div className="text-gray-500">Rejected</div>
         </div>
       </div>
+    
       {/* Bookings Table/Card */}
       <div className="bg-white rounded-3xl shadow-lg p-6 animate-fadeInUp">
         <h2 className="text-xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiUsers /> Bookings</h2>
@@ -224,7 +247,7 @@ const OwnerDashboard = () => {
       {showDrawer && selectedBooking && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="flex-1 bg-black bg-opacity-40" onClick={() => { setShowDrawer(false); dispatch(clearSelectedBooking()); }} />
-          <div className="w-full max-w-4xl bg-white h-full shadow-2xl p-0 relative flex flex-col animate-fadeInRight rounded-l-2xl">
+          <div className="w-full max-w-2xl bg-gradient-to-br from-marriagePink/10 to-white h-full shadow-2xl p-0 relative flex flex-col animate-fadeInRight rounded-l-2xl">
             <button
               className="absolute top-4 right-4 text-marriageRed text-3xl font-bold hover:text-marriageHotPink z-50 flex items-center justify-center"
               onClick={() => { setShowDrawer(false); dispatch(clearSelectedBooking()); }}
@@ -232,24 +255,46 @@ const OwnerDashboard = () => {
             >
               <FiX />
             </button>
-            <div className="flex flex-1 flex-col md:flex-row gap-6 p-8 overflow-y-auto">
-              {/* Left: Conversation/Details */}
-              <div className="flex-1 bg-gray-50 rounded-2xl shadow p-6 flex flex-col min-w-[320px] max-w-[420px] border border-gray-200">
-                <h3 className="text-xl font-bold mb-4 text-marriageHotPink">Booking Conversation</h3>
-                {/* If you have a conversation log, render it here. Otherwise, show a summary. */}
-                <div className="flex flex-col gap-4 text-base text-gray-700 h-full">
-                  <div className="flex flex-col gap-3 bg-white rounded-xl p-4 shadow-inner border border-marriagePink/20 h-full">
-              
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="font-bold">Status:</span>
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${selectedBooking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : selectedBooking.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{selectedBooking.status}</span>
+            <div className="flex flex-1 flex-col gap-0 p-0 overflow-y-auto">
+              {/* Modern Tabs Navigation */}
+              <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-marriagePink/20 flex items-center px-8 pt-8 pb-2 gap-2 rounded-t-2xl shadow-sm">
+                <button
+                  className={`flex-1 flex items-center gap-2 justify-center px-4 py-2 rounded-t-lg font-bold transition-all duration-150 ${activeTab === 'menu' ? 'bg-marriageHotPink text-white shadow' : 'bg-white text-marriageHotPink hover:bg-marriagePink/10'}`}
+                  onClick={() => setActiveTab('menu')}
+                >
+                  <FiList className="text-lg" /> Menu
+                </button>
+                <button
+                  className={`flex-1 flex items-center gap-2 justify-center px-4 py-2 rounded-t-lg font-bold transition-all duration-150 ${activeTab === 'user' ? 'bg-marriageHotPink text-white shadow' : 'bg-white text-marriageHotPink hover:bg-marriagePink/10'}`}
+                  onClick={() => setActiveTab('user')}
+                >
+                  <FiUser className="text-lg" /> User Details
+                </button>
+                <button
+                  className={`flex-1 flex items-center gap-2 justify-center px-4 py-2 rounded-t-lg font-bold transition-all duration-150 ${activeTab === 'decoration' ? 'bg-marriageHotPink text-white shadow' : 'bg-white text-marriageHotPink hover:bg-marriagePink/10'}`}
+                  onClick={() => setActiveTab('decoration')}
+                >
+                  <FiGift className="text-lg" /> Decoration
+                </button>
                     </div>
+              {/* Tab Content Card */}
+              <div className="flex-1 flex flex-col items-center justify-start px-4 sm:px-8 py-8 bg-white rounded-b-2xl shadow-lg min-h-[300px]">
+                <div className="w-full max-w-lg">
+                  {activeTab === 'menu' && (
                     <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Menu Details</label>
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                      {selectedBooking.menuId && typeof selectedBooking.menuId === 'object' ? (
+                      <h3 className="text-xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiList /> Menu Details</h3>
+                      {selectedBooking.menuItems && selectedBooking.menuItems.length > 0 ? (
                         <>
-                          <div className="font-semibold text-marriageHotPink">{selectedBooking.menuId.name}</div>
+                          <div className="font-semibold text-marriageHotPink mb-2">Custom Menu Items</div>
+                          <ul className="list-disc pl-5 text-gray-700 text-base mb-1">
+                            {selectedBooking.menuItems.map((item, idx) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : selectedBooking.menuId && typeof selectedBooking.menuId === 'object' ? (
+                        <>
+                          <div className="font-semibold text-marriageHotPink mb-2">{selectedBooking.menuId.name}</div>
                           <div className="text-gray-600 text-sm mb-1">{selectedBooking.menuId.description}</div>
                           <div className="text-gray-800 font-semibold mb-1">Price: {selectedBooking.menuId.basePrice || selectedBooking.menuId.price} PKR</div>
                           {selectedBooking.menuId.items && selectedBooking.menuId.items.length > 0 && (
@@ -274,55 +319,48 @@ const OwnerDashboard = () => {
                           )}
                         </>
                       ) : (
-                        <div className="pl-2 text-gray-600">{selectedBooking.menuId || '-'}</div>
+                        <div className="text-gray-400">No menu details available.</div>
                       )}
                     </div>
+                  )}
+                  {activeTab === 'user' && (
+                    <div>
+                      <h3 className="text-xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiUser /> User Details</h3>
+                      <div className="mb-2"><span className="font-semibold">Name:</span> {selectedBooking.guestName || '-'}</div>
+                      <div className="mb-2"><span className="font-semibold">Email:</span> {selectedBooking.guestEmail || '-'}</div>
+                      <div className="mb-2"><span className="font-semibold">Phone:</span> {selectedBooking.guestPhone || '-'}</div>
+                      <div className="mb-2"><span className="font-semibold">Date:</span> {selectedBooking.bookingDate ? new Date(selectedBooking.bookingDate).toLocaleDateString() : '-'}</div>
+                      <div className="mb-2"><span className="font-semibold">Price:</span> {selectedBooking.price ? `Rs. ${selectedBooking.price}` : '-'}</div>
+                      <div className="mb-2"><span className="font-semibold">Message:</span> {selectedBooking.message || '-'}</div>
+                    </div>
+                  )}
+                  {activeTab === 'decoration' && (
+                    <div>
+                      <h3 className="text-xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiGift /> Decoration Details</h3>
+                      {selectedBooking.decorationItems && selectedBooking.decorationItems.length > 0 ? (
+                        <>
+                          <div className="font-semibold text-marriageHotPink mb-2">Custom Decoration Items</div>
+                          <ul className="list-disc pl-5 text-gray-700 text-base mb-1">
+                            {selectedBooking.decorationItems.map((item, idx) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : selectedBooking.decorationIds && Array.isArray(selectedBooking.decorationIds) && selectedBooking.decorationIds.length > 0 ? (
+                        <>
+                          <div className="font-semibold text-marriageHotPink mb-2">Decoration IDs</div>
+                          <ul className="list-disc pl-5 text-gray-700 text-base mb-1">
+                            {selectedBooking.decorationIds.map((id, idx) => (
+                              <li key={idx}>{typeof id === 'object' && id.name ? id.name : id}</li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : (
+                        <div className="text-gray-400">No decoration details available.</div>
+                      )}
+                    </div>
+                  )}
                   </div>
-                  </div>
-                </div>
-              </div>
-              {/* Right: Booking Summary Card */}
-              <div className="flex-1 bg-white rounded-2xl shadow p-6 flex flex-col min-w-[320px] max-w-[420px] border border-gray-200">
-                <h3 className="text-xl font-bold mb-4 text-marriageHotPink">Conversation Summary</h3>
-                <form className="flex flex-col gap-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Guest's Full Name</label>
-                      <input className="w-full rounded-lg border border-gray-200 px-3 py-2 bg-gray-50 text-gray-700" value={selectedBooking.guestName || ''} readOnly />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Date to come</label>
-                      <div className="relative">
-                        <input className="w-full rounded-lg border border-gray-200 px-3 py-2 bg-gray-50 text-gray-700 pr-8" value={new Date(selectedBooking.bookingDate).toLocaleDateString()} readOnly />
-                        <FiCalendar className="absolute right-2 top-1/2 -translate-y-1/2 text-marriageHotPink" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Phone Number</label>
-                      <input className="w-full rounded-lg border border-gray-200 px-3 py-2 bg-gray-50 text-gray-700" value={selectedBooking.guestPhone || ''} readOnly />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Time to come</label>
-                      <div className="relative">
-                        <input className="w-full rounded-lg border border-gray-200 px-3 py-2 bg-gray-50 text-gray-700 pr-8" value={new Date(selectedBooking.bookingDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} readOnly />
-                        <FiClock className="absolute right-2 top-1/2 -translate-y-1/2 text-marriageHotPink" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Email</label>
-                      <input className="w-full rounded-lg border border-gray-200 px-3 py-2 bg-gray-50 text-gray-700" value={selectedBooking.guestEmail || ''} readOnly />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Number of Guests</label>
-                      <input className="w-full rounded-lg border border-gray-200 px-3 py-2 bg-gray-50 text-gray-700" value={selectedBooking.numberOfGuests || ''} readOnly />
-                    </div>
-                  </div>
-              
-                  <div className="flex gap-4 mt-4">
-                    <button type="button" className="flex-1 py-2 rounded-lg border border-marriageHotPink text-marriageHotPink font-bold bg-white cursor-not-allowed" disabled>Cancel</button>
-                    <button type="button" className="flex-1 py-2 rounded-lg bg-marriageHotPink text-white font-bold cursor-not-allowed" disabled>Save</button>
-                  </div>
-                </form>
               </div>
             </div>
           </div>

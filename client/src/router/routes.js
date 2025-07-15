@@ -13,6 +13,7 @@ import SearchResults from "../Pages/SearchResults";
 import PublicHallDetail from "../Pages/PublicHallDetail";
 import CoverPage from "../Pages/CoverPage";
 import CustomDealBooking from '../Pages/CustomDealBooking';
+import AdminAssignManagerPage from '../Pages/AdminAssignManagerPage';
 
 export const router = createBrowserRouter([
   {
@@ -28,9 +29,9 @@ export const router = createBrowserRouter([
     element:<RishtaDhondoHome/>
   },
   {
-    path: "/owner",
+    path: "/:role",
     element: (
-      <ProtectedRoute allowedRoles={["hall-owner"]}>
+      <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>
         <OwnerLayout>
           <OwnerDashboard />
         </OwnerLayout>
@@ -48,9 +49,9 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/owner/halls",
+    path: "/:role/halls",
     element: (
-      <ProtectedRoute allowedRoles={["hall-owner"]}>
+      <ProtectedRoute allowedRoles={["hall-owner","manager","admin"]}>
         <OwnerLayout>
           <OwnerHalls />
         </OwnerLayout>
@@ -58,12 +59,19 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: '/halls/:id',
-    element: <HallDetail />,
+    path: '/:role/halls/:id',
+    element:     (  
+    <ProtectedRoute allowedRoles={["hall-owner","manager","admin"]}>
+      <HallDetail />      
+      </ProtectedRoute>)
+,
   },
   {
-    path: '/owner/my-bookings',
-    element: <MyBookings />,
+    path: '/:role/my-bookings',
+    element:(    
+    <ProtectedRoute allowedRoles={["hall-owner","manager","admin"]}>
+      <MyBookings />
+</ProtectedRoute>) ,
   },
   {
     path: '/search-results',
@@ -76,5 +84,13 @@ export const router = createBrowserRouter([
   {
     path: '/custom-booking/:token',
     element: <CustomDealBooking />,
+  },
+  {
+    path: '/admin/associate-manager',
+    element: (
+      <ProtectedRoute allowedRoles={["admin"]}>
+        <AdminAssignManagerPage />
+      </ProtectedRoute>
+    ),
   },
 ]);

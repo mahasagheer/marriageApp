@@ -337,6 +337,47 @@ export const updateAvailableDate = createAsyncThunk(
   }
 );
 
+// Async thunk for associating a manager with a hall
+export const associateManager = createAsyncThunk(
+  'halls/associateManager',
+  async ({ hallId, managerId, department, tasks }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/halls/${hallId}/associate-manager`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ managerId, department, tasks }),
+      });
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to associate manager');
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Async thunk for fetching halls assigned to the manager
+export const fetchManagerHalls = createAsyncThunk(
+  'halls/fetchManagerHalls',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/halls/manager/halls`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to fetch manager halls');
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
 const hallSlice = createSlice({
   name: 'halls',
   initialState: {
@@ -514,6 +555,34 @@ const hallSlice = createSlice({
       .addCase(updateAvailableDate.rejected, (state, action) => {
         state.updateDateLoading = false;
         state.updateDateError = action.payload || 'Failed to update date';
+      })
+      .addCase(associateManager.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(associateManager.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.error = null;
+        // Optionally update halls if needed
+      })
+      .addCase(associateManager.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to associate manager';
+        state.success = false;
+      })
+      .addCase(fetchManagerHalls.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchManagerHalls.fulfilled, (state, action) => {
+        state.loading = false;
+        state.halls = action.payload;
+      })
+      .addCase(fetchManagerHalls.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to fetch manager halls';
       });
   },
 });

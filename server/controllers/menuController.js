@@ -5,13 +5,17 @@ const Hall = require('../models/Hall');
 exports.createMenu = async (req, res) => {
   try {
     const { hallId, name, items, basePrice, addOns } = req.body;
-    
-    // Check if hall exists and user owns it
-    const hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
+    let hall;
+    if (req.user.role === 'admin') {
+      hall = await Hall.findById(hallId);
+    } else if (req.user.role === 'manager') {
+      hall = await Hall.findOne({ _id: hallId, 'managers.manager': req.user._id });
+    } else {
+      hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
+    }
     if (!hall) {
       return res.status(403).json({ message: 'Not authorized or hall not found' });
     }
-
     const menu = new Menu({
       name,
       hallId,
@@ -19,7 +23,6 @@ exports.createMenu = async (req, res) => {
       basePrice,
       addOns: addOns || []
     });
-
     const savedMenu = await menu.save();
     res.status(201).json(savedMenu);
   } catch (err) {
@@ -31,13 +34,17 @@ exports.createMenu = async (req, res) => {
 exports.getMenusByHall = async (req, res) => {
   try {
     const { hallId } = req.params;
-    
-    // Check if hall exists and user owns it
-    const hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
+    let hall;
+    if (req.user.role === 'admin') {
+      hall = await Hall.findById(hallId);
+    } else if (req.user.role === 'manager') {
+      hall = await Hall.findOne({ _id: hallId, 'managers.manager': req.user._id });
+    } else {
+      hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
+    }
     if (!hall) {
       return res.status(403).json({ message: 'Not authorized or hall not found' });
     }
-
     const menus = await Menu.find({ hallId }).populate('hallId', 'name');
     res.json(menus);
   } catch (err) {
@@ -62,17 +69,24 @@ exports.getOwnerMenus = async (req, res) => {
 exports.getMenuById = async (req, res) => {
   try {
     const { menuId } = req.params;
-    
     const menu = await Menu.findById(menuId).populate('hallId');
     if (!menu) {
       return res.status(404).json({ message: 'Menu not found' });
     }
-
-    // Check if user owns the hall
-    if (String(menu.hallId.owner) !== String(req.user._id)) {
+    // Check if user owns the hall or is admin or manager
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'manager' &&
+      String(menu.hallId.owner) !== String(req.user._id)
+    ) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-
+    if (
+      req.user.role === 'manager' &&
+      !menu.hallId.managers.some(m => String(m.manager) === String(req.user._id))
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
     res.json(menu);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -84,23 +98,29 @@ exports.updateMenu = async (req, res) => {
   try {
     const { menuId } = req.params;
     const { name, items, basePrice, addOns } = req.body;
-    
     const menu = await Menu.findById(menuId).populate('hallId');
     if (!menu) {
       return res.status(404).json({ message: 'Menu not found' });
     }
-
-    // Check if user owns the hall
-    if (String(menu.hallId.owner) !== String(req.user._id)) {
+    // Check if user owns the hall or is admin or manager
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'manager' &&
+      String(menu.hallId.owner) !== String(req.user._id)
+    ) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-
+    if (
+      req.user.role === 'manager' &&
+      !menu.hallId.managers.some(m => String(m.manager) === String(req.user._id))
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
     // Update fields
     if (name !== undefined) menu.name = name;
     if (items !== undefined) menu.items = items;
     if (basePrice !== undefined) menu.basePrice = basePrice;
     if (addOns !== undefined) menu.addOns = addOns;
-
     const updatedMenu = await menu.save();
     res.json(updatedMenu);
   } catch (err) {
@@ -112,17 +132,24 @@ exports.updateMenu = async (req, res) => {
 exports.deleteMenu = async (req, res) => {
   try {
     const { menuId } = req.params;
-    
     const menu = await Menu.findById(menuId).populate('hallId');
     if (!menu) {
       return res.status(404).json({ message: 'Menu not found' });
     }
-
-    // Check if user owns the hall
-    if (String(menu.hallId.owner) !== String(req.user._id)) {
+    // Check if user owns the hall or is admin or manager
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'manager' &&
+      String(menu.hallId.owner) !== String(req.user._id)
+    ) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-
+    if (
+      req.user.role === 'manager' &&
+      !menu.hallId.managers.some(m => String(m.manager) === String(req.user._id))
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
     await menu.deleteOne();
     res.json({ message: 'Menu deleted successfully' });
   } catch (err) {

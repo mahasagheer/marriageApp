@@ -31,7 +31,7 @@ exports.createHall = async (req, res) => {
 // Get all halls (public)
 exports.getHalls = async (req, res) => {
   try {
-    const halls = await Hall.find();
+    const halls = await Hall.find().populate('managers.manager', 'name email');
     res.json(halls);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -97,7 +97,14 @@ exports.updateHall = async (req, res) => {
 // Get a single hall by ID (only if owned by the user)
 exports.getHallById = async (req, res) => {
   try {
-    const hall = await Hall.findOne({ _id: req.params.id, owner: req.user._id });
+    let hall;
+    if (req.user && req.user.role === 'admin') {
+      hall = await Hall.findById(req.params.id).populate('managers.manager', 'name email');
+    } else if (req.user && req.user.role === 'manager') {
+      hall = await Hall.findOne({ _id: req.params.id, 'managers.manager': req.user._id }).populate('managers.manager', 'name email');
+    } else {
+      hall = await Hall.findOne({ _id: req.params.id, owner: req.user._id }).populate('managers.manager', 'name email');
+    }
     if (!hall) {
       return res.status(404).json({ message: 'Hall not found or not authorized' });
     }
@@ -131,6 +138,19 @@ exports.getPublicHallDetail = async (req, res) => {
     const menus = await Menu.find({ hallId: hall._id });
     const decorations = await Decoration.find({ hallId: hall._id });
     res.json({ hall, menus, decorations });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}; 
+
+// Get halls assigned to the logged-in manager
+exports.getManagerHalls = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'manager') {
+      return res.status(403).json({ message: 'Forbidden: Managers only' });
+    }
+    const halls = await Hall.find({ 'managers.manager': req.user._id }).populate('managers.manager', 'name email');
+    res.json(halls);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

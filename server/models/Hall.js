@@ -9,6 +9,13 @@ const hallSchema = new mongoose.Schema({
   capacity: { type: Number, required: true },
   price: { type: Number, required: true },
   facilities: [{ type: String }],
+  managers: [
+    {
+      manager: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      department: { type: String },
+      tasks: [{ type: String }],
+    }
+  ],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   owner: {
     type: require('mongoose').Schema.Types.ObjectId,

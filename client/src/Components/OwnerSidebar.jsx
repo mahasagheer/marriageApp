@@ -24,6 +24,23 @@ const OwnerSidebar = () => {
   const [open, setOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
+  // Role-based nav links
+  let navLinks = [];
+  if (user?.role === 'hall-owner' || user?.role === 'manager') {
+    navLinks = [
+      { to: `/${user?.role}`, label: 'Dashboard', icon: <FiBarChart2 /> },
+      { to: `/${user?.role}/halls`, label: 'Halls', icon: <FiFileText /> },
+      { to: `/${user?.role}/my-bookings`, label: 'My Bookings', icon: <FiCalendar /> },
+    ];
+  } else if (user?.role === 'admin') {
+    navLinks = [
+      { to: '/admin', label: 'Admin Dashboard', icon: <FiBarChart2 /> },
+      { to: '/admin/halls', label: 'All Halls', icon: <FiFileText /> },
+      { to: '/admin/my-bookings', label: 'All Bookings', icon: <FiCalendar /> },
+      { to: '/admin/associate-manager', label: 'Associate Manager', icon: <FiUsers /> },
+    ];
+  }
+
   const handleLogout = () => {
     logout();
     setShowProfileDropdown(false);

@@ -60,6 +60,42 @@ export const updateBookingStatus = createAsyncThunk(
   }
 );
 
+// Fetch all bookings for admin
+export const fetchAllBookings = createAsyncThunk(
+  'bookings/fetchAllBookings',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/bookings/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to fetch bookings');
+      return data.bookings;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Fetch manager bookings
+export const fetchManagerBookings = createAsyncThunk(
+  'bookings/fetchManagerBookings',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/halls/manager/bookings`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to fetch bookings');
+      return data.bookings;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
 const bookingSlice = createSlice({
   name: 'bookings',
   initialState: {
@@ -90,6 +126,32 @@ const bookingSlice = createSlice({
         state.bookings = action.payload;
       })
       .addCase(fetchOwnerBookings.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to fetch bookings';
+      })
+      // Fetch all bookings for admin
+      .addCase(fetchAllBookings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllBookings.fulfilled, (state, action) => {
+        state.loading = false;
+        state.bookings = action.payload;
+      })
+      .addCase(fetchAllBookings.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to fetch bookings';
+      })
+      // Fetch manager bookings
+      .addCase(fetchManagerBookings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchManagerBookings.fulfilled, (state, action) => {
+        state.loading = false;
+        state.bookings = action.payload;
+      })
+      .addCase(fetchManagerBookings.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Failed to fetch bookings';
       })

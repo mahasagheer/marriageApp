@@ -19,7 +19,10 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use('/api/sample', require('./routes/sample'));
-app.use('/api/auth', require('./routes/auth'));
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+// Register /api/users endpoint directly
+app.use('/api', authRoutes);
 const hallRoutes = require('./routes/halls');
 app.use('/api/halls', hallRoutes);
 app.use('/api/menus', require('./routes/menus'));

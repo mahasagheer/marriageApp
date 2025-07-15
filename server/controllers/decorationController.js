@@ -5,20 +5,23 @@ const Hall = require('../models/Hall');
 exports.createDecoration = async (req, res) => {
   try {
     const { hallId, name, price, addOns } = req.body;
-    
-    // Check if hall exists and user owns it
-    const hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
+    let hall;
+    if (req.user.role === 'admin') {
+      hall = await Hall.findById(hallId);
+    } else if (req.user.role === 'manager') {
+      hall = await Hall.findOne({ _id: hallId, 'managers.manager': req.user._id });
+    } else {
+      hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
+    }
     if (!hall) {
       return res.status(403).json({ message: 'Not authorized or hall not found' });
     }
-
     const decoration = new Decoration({
       hallId,
       name,
       price,
       addOns: addOns || []
     });
-
     const savedDecoration = await decoration.save();
     res.status(201).json(savedDecoration);
   } catch (err) {
@@ -30,13 +33,17 @@ exports.createDecoration = async (req, res) => {
 exports.getDecorationsByHall = async (req, res) => {
   try {
     const { hallId } = req.params;
-    
-    // Check if hall exists and user owns it
-    const hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
+    let hall;
+    if (req.user.role === 'admin') {
+      hall = await Hall.findById(hallId);
+    } else if (req.user.role === 'manager') {
+      hall = await Hall.findOne({ _id: hallId, 'managers.manager': req.user._id });
+    } else {
+      hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
+    }
     if (!hall) {
       return res.status(403).json({ message: 'Not authorized or hall not found' });
     }
-
     const decorations = await Decoration.find({ hallId }).populate('hallId', 'name');
     res.json(decorations);
   } catch (err) {
@@ -61,17 +68,24 @@ exports.getOwnerDecorations = async (req, res) => {
 exports.getDecorationById = async (req, res) => {
   try {
     const { decorationId } = req.params;
-    
     const decoration = await Decoration.findById(decorationId).populate('hallId');
     if (!decoration) {
       return res.status(404).json({ message: 'Decoration not found' });
     }
-
-    // Check if user owns the hall
-    if (String(decoration.hallId.owner) !== String(req.user._id)) {
+    // Check if user owns the hall or is admin or manager
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'manager' &&
+      String(decoration.hallId.owner) !== String(req.user._id)
+    ) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-
+    if (
+      req.user.role === 'manager' &&
+      !decoration.hallId.managers.some(m => String(m.manager) === String(req.user._id))
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
     res.json(decoration);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -83,22 +97,28 @@ exports.updateDecoration = async (req, res) => {
   try {
     const { decorationId } = req.params;
     const { name, price, addOns } = req.body;
-    
     const decoration = await Decoration.findById(decorationId).populate('hallId');
     if (!decoration) {
       return res.status(404).json({ message: 'Decoration not found' });
     }
-
-    // Check if user owns the hall
-    if (String(decoration.hallId.owner) !== String(req.user._id)) {
+    // Check if user owns the hall or is admin or manager
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'manager' &&
+      String(decoration.hallId.owner) !== String(req.user._id)
+    ) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-
+    if (
+      req.user.role === 'manager' &&
+      !decoration.hallId.managers.some(m => String(m.manager) === String(req.user._id))
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
     // Update fields
     if (name !== undefined) decoration.name = name;
     if (price !== undefined) decoration.price = price;
     if (addOns !== undefined) decoration.addOns = addOns;
-
     const updatedDecoration = await decoration.save();
     res.json(updatedDecoration);
   } catch (err) {
@@ -110,17 +130,24 @@ exports.updateDecoration = async (req, res) => {
 exports.deleteDecoration = async (req, res) => {
   try {
     const { decorationId } = req.params;
-    
     const decoration = await Decoration.findById(decorationId).populate('hallId');
     if (!decoration) {
       return res.status(404).json({ message: 'Decoration not found' });
     }
-
-    // Check if user owns the hall
-    if (String(decoration.hallId.owner) !== String(req.user._id)) {
+    // Check if user owns the hall or is admin or manager
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'manager' &&
+      String(decoration.hallId.owner) !== String(req.user._id)
+    ) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-
+    if (
+      req.user.role === 'manager' &&
+      !decoration.hallId.managers.some(m => String(m.manager) === String(req.user._id))
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
     await decoration.deleteOne();
     res.json({ message: 'Decoration deleted successfully' });
   } catch (err) {

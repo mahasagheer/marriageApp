@@ -295,7 +295,50 @@ exports.getBookingById = async (req, res) => {
 exports.getBookingsByHall = async (req, res) => {
   try {
     const { hallId } = req.params;
-    const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
+    const hall = await Hall.findById(hallId);
+    if (!hall) return res.status(404).json({ message: 'Hall not found' });
+    const user = req.user;
+    // Admin can access all
+    if (user.role === 'admin') {
+      const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
+      return res.json({ bookings });
+    }
+    // Owner can access their own halls
+    if (user.role === 'hall-owner' && hall.owner.toString() === user._id.toString()) {
+      const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
+      return res.json({ bookings });
+    }
+    // Manager can access assigned halls
+    if (user.role === 'manager' && hall.managers.some(m => m.manager.toString() === user._id.toString())) {
+      const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
+      return res.json({ bookings });
+    }
+    // Otherwise forbidden
+    return res.status(403).json({ message: 'Forbidden: Not authorized to view bookings for this hall' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getAllBookings = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden: Admins only' });
+    }
+    const bookings = await Booking.find().populate('hallId');
+    res.json({ bookings });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getManagerBookings = async (req, res) => {
+  try {
+    const managerId = req.user._id;
+    // Find all halls where this user is a manager
+    const halls = await Hall.find({ 'managers.manager': managerId });
+    const hallIds = halls.map(h => h._id);
+    const bookings = await Booking.find({ hallId: { $in: hallIds }, status: { $in: ['pending', 'approved', 'rejected'] } }).populate('hallId');
     res.json({ bookings });
   } catch (error) {
     res.status(500).json({ message: error.message });

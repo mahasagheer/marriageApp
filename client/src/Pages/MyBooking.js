@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
-import { fetchHalls, fetchHallCalendarData, addAvailableDate, updateAvailableDate } from "../slice/hallSlice";
+import { fetchHalls, fetchHallCalendarData, addAvailableDate, updateAvailableDate, fetchManagerHalls } from "../slice/hallSlice";
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
@@ -20,26 +20,47 @@ const localizer = dateFnsLocalizer({
 });
 
 // Custom Event badge component
-const StatusBadge = ({ event }) => (
-  <span
-    className={
-      event.status === 'approved'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-400 shadow'
-        : event.status === 'pending'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow'
-        : event.status === 'rejected'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-400 shadow'
-        : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
-    }
-    style={{ pointerEvents: 'none' }}
-  >
-    {event.title}
-  </span>
-);
+const StatusBadge = ({ event }) => {
+  if (event.status) {
+    // Booking event
+    return (
+      <span
+        className={
+          event.status === 'approved'
+            ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-400 shadow'
+            : event.status === 'pending'
+            ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow'
+            : event.status === 'rejected'
+            ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-400 shadow'
+            : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
+        }
+        style={{ pointerEvents: 'none' }}
+      >
+        {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+        {event.raw && event.raw.guestName ? ` - ${event.raw.guestName}` : ''}
+        {event.raw && event.raw.guestEmail ? ` (${event.raw.guestEmail})` : ''}
+      </span>
+    );
+  }
+  // Available/reserved date event
+  return (
+    <span
+      className={
+        event.isBooked
+          ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-marriageHotPink text-white border-2 border-marriageHotPink shadow'
+          : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
+      }
+      style={{ pointerEvents: 'none' }}
+    >
+      {event.title}
+    </span>
+  );
+};
 
 export const MyBookings = () => {
   const dispatch = useDispatch();
   const { halls, loading, hallCalendarEvents, hallCalendarLoading, hallCalendarError } = useSelector((state) => state.halls);
+  const user = JSON.parse(localStorage.getItem('user'));
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -49,8 +70,12 @@ export const MyBookings = () => {
   const [modalError, setModalError] = useState("");
 
   useEffect(() => {
-    dispatch(fetchHalls());
-  }, [dispatch]);
+    if (user?.role === 'manager') {
+      dispatch(fetchManagerHalls());
+    } else {
+      dispatch(fetchHalls());
+    }
+  }, [dispatch, user?.role]);
 
   useEffect(() => {
     if (!halls || halls.length === 0) return;

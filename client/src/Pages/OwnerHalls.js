@@ -4,7 +4,7 @@ import { Button } from "../Components/Layout/Button";
 import AddHallModal from "../Components/AddHallModal";
 import EditHallModal from "../Components/EditHallModal";
 import { useDispatch, useSelector } from "react-redux";
-import { addHall, resetSuccess, fetchHalls, deleteHall, updateHall } from "../slice/hallSlice";
+import { addHall, resetSuccess, fetchHalls, deleteHall, updateHall, fetchManagerHalls } from "../slice/hallSlice";
 import { useNavigate } from "react-router-dom";
 
 const OwnerHalls = () => {
@@ -14,10 +14,15 @@ const OwnerHalls = () => {
   const dispatch = useDispatch();
   const { loading, error, success, halls } = useSelector((state) => state.halls);
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
-    dispatch(fetchHalls());
-  }, [dispatch]);
+    if (user?.role === 'manager') {
+      dispatch(fetchManagerHalls());
+    } else {
+      dispatch(fetchHalls());
+    }
+  }, [dispatch, user?.role]);
 
   const handleAddHall = (formData) => {
     dispatch(addHall(formData));
@@ -30,10 +35,14 @@ const OwnerHalls = () => {
       setSelectedHall(null);
       setTimeout(() => {
         dispatch(resetSuccess());
-        dispatch(fetchHalls());
+        if (user?.role === 'manager') {
+          dispatch(fetchManagerHalls());
+        } else {
+          dispatch(fetchHalls());
+        }
       }, 2000);
     }
-  }, [success, dispatch]);
+  }, [success, dispatch, user?.role]);
 
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this hall?")) {
@@ -93,7 +102,7 @@ const OwnerHalls = () => {
             <div 
               key={hall._id} 
               className="flex flex-col md:flex-row bg-white rounded-xl shadow border border-gray-200 overflow-hidden hover:shadow-lg transition cursor-pointer"
-              onClick={() => navigate(`/halls/${hall._id}`)}
+              onClick={() => navigate(`/${user.role}/halls/${hall._id}`)}
             >
               {/* Hall Image */}
               <div className="md:w-56 w-full h-40 md:h-auto flex-shrink-0 bg-gray-200 flex items-center justify-center">

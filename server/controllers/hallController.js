@@ -28,10 +28,19 @@ exports.createHall = async (req, res) => {
   }
 };
 
-// Get all halls (public)
+// Get all halls (role-based)
 exports.getHalls = async (req, res) => {
   try {
-    const halls = await Hall.find().populate('managers.manager', 'name email');
+    let halls;
+    if (req.user.role === 'admin') {
+      halls = await Hall.find().populate('managers.manager', 'name email');
+    } else if (req.user.role === 'hall-owner') {
+      halls = await Hall.find({ owner: req.user._id }).populate('managers.manager', 'name email');
+    } else if (req.user.role === 'manager') {
+      halls = await Hall.find({ 'managers.manager': req.user._id }).populate('managers.manager', 'name email');
+    } else {
+      return res.status(403).json({ message: 'Forbidden: Not authorized' });
+    }
     res.json(halls);
   } catch (error) {
     res.status(500).json({ message: error.message });

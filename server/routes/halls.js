@@ -8,7 +8,7 @@ const bookingController = require('../controllers/bookingController');
 const Hall = require('../models/Hall');
 
 router.get('/search', hallController.searchHalls);
-router.get('/', hallController.getHalls);
+router.get('/', auth, hallController.getHalls);
 router.get('/public/:id', hallController.getPublicHallDetail);
 router.get('/:id', auth, hallController.getHallById);
 router.post('/', auth, upload.array('images', 5), hallController.createHall);

@@ -6,6 +6,9 @@ const Message = require('../models/Message');
 const Menu = require('../models/Menu');
 const Decoration = require('../models/Decoration');
 const crypto = require('crypto');
+const Payment = require('../models/Payment');
+const path = require('path');
+const fs = require('fs');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -111,6 +114,9 @@ exports.createPublicBooking = async (req, res) => {
       guestPhone,
     });
     await booking.save();
+    // Emit socket event for real-time update
+    const io = req.app.get('io');
+    if (io) io.emit('newBooking', booking);
     res.status(201).json({ message: 'Booking created', booking });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -226,8 +232,14 @@ exports.markMessagesRead = async (req, res) => {
 exports.getAllChatSessions = async (req, res) => {
   try {
     const { hallId } = req.params;
-    // Find all messages for this hall
-    const messages = await Message.find({ hallId }).sort({ createdAt: 1 });
+    let messages;
+    if (!hallId || hallId === 'undefined') {
+      // Admin: fetch all messages
+      messages = await Message.find().sort({ createdAt: 1 });
+    } else {
+      // Owner/manager: fetch messages for specific hall
+      messages = await Message.find({ hallId }).sort({ createdAt: 1 });
+    }
     // Group by bookingId/chatSessionId
     const sessionMap = {};
     messages.forEach(msg => {
@@ -301,17 +313,17 @@ exports.getBookingsByHall = async (req, res) => {
     // Admin can access all
     if (user.role === 'admin') {
       const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
-      return res.json({ bookings });
+      return res.json(bookings);
     }
     // Owner can access their own halls
     if (user.role === 'hall-owner' && hall.owner.toString() === user._id.toString()) {
       const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
-      return res.json({ bookings });
+      return res.json(bookings);
     }
     // Manager can access assigned halls
     if (user.role === 'manager' && hall.managers.some(m => m.manager.toString() === user._id.toString())) {
       const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
-      return res.json({ bookings });
+      return res.json(bookings);
     }
     // Otherwise forbidden
     return res.status(403).json({ message: 'Forbidden: Not authorized to view bookings for this hall' });
@@ -342,5 +354,181 @@ exports.getManagerBookings = async (req, res) => {
     res.json({ bookings });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Get bookings (role-based)
+exports.getBookings = async (req, res) => {
+  try {
+    let bookings;
+    if (req.user.role === 'admin') {
+      bookings = await Booking.find().populate('hallId');
+    } else if (req.user.role === 'hall-owner') {
+      const halls = await Hall.find({ owner: req.user._id });
+      const hallIds = halls.map(h => h._id);
+      bookings = await Booking.find({ hallId: { $in: hallIds } }).populate('hallId');
+    } else if (req.user.role === 'manager') {
+      const halls = await Hall.find({ 'managers.manager': req.user._id });
+      const hallIds = halls.map(h => h._id);
+      bookings = await Booking.find({ hallId: { $in: hallIds } }).populate('hallId');
+    } else {
+      return res.status(403).json({ message: 'Forbidden: Not authorized' });
+    }
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Manager shares payment number for a booking
+exports.sharePaymentNumber = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { paymentNumber } = req.body;
+    if (!paymentNumber) return res.status(400).json({ message: 'Payment number required' });
+    // Only manager can share payment number for assigned hall
+    const booking = await Booking.findById(bookingId).populate('hallId');
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    const hall = booking.hallId;
+    if (
+      req.user.role !== 'manager' ||
+      !hall.managers.some(m => m.manager.toString() === req.user._id.toString())
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    // Ensure booking has a customDealToken
+    if (!booking.customDealToken) {
+      booking.customDealToken = generateToken();
+      await booking.save();
+    }
+    // Upsert payment record
+    let payment = await Payment.findOne({ bookingId: booking._id });
+    if (!payment) {
+      payment = new Payment({
+        userId: booking.userId,
+        bookingId: booking._id,
+        paymentNumber,
+        sharedByManager: true,
+        status: 'awaiting_payment',
+      });
+    } else {
+      payment.paymentNumber = paymentNumber;
+      payment.sharedByManager = true;
+      payment.status = 'awaiting_payment';
+    }
+    await payment.save();
+    // Send payment number to guest via email (if guestEmail exists)
+    if (booking.guestEmail) {
+      const bookingLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/custom-booking/${booking.customDealToken}`;
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: booking.guestEmail,
+        subject: `Payment Instructions for Your Booking at ${hall.name}`,
+        text: `Dear ${booking.guestName || 'Guest'},\n\nPlease send your payment to: ${paymentNumber}\n\nYou can view your booking details and upload your payment screenshot here:\n${bookingLink}\n\nThank you!`,
+      });
+    }
+    res.json({ message: 'Payment number shared', payment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Public endpoint: fetch booking and payment info by customDealToken
+exports.getBookingAndPaymentByToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const booking = await Booking.findOne({ customDealToken: token }).populate('hallId menuId decorationIds');
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    const payment = await Payment.findOne({ bookingId: booking._id });
+    res.json({ booking, payment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// User uploads payment proof (screenshot)
+exports.uploadPaymentProof = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    // Only user who made the booking can upload proof
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.userId && booking.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    let payment = await Payment.findOne({ bookingId: booking._id });
+    if (!payment) {
+      payment = new Payment({
+        userId: req.user._id,
+        bookingId: booking._id,
+        status: 'awaiting_verification',
+      });
+    }
+    payment.proofImage = req.file.path;
+    payment.status = 'awaiting_verification';
+    await payment.save();
+    res.json({ message: 'Payment proof uploaded', payment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Manager verifies or rejects payment
+exports.verifyPayment = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    const { status } = req.body; // 'verified' or 'rejected'
+    if (!['verified', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const payment = await Payment.findById(paymentId).populate({ path: 'bookingId', populate: { path: 'hallId' } });
+    if (!payment) return res.status(404).json({ message: 'Payment not found' });
+    const hall = payment.bookingId.hallId;
+    if (
+      req.user.role !== 'manager' ||
+      !hall.managers.some(m => m.manager.toString() === req.user._id.toString())
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    payment.status = status;
+    await payment.save();
+    // Send email to client if guestEmail exists
+    const guestEmail = payment.bookingId.guestEmail;
+    const guestName = payment.bookingId.guestName || 'Guest';
+    if (guestEmail) {
+      let subject, text;
+      if (status === 'verified') {
+        subject = `Your payment for booking at ${hall.name} has been verified!`;
+        text = `Dear ${guestName},\n\nYour payment for your booking at ${hall.name} has been verified. Thank you for completing your payment!\n\nWe look forward to hosting your event.\n\nBest regards,\n${hall.name} Team`;
+      } else if (status === 'rejected') {
+        subject = `Your payment for booking at ${hall.name} was rejected`;
+        text = `Dear ${guestName},\n\nUnfortunately, your payment proof for your booking at ${hall.name} was rejected. Please contact us or re-upload your payment proof.\n\nIf you have questions, reply to this email.\n\nBest regards,\n${hall.name} Team`;
+      }
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: guestEmail,
+          subject,
+          text,
+        });
+      } catch (emailError) {
+        console.error('Failed to send payment status email:', emailError);
+      }
+    }
+    res.json({ message: `Payment ${status}`, payment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getPaymentByBookingId = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const payment = await Payment.findOne({ bookingId });
+    if (!payment) return res.status(404).json({ message: 'Payment not found' });
+    res.json({ payment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 }; 

@@ -96,6 +96,89 @@ export const fetchManagerBookings = createAsyncThunk(
   }
 );
 
+// Fetch bookings for current user (role-based)
+export const fetchBookings = createAsyncThunk(
+  'bookings/fetchBookings',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/booking`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to fetch bookings');
+      // The new endpoint returns an array
+      return Array.isArray(data) ? data : data.bookings || [];
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Fetch payment info for a booking
+export const fetchPaymentByBookingId = createAsyncThunk(
+  'bookings/fetchPaymentByBookingId',
+  async (bookingId, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/booking/payment/by-booking/${bookingId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to fetch payment');
+      return data.payment;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Manager shares payment number
+export const sharePaymentNumber = createAsyncThunk(
+  'bookings/sharePaymentNumber',
+  async ({ bookingId, paymentNumber }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/booking/${bookingId}/share-payment-number`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ paymentNumber })
+      });
+      const data = await res.json();
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to share payment number');
+      return data.payment;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Manager verifies or rejects payment
+export const verifyPayment = createAsyncThunk(
+  'bookings/verifyPayment',
+  async ({ paymentId, status }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/booking/payment/${paymentId}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to verify payment');
+      return data.payment;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
 const bookingSlice = createSlice({
   name: 'bookings',
   initialState: {
@@ -187,6 +270,19 @@ const bookingSlice = createSlice({
       .addCase(updateBookingStatus.rejected, (state, action) => {
         const id = action.meta.arg.id;
         state.actionStatus[id] = 'error';
+      })
+      // Fetch bookings for current user (role-based)
+      .addCase(fetchBookings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchBookings.fulfilled, (state, action) => {
+        state.loading = false;
+        state.bookings = action.payload;
+      })
+      .addCase(fetchBookings.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to fetch bookings';
       });
   },
 });

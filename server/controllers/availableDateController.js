@@ -20,8 +20,14 @@ exports.addAvailableDate = async (req, res) => {
 exports.getAvailableDatesForHall = async (req, res) => {
   try {
     const { hallId } = req.params;
-    const hall = await Hall.findOne({ _id: hallId, owner: req.user._id });
-    if (!hall) return res.status(403).json({ message: 'Not authorized or hall not found' });
+    const hall = await Hall.findById(hallId);
+    if (!hall) return res.status(404).json({ message: 'Hall not found' });
+    // Allow owner, assigned manager, or admin
+    const isOwner = hall.owner.toString() === req.user._id.toString();
+    const isManager = hall.managers.some(m => m.manager.toString() === req.user._id.toString());
+    if (!(isOwner || isManager || req.user.role === 'admin')) {
+      return res.status(403).json({ message: 'Not authorized or hall not found' });
+    }
     const dates = await AvailableDate.find({ hallId }).populate('hallId', 'name');
     res.json(dates.map(date => ({
       _id: date._id,

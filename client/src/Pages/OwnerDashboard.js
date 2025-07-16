@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchOwnerBookings, fetchBookingById, updateBookingStatus, clearSelectedBooking, fetchAllBookings, fetchManagerBookings } from "../slice/bookingSlice";
+import { fetchBookings, fetchBookingById, updateBookingStatus, clearSelectedBooking, fetchPaymentByBookingId, sharePaymentNumber, verifyPayment } from "../slice/bookingSlice";
 import { fetchUnreadCount } from "../slice/chatSlice";
-import { FiUser, FiMessageSquare, FiList, FiCheckCircle, FiXCircle, FiClock, FiUsers, FiX, FiMail, FiPhone, FiCalendar, FiGift } from "react-icons/fi";
+import { getSocket } from "../socket";
+import { FiUser, FiMessageSquare, FiList, FiCheckCircle, FiXCircle, FiClock, FiUsers, FiX, FiMail, FiPhone, FiCalendar, FiGift, FiDollarSign } from "react-icons/fi";
 import OwnerChat from './OwnerChat';
 import CreateCustomDealModal from '../Components/CreateCustomDealModal';
 import OwnerSidebar from '../Components/OwnerSidebar';
@@ -23,18 +24,69 @@ const OwnerDashboard = () => {
   const [showCustomDealModal, setShowCustomDealModal] = useState(false);
   const [activeTab, setActiveTab] = useState('menu');
 
+  // Payment state for manager
+  const [paymentNumberInput, setPaymentNumberInput] = useState("");
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [payment, setPayment] = useState(null);
+  const [paymentSharing, setPaymentSharing] = useState(false); // New state for sharing payment number
+
   useEffect(() => {
-    if (user?.role === 'admin') {
-      dispatch(fetchAllBookings());
-    } else if (user?.role === 'manager') {
-      dispatch(fetchManagerBookings());
-    } else if (user?.role === 'hall-owner') {
-    dispatch(fetchOwnerBookings());
-      if (user?.id) {
-        dispatch(fetchUnreadCount(user.id));
-      }
+    dispatch(fetchBookings());
+    if (user?.role === 'hall-owner' && user?.id) {
+      dispatch(fetchUnreadCount(user.id));
     }
+    // Listen for newBooking event via socket.io
+    const socket = getSocket();
+    const handleNewBooking = (booking) => {
+      // Optionally, filter by owner here if needed
+      dispatch(fetchBookings());
+    };
+    socket.on('newBooking', handleNewBooking);
+    return () => {
+      socket.off('newBooking', handleNewBooking);
+    };
   }, [dispatch, user?.role, user?.id]);
+
+  // Fetch payment info when drawer opens and selectedBooking changes
+  useEffect(() => {
+    if (showDrawer && selectedBooking) {
+      setPaymentLoading(true);
+      setPaymentError("");
+      dispatch(fetchPaymentByBookingId(selectedBooking._id))
+        .unwrap()
+        .then((data) => {
+          setPayment(data);
+          setPaymentNumberInput(data?.paymentNumber || "");
+        })
+        .catch((err) => setPaymentError(err))
+        .finally(() => setPaymentLoading(false));
+    }
+  }, [showDrawer, selectedBooking, dispatch]);
+
+  // Handler for sharing payment number
+  const handleSharePaymentNumber = () => {
+    if (!paymentNumberInput) return;
+    setPaymentLoading(true);
+    setPaymentError("");
+    dispatch(sharePaymentNumber({ bookingId: selectedBooking._id, paymentNumber: paymentNumberInput }))
+      .unwrap()
+      .then((data) => setPayment(data))
+      .catch((err) => setPaymentError(err))
+      .finally(() => setPaymentLoading(false));
+  };
+
+  // Handler for verifying/rejecting payment
+  const handleVerifyPayment = (status) => {
+    if (!payment?._id) return;
+    setPaymentLoading(true);
+    setPaymentError("");
+    dispatch(verifyPayment({ paymentId: payment._id, status }))
+      .unwrap()
+      .then((data) => setPayment(data))
+      .catch((err) => setPaymentError(err))
+      .finally(() => setPaymentLoading(false));
+  };
 
   const handleStatusChange = (id, status) => {
     dispatch(updateBookingStatus({ id, status }));
@@ -239,7 +291,7 @@ const OwnerDashboard = () => {
           </button>
           <div className="bg-white rounded-3xl shadow-2xl border-2 border-marriagePink p-0 max-w-4xl w-full h-[44rem] flex flex-col overflow-hidden relative">
             <div className="flex-1 flex flex-col bg-gradient-to-br from-white via-marriagePink/10 to-marriagePink/5">
-              <OwnerChat hallId={showChat.booking ? showChat.booking.hallId?._id : bookings[0]?.hallId?._id} bookings={bookings} booking={showChat.booking} />
+              <OwnerChat hallId={user?.role === 'admin' ? null : (showChat.booking ? showChat.booking.hallId?._id : bookings[0]?.hallId?._id)} bookings={bookings} booking={showChat.booking} isAdmin={user?.role === 'admin'} />
             </div>
           </div>
         </div>
@@ -277,10 +329,108 @@ const OwnerDashboard = () => {
                   >
                     <FiGift className="text-lg" /> Decoration
                   </button>
-                    </div>
+                  <button
+                    className={`flex-1 flex items-center gap-2 justify-center px-4 py-2 rounded-t-lg font-bold transition-all duration-150 ${activeTab === 'payment' ? 'bg-marriageHotPink text-white shadow' : 'bg-white text-marriageHotPink hover:bg-marriagePink/10'}`}
+                    onClick={() => setActiveTab('payment')}
+                  >
+                    <FiDollarSign className="text-lg" /> Payment
+                  </button>
+                </div>
                 {/* Tab Content Card */}
                 <div className="flex-1 flex flex-col items-center justify-start px-4 sm:px-8 py-8 bg-white rounded-b-2xl shadow-lg min-h-[300px]">
                   <div className="w-full max-w-lg">
+                    {/* Payment Tab */}
+                    {activeTab === 'payment' && (
+                      <div>
+                        <h3 className="text-xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiDollarSign /> Payment Details</h3>
+                        {paymentLoading ? (
+                          <div className="text-gray-400">Loading payment info...</div>
+                        ) : user?.role === 'owner' ? (
+                          payment ? (
+                            <div className="mb-2">
+                              <span className="font-semibold">Payment Status: </span>
+                              <span className={
+                                payment?.status === 'verified' ? 'text-green-600' :
+                                payment?.status === 'rejected' ? 'text-red-600' :
+                                'text-yellow-600'
+                              }>
+                                {payment?.status?.charAt(0).toUpperCase() + payment?.status?.slice(1)}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-gray-400">Payment not made yet.</div>
+                          )
+                        ) : paymentError && paymentError.includes('Payment not found') ? (
+                          user?.role === 'manager' ? (
+                            <div className="mb-2">
+                              <label className="block text-marriageHotPink font-semibold mb-1">Payment Number (to share with user):</label>
+                              <input
+                                type="text"
+                                className="w-full border rounded px-3 py-2 mb-2"
+                                value={paymentNumberInput}
+                                onChange={e => setPaymentNumberInput(e.target.value)}
+                                placeholder="e.g. Bank Account or Mobile Wallet Number"
+                                disabled={paymentLoading || paymentSharing}
+                              />
+                              <button
+                                className="bg-marriageHotPink text-white px-4 py-2 rounded font-bold hover:bg-marriageRed transition"
+                                onClick={handleSharePaymentNumber}
+                                disabled={paymentLoading || paymentSharing || !paymentNumberInput}
+                              >
+                                {paymentSharing ? 'Sharing...' : 'Share Payment Number'}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-gray-400">No payment info available.</div>
+                          )
+                        ) : (
+                          // Manager/Admin: show full payment details and actions
+                          payment && (
+                            <>
+                              <div className="mb-2">
+                                <span className="font-semibold">Payment Number: </span>
+                                <span>{payment?.paymentNumber || 'N/A'}</span>
+                              </div>
+                              <div className="mb-2">
+                                <span className="font-semibold">Status: </span>
+                                <span className={
+                                  payment?.status === 'verified' ? 'text-green-600' :
+                                  payment?.status === 'rejected' ? 'text-red-600' :
+                                  'text-yellow-600'
+                                }>
+                                  {payment?.status?.charAt(0).toUpperCase() + payment?.status?.slice(1)}
+                                </span>
+                              </div>
+                              {payment.proofImage && (
+                                <div className="mb-2">
+                                  <span className="font-semibold text-marriageHotPink">Payment Proof:</span><br />
+                                  <img src={`/${payment.proofImage}`} alt="Payment Proof" className="max-w-xs max-h-40 rounded shadow border mt-2" />
+                                </div>
+                              )}
+                              {/* Manager actions */}
+                              {user?.role === 'manager' && payment?.status === 'awaiting_verification' && payment?.proofImage && (
+                                <div className="flex gap-4 mt-2">
+                                  <button
+                                    className="px-4 py-2 bg-green-500 text-white rounded font-bold shadow hover:bg-green-700 transition"
+                                    onClick={() => handleVerifyPayment('verified')}
+                                    disabled={paymentLoading}
+                                  >
+                                    Verify Payment
+                                  </button>
+                                  <button
+                                    className="px-4 py-2 bg-red-500 text-white rounded font-bold shadow hover:bg-red-700 transition"
+                                    onClick={() => handleVerifyPayment('rejected')}
+                                    disabled={paymentLoading}
+                                  >
+                                    Reject Payment
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )
+                        )}
+                      </div>
+                    )}
                     {activeTab === 'menu' && (
                     <div>
                         <h3 className="text-xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiList /> Menu Details</h3>

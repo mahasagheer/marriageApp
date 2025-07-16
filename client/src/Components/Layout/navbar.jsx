@@ -10,10 +10,10 @@ export const NavBar = ({ onLoginClick, onRegisterClick }) => {
             className="h-16 bg-white"
           />
         </div>
-        <div className="flex space-x-4">
+        {/* <div className="flex space-x-4">
           <Button btnText={"Login"} btnColor={"marriageHotPink"} onClick={onLoginClick} />
           <Button btnText={"Register"} btnColor={"marriageHotPink"} />
-        </div>
+        </div> */}
       </nav>
     );
   };

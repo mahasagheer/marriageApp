@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FiHome, FiUsers, FiCalendar, FiFileText, FiBarChart2, FiSettings, FiMenu } from "react-icons/fi";
+import { FiHome, FiUsers, FiCalendar, FiFileText, FiBarChart2, FiSettings, FiMenu, FiUser } from "react-icons/fi";
+import { FaBuilding, FaUserPlus } from "react-icons/fa";
 
 const navLinks = [
   { to: "/owner", label: "Owner Dashboard", icon: <FiBarChart2 /> },
@@ -39,6 +40,12 @@ const OwnerSidebar = () => {
       { to: '/admin/my-bookings', label: 'All Bookings', icon: <FiCalendar /> },
       { to: '/admin/associate-manager', label: 'Associate Manager', icon: <FiUsers /> },
     ];
+  }else if(user?.role ==="user"){
+    navLinks =  [
+      { label: "My Profile", icon: FiUser, to: "/user/profile" },
+      { label: "Agencies", icon: FaBuilding, to: "/user/agencies" },
+      { label: "Forms", icon: FaUserPlus, to: "/user/forms" },
+    ]
   }
 
   const handleLogout = () => {

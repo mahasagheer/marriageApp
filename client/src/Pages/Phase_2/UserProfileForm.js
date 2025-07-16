@@ -1,236 +1,397 @@
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  createProfile,
+  updateProfile,
+  fetchProfileById,
+} from "../../slice/userProfile";
+
 import { Input } from "../../Components/Layout/Input";
 import { Button } from "../../Components/Layout/Button";
 import {
-  FiAlignLeft,
-  FiCalendar,
   FiUser,
-  FiPhone,
-  FiMail,
-  FiX,
+  FiUsers,
+  FiHeart,
+  FiCalendar,
+  FiTrendingUp,
+  FiBookOpen,
+  FiStar,
+  FiAward,
+  FiBriefcase,
+  FiDollarSign,
+  FiAlignLeft,
+  FiArrowRight,
+  FiArrowLeft,
+  FiUploadCloud,
 } from "react-icons/fi";
+import { RadioInput } from "../../Components/Layout/radioButton";
+import { genderOptions, maritalStatusOptions } from "../../utils";
 
-export default function UserProfileModal({ isOpen, onClose }) {
+export default function CreateProfilePage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+const {id}=useParams();
   const [profile, setProfile] = useState({
     name: "",
-    phone: "",
-    email: "",
+    age: "",
+    gender: "",
+    height: "",
+    religion: "",
+    caste: "",
+    education: "",
+    occupation: "",
+    income: "",
+    maritalStatus: "", 
+    bio: "",
+    pic: null,
+    file: null,
   });
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const steps = ["Personal", "Background", "Educational Details","Files"];
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchProfileById(id))
+        .unwrap()
+        .then((data) => setProfile(data))
+        .catch((error) => console.error("Error fetching profile:", error));
+    }
+  }, [id, dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProfile({ ...profile, [name]: value });
+    setProfile((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setFormSubmitted(true);
-
-    // TODO: API call to save profile
-
-    setTimeout(() => {
-      onClose();
-      setFormSubmitted(false);
-      setProfile({
-        name: "",
-        phone: "",
-        email: "",
-      });
-    }, 2000);
-  };
-
-  const handleClose = () => {
-    onClose();
-    setFormSubmitted(false);
-    setProfile({
-      name: "",
-      age: "",
-      bio: "",
-      gender: "",
-      phone: "",
-      email: "",
-    });
-  };
-
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (files && files[0]) {
+      setProfile((prev) => ({
+        ...prev,
+        [name]: files[0],
+      }));
     }
   };
 
-  if (!isOpen) return null;
+  const nextStep = () => {
+    if (validateCurrentStep()) setStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+
+  const prevStep = () => setStep((s) => Math.max(s - 1, 0));
+
+  const totalKeys = Object.keys(profile).length;
+  const filledCount = useMemo(
+    () =>
+      Object.values(profile).filter((v) =>
+        typeof v === "string" ? v.trim() : v !== null
+      ).length,
+    [profile]
+  );
+  const progress = Math.round((filledCount / totalKeys) * 100);
+
+
+  const validateCurrentStep = () => {
+    const err = {};
+    if (step === 0) {
+      if (!profile.name.trim()) err.name = "Name is required";
+      if (!profile.age || profile.age < 18) err.age = "Age must be 18 or above";
+      if (!profile.gender) err.gender = "Gender is required";
+      if (!profile.height.trim()) err.height = "Height is required";
+    }
+    if (step === 1) {
+      if (!profile.maritalStatus) err.maritalStatus = "Marital Status is required";
+      if (!profile.religion.trim()) err.religion = "Religion is required";
+      if (!profile.caste.trim()) err.caste = "Caste is required";
+    }
+    if (step === 2) {
+      if (!profile.education.trim()) err.education = "Education required";
+      if (!profile.occupation.trim()) err.occupation = "Occupation required";
+      if (!profile.income.trim()) err.income = "Income required";
+      if (!profile.bio.trim()) err.bio = "Bio required";
+    }
+    setErrors(err);
+    if (Object.keys(err).length) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    return Object.keys(err).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateCurrentStep() || isSubmitting) return;
+    setIsSubmitting(true);
+    const formData = new FormData();
+    // Required fields
+    formData.append("name", profile.name);
+    formData.append("age", profile.age);
+    formData.append("gender", profile.gender);
+    formData.append("height", profile.height);
+    formData.append("religion", profile.religion);
+    formData.append("caste", profile.caste);
+    formData.append("education", profile.education);
+    formData.append("occupation", profile.occupation);
+    formData.append("income", profile.income);
+    formData.append("bio", profile.bio);
+    formData.append("maritalStatus", profile.maritalStatus);
+
+    // Optional fields
+    if (profile.pic) formData.append("pic", profile.pic);
+    if (profile.file) formData.append("file", profile.file);
+
+    try {
+
+      if (id) {
+        await dispatch(updateProfile({ id: id, updates: formData }));
+        alert("✅ Profile updated successfully!");
+      } else {
+     const response =  await dispatch(createProfile(formData));
+        alert("✅ Profile created successfully!");
+        console.log(response)
+
+      }
+      navigate("/user/profile");
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const Label = ({ icon: Icon, children }) => (
+    <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+      <Icon className="w-4 h-4" />
+      {children}
+    </label>
+  );
+
+  const ErrorMsg = ({ msg }) =>
+    msg ? <p className="text-xs text-red-600 mt-1">{msg}</p> : null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={handleBackdropClick}
-    >
-<div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">        {/* Modal Header */}
-        <div className="flex justify-between items-center p-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            👤 Create Your Profile
-          </h2>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Close modal"
+    <main className="max-w-3xl mx-auto py-10 px-4">
+      <h1 className="text-3xl font-bold text-center mb-6">
+        {id ? "✏️ Edit Profile" : "👤 Create Your Profile"}
+      </h1>
+
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
+        <div
+          className="bg-marriageHotPink h-2 rounded-full transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <div className="flex justify-between mb-8">
+        {steps.map((s, idx) => (
+          <div
+            key={s}
+            className={`flex-1 text-center text-xs ${
+              idx === step ? "text-marriageHotPink font-semibold" : "text-gray-500"
+            }`}
           >
-            <FiX className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
+            {s}
+          </div>
+        ))}
+      </div>
 
-        {/* Modal Content */}
-        <div className="p-6 pt-0">
-          <form onSubmit={handleSubmit} className="space-y-5">
-          
-
-<div class="sm:hidden">
-    <label for="tabs" class="sr-only">Select User Type</label>
-    <select id="tabs" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-        <option>User</option>
-        <option>Admin</option>
-        <option>Agency</option>
-    </select>
-</div>
-<ul class="hidden text-sm font-medium text-center text-gray-500 rounded-lg shadow-sm sm:flex dark:divide-gray-700 dark:text-gray-400">
-    <li class="w-full focus-within:z-10">
-        <a href="#" class="inline-block w-full p-4 text-gray-900 bg-gray-100 border-r border-gray-200 dark:border-gray-700 rounded-s-lg focus:ring-4 focus:ring-blue-300 active focus:outline-none dark:bg-gray-700 dark:text-white" aria-current="page">Profile</a>
-    </li>
-    <li class="w-full focus-within:z-10">
-        <a href="#" class="inline-block w-full p-4 bg-white border-r border-gray-200 dark:border-gray-700 hover:text-gray-700 hover:bg-gray-50 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700">Dashboard</a>
-    </li>
-    <li class="w-full focus-within:z-10">
-        <a href="#" class="inline-block w-full p-4 bg-white border-r border-gray-200 dark:border-gray-700 hover:text-gray-700 hover:bg-gray-50 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700">Settings</a>
-    </li>
-    <li class="w-full focus-within:z-10">
-        <a href="#" class="inline-block w-full p-4 bg-white border-s-0 border-gray-200 dark:border-gray-700 rounded-e-lg hover:text-gray-700 hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700">Invoice</a>
-    </li>
-</ul>
-
-            {/* Full Name */}
+      {/* Step 0: Personal */}
+      {step === 0 && (
+        <div className="space-y-5">
+          <div>
+            <Label icon={FiUser}>Full Name</Label>
+            <Input
+              name="name"
+              value={profile.name}
+              onChange={handleChange}
+              required
+            />
+            <ErrorMsg msg={errors.name} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <FiUser className="w-4 h-4" />
-                Full Name
-              </label>
+              <Label icon={FiCalendar}>Age</Label>
               <Input
-                type="text"
-                name="name"
-                value={profile.name}
-                onChange={handleChange}
-                placeholder="e.g. Ali Raza"
-                required
-              />
-            </div>
-
-            {/* Age
-            <div>
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <FiCalendar className="w-4 h-4" />
-                Age
-              </label>
-              <Input
-                type="number"
                 name="age"
+                type="number"
+                min="18"
                 value={profile.age}
                 onChange={handleChange}
-                placeholder="e.g. 25"
-                required
               />
+              <ErrorMsg msg={errors.age} />
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                🧑 Gender
-              </label>
-              <select
-                name="gender"
-                value={profile.gender}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Gender</option>
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
-            </div> */}
-
-            {/* Phone */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <FiPhone className="w-4 h-4" />
-                Phone
-              </label>
-              <Input
-                type="tel"
-                name="phone"
-                value={profile.phone}
-                onChange={handleChange}
-                placeholder="e.g. 0300-1234567"
-                required
-              />
+ {/* Gender Radio Group */}
+ <div>
+            <Label icon={FiUsers}>Gender</Label>
+            <div className="space-y-2 mt-2">
+              {genderOptions.map((option) => (
+                <RadioInput
+                  key={option.value}
+                  name="gender"
+                  value={option.value}
+                  checked={profile.gender === option.value}
+                  onChange={handleChange}
+                  label={option.label}
+                />
+              ))}
             </div>
-
-            {/* Email */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <FiMail className="w-4 h-4" />
-                Email
-              </label>
-              <Input
-                type="email"
-                name="email"
-                value={profile.email}
-                onChange={handleChange}
-                placeholder="e.g. yourname@example.com"
-                required
-              />
-            </div>
-
-            {/* Bio */}
-            {/* <div>
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <FiAlignLeft className="w-4 h-4" />
-                Short Bio
-              </label>
-              <textarea
-                name="bio"
-                value={profile.bio}
-                onChange={handleChange}
-                placeholder="Write a short bio about yourself..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                rows={4}
-                required
-              />
-            </div> */}
-
-            {/* Submit + Cancel Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                btnText={"Create Profile"}
-                btnColor={"marriageHotPink"}
-                type="submit"
-              />
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-
-          {/* Success Message */}
-          {formSubmitted && (
-            <div className="mt-4 text-green-600 font-medium text-center">
-              ✅ Profile created successfully!
-            </div>
-          )}
+            <ErrorMsg msg={errors.gender} />
+          </div>
+         
+          </div>
+          <div>
+            <Label icon={FiTrendingUp}>Height</Label>
+            <Input
+              name="height"
+              value={profile.height}
+              onChange={handleChange}
+              placeholder="e.g. 5'8 "
+            />
+            <ErrorMsg msg={errors.height} />
+          </div>
         </div>
+      )}
+
+      {/* Step 1: Background */}
+      {step === 1 && (
+        <div className="space-y-5">
+          {/* Marital Status Radio Group */}
+          <div>
+            <Label icon={FiHeart}>Marital Status</Label>
+            <div className="space-y-2 mt-2">
+              {maritalStatusOptions.map((option) => (
+                <RadioInput
+                  key={option.value}
+                  name="maritalStatus"
+                  value={option.value}
+                  checked={profile.maritalStatus === option.value}
+                  onChange={handleChange}
+                  label={option.label}
+                />
+              ))}
+            </div>
+            <ErrorMsg msg={errors.maritalStatus} />
+          </div>
+          <div>
+            <Label icon={FiStar}>Religion</Label>
+            <Input
+              name="religion"
+              value={profile.religion}
+              onChange={handleChange}
+            />
+            <ErrorMsg msg={errors.religion} />
+          </div>
+          <div>
+            <Label icon={FiAward}>Caste</Label>
+            <Input
+              name="caste"
+              value={profile.caste}
+              onChange={handleChange}
+            />
+            <ErrorMsg msg={errors.caste} />
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Education */}
+      {step === 2 && (
+        <div className="space-y-5">
+          <div>
+            <Label icon={FiBookOpen}>Education</Label>
+            <Input
+              name="education"
+              value={profile.education}
+              onChange={handleChange}
+            />
+            <ErrorMsg msg={errors.education} />
+          </div>
+          <div>
+            <Label icon={FiBriefcase}>Occupation</Label>
+            <Input
+              name="occupation"
+              value={profile.occupation}
+              onChange={handleChange}
+            />
+            <ErrorMsg msg={errors.occupation} />
+          </div>
+          <div>
+            <Label icon={FiDollarSign}>Income</Label>
+            <Input
+              name="income"
+              value={profile.income}
+              onChange={handleChange}
+            />
+            <ErrorMsg msg={errors.income} />
+          </div>
+          <div>
+            <Label icon={FiAlignLeft}>Short Bio</Label>
+            <textarea
+              name="bio"
+              value={profile.bio}
+              onChange={handleChange}
+              rows={4}
+              className="w-full p-3 border border-gray-300 rounded-lg"
+            />
+            <ErrorMsg msg={errors.bio} />
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Profile Pic */}
+      {step === 3 && (
+        <div className="space-y-5">
+          <div>
+            <Label icon={FiUploadCloud}>Profile Picture</Label>
+            <Input
+              name="pic"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+          </div>
+          <div>
+            <Label icon={FiUploadCloud}>CNIC </Label>
+            <Input
+              name="file"
+              type="file"
+              onChange={handleFileChange}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Buttons */}
+      <div className="flex gap-x-10 justify-end mt-10">
+        {step > 0 && (
+          <Button
+            btnText="Back"
+            btnColor="marriageHotPink"
+            icon={<FiArrowLeft />}
+            onClick={prevStep}
+            type="button"
+          />
+        )}
+        {step < steps.length-1 ? (
+          <Button
+            btnText="Next"
+            btnColor="marriageHotPink"
+            icon={<FiArrowRight />}
+            onClick={nextStep}
+            type="button"
+          />
+        ) : (
+          <Button
+            btnText={id ? "Update Profile" : "Submit Profile"}
+            btnColor="marriageHotPink"
+            onClick={handleSubmit}
+            type="button"
+            disabled={isSubmitting}
+          />
+        )}
       </div>
-    </div>
+    </main>
   );
 }

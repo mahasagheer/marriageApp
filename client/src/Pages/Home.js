@@ -5,6 +5,7 @@ import { Button } from '../Components/Layout/Button';
 import { Footer } from '../Components/Layout/Footer';
 import { LoginModal } from '../Components/loginModal';
 import { useNavigate } from 'react-router-dom';
+import CoverPage from './CoverPage';
 
 export default function Home () {
   const [showLogin, setShowLogin] = useState(false);
@@ -122,6 +123,7 @@ export default function Home () {
           </div>
         </section>
       </div>
+      <CoverPage/>
       {/* Footer */}
       <Footer />
       {/* Login Modal */}

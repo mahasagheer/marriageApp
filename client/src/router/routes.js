@@ -11,23 +11,47 @@ import UserProfileForm from "../Pages/Phase_2/UserProfileForm";
 import RishtaDhondoHome from "../Pages/Phase_2/Home";
 import SearchResults from "../Pages/SearchResults";
 import PublicHallDetail from "../Pages/PublicHallDetail";
-import CoverPage from "../Pages/CoverPage";
 import CustomDealBooking from '../Pages/CustomDealBooking';
 import AdminAssignManagerPage from '../Pages/AdminAssignManagerPage';
+import UserProfileDisplay from "../Pages/Phase_2/ProfilePageUser";
 
 export const router = createBrowserRouter([
+  // {
+  //   path: "/",
+  //   element: <CoverPage />,
+  // },
   {
     path: "/",
-    element: <CoverPage />,
-  },
-  {
-    path: "/hall",
     element: <Home />,
   },
   {
-    path:"/rishta",
-    element:<RishtaDhondoHome/>
+    path: "/match",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <RishtaDhondoHome />
+      </ProtectedRoute>
+    )
   },
+{
+  path: "/user/addProfile/:id",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <OwnerLayout>
+        <UserProfileForm />
+        </OwnerLayout>
+      </ProtectedRoute>
+    )
+},
+{
+  path: "/user/profile",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <OwnerLayout>
+        <UserProfileDisplay />
+        </OwnerLayout>
+      </ProtectedRoute>
+    )
+},
   {
     path: "/:role",
     element: (
@@ -51,7 +75,7 @@ export const router = createBrowserRouter([
   {
     path: "/:role/halls",
     element: (
-      <ProtectedRoute allowedRoles={["hall-owner","manager","admin"]}>
+      <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>
         <OwnerLayout>
           <OwnerHalls />
         </OwnerLayout>
@@ -60,18 +84,18 @@ export const router = createBrowserRouter([
   },
   {
     path: '/:role/halls/:id',
-    element:     (  
-    <ProtectedRoute allowedRoles={["hall-owner","manager","admin"]}>
-      <HallDetail />      
+    element: (
+      <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>
+        <HallDetail />
       </ProtectedRoute>)
-,
+    ,
   },
   {
     path: '/:role/my-bookings',
-    element:(    
-    <ProtectedRoute allowedRoles={["hall-owner","manager","admin"]}>
-      <MyBookings />
-</ProtectedRoute>) ,
+    element: (
+      <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>
+        <MyBookings />
+      </ProtectedRoute>),
   },
   {
     path: '/search-results',

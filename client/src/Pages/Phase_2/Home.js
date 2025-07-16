@@ -6,9 +6,17 @@ import { Footer } from "../../Components/Layout/Footer";
 import logo from "../../assets/logo.png";
 import match from "../../assets/match.png";
 import { motion } from "framer-motion";
+import { NavBar } from "../../Components/Layout/navbar";
+import { useNavigate } from "react-router-dom";
 
-const HeroSection = ({handleProfileModal}) => (
-  <div className="h-[60vh] relative bg-gradient-to-br from-red-700 via-pink-600 to-rose-600 text-white py-10 md:py-18 px-4 overflow-hidden">
+export const HeroSection = () => {
+  const navigate=useNavigate()
+  const handleProfileModal = () => {
+    navigate("/user/addProfile")
+  };
+  
+  return(
+<div className={`h-[60vh] relative bg-gradient-to-br from-marriagePink via-marriageHotPink to-marriageRed text-white py-10 md:py-18 px-4 overflow-hidden`}>
     {/* Floating Hearts Animation */}
     <div className="absolute inset-0 overflow-hidden">
       {[...Array(8)].map((_, i) => (
@@ -76,14 +84,15 @@ const HeroSection = ({handleProfileModal}) => (
       </motion.div>
     </div>
   </div>
-);
+  )
+}
+  
+
 
 const RishtaDhondoHome = () => {
-  const [open, setOpen] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-
+  const navigate=useNavigate()
   const handleProfileModal = () => {
-    setOpen(true);
+    navigate("/user/addProfile")
   };
 
   const MatchmakingSection = () => (
@@ -247,37 +256,11 @@ const RishtaDhondoHome = () => {
   return (
     <div className="font-sans text-gray-800 bg-white min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <img src={logo} alt="RishtaDhondo" className="h-16" />
-              <h1 className="text-2xl font-bold text-red-700 hidden md:block">
-                RishtaDhondo
-              </h1>
-            </div>
-
-            <div className="flex space-x-4">
-              <Button
-                btnText={"Login"}
-                btnColor={"marriageRedOutline"}
-                onClick={() => setShowLogin(true)}
-                className="px-4"
-              />
-              <Button
-                btnText={"Register Free"}
-                btnColor={"marriageRed"}
-                onClick={() => handleProfileModal()}
-                className="px-4"
-              />
-            </div>
-          </div>
-        </div>
-      </header>
+      <NavBar/>
 
       {/* Main Content */}
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <HeroSection {...{handleProfileModal}} />
+      <main >
+        <HeroSection  />
 
         {/* <MatchmakingSection /> */}
         <ProfileShowcase />
@@ -285,9 +268,7 @@ const RishtaDhondoHome = () => {
       </main>
 
       <Footer />
-      {setOpen && (
-        <UserProfileModal isOpen={open} onClose={() => setOpen(false)} />
-      )}
+     
     </div>
   );
 };

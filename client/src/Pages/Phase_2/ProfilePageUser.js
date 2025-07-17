@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProfileByuserId, deleteProfile } from '../../slice/userProfile';
-import { 
-  FiUser, FiMail, FiPhone, FiCalendar, 
-  FiMapPin, FiBook, FiEdit2, FiTrash2, 
+import {
+  FiUser, FiMail, FiPhone, FiCalendar, FiBook, FiEdit2, FiTrash2,
   FiTrendingUp,
   FiHeart
 } from 'react-icons/fi';
@@ -27,27 +26,30 @@ export default function UserProfileDisplay() {
         if (!user?.id) {
           throw new Error('User ID not found');
         }
-
+  
         const result = await dispatch(fetchProfileByuserId(user.id)).unwrap();
-        
-        if (!result) {
+  
+        // Check if result exists and has a message property
+        if (result?.message?.includes('Profile not found')) {
           setProfile(null);
           setError(null);
         } else {
-          setProfile(result);
+          setProfile(result || null);
         }
       } catch (err) {
-        if (err.message.includes('404') || err.message.includes('Profile not found')) {
+        // Safely check error message
+        const errMessage = err?.message || '';
+        if (errMessage.includes('404') || errMessage.includes('Profile not found')) {
           setProfile(null);
           setError(null);
         } else {
-          setError(err.message);
+          setError(errMessage || 'Failed to load profile');
         }
       } finally {
         setLoading(false);
       }
     };
-    
+  
     loadProfile();
   }, [dispatch, id]);
 
@@ -78,7 +80,7 @@ export default function UserProfileDisplay() {
   if (error) return (
     <div className="text-center py-20 text-red-500">
       <p>Error: {error}</p>
-      <button 
+      <button
         onClick={() => window.location.reload()}
         className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
       >
@@ -91,16 +93,10 @@ export default function UserProfileDisplay() {
       {!profile ? (
         <div className='flex flex-col items-center justify-center min-h-screen'>
           <HeroSection />
-          <button 
-            onClick={() => navigate('/create-profile')}
-            className="mt-8 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Create Your Profile
-          </button>
+          
         </div>
       ) : (
-        <div className="max-w-3xl py-8 px-4">
-          {/* Profile Header */}
+        <div className="w-[100%] py-8 px-4">
           {/* Profile Header */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8 relative">
             {/* Action Buttons - Top Right Corner */}
@@ -112,7 +108,7 @@ export default function UserProfileDisplay() {
                 btnColor="marriageHotPink"
                 padding="px-4 py-2"
               />
-              <Button 
+              <Button
                 onClick={handleDeleteProfile}
                 btnText="Delete"
                 btnIcon={FiTrash2}
@@ -123,15 +119,15 @@ export default function UserProfileDisplay() {
 
             <div className="md:flex">
               {/* Profile Image */}
-              <div className="md:w-[40%] p-6 flex flex-col items-center">
+              <div className="md:w-1/3 p-6 flex flex-col items-center">
                 <img
                   src={
-                    profile.pic 
+                    profile.pic
                       ? `http://localhost:5000/${profile.pic}`
                       : defaultProfilePic
                   }
                   alt={profile.name || 'Profile'}
-                  className="h-55 w-55 object-cover rounded-full border-2 border-white shadow-md"
+                  className="h-56 w-56 object-cover rounded-full border-2 border-white shadow-md"
                   onError={(e) => {
                     e.target.src = defaultProfilePic;
                   }}
@@ -148,7 +144,7 @@ export default function UserProfileDisplay() {
                   </div>
                   <div className="flex items-center text-gray-600">
                     <FiHeart
-                     className="mr-2" />
+                      className="mr-2" />
                     <span>{profile.maritalStatus || 'Not specified'}</span>
                   </div>
                   <div className="flex items-center text-gray-600">
@@ -175,7 +171,7 @@ export default function UserProfileDisplay() {
                   )}
                 </div>
 
-                
+
               </div>
             </div>
           </div>
@@ -216,10 +212,10 @@ export default function UserProfileDisplay() {
                   {profile.userId.email && (
                     <div className="flex items-center  text-gray-600">
                       <FiMail className="mr-2" />
-                      <span>{profile.userId.email}</span>
+                      <span>{profile?.userId?.email}</span>
                     </div>
                   )}
-                  {profile.userId.phone && (
+                  {profile?.userId?.phone && (
                     <div className="flex items-center  text-gray-600">
                       <FiPhone className="mr-2 " />
                       <span>{profile.userId.phone}</span>

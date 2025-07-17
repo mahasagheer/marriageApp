@@ -27,6 +27,7 @@ import {
 } from "react-icons/fi";
 import { RadioInput } from "../../Components/Layout/radioButton";
 import { genderOptions, maritalStatusOptions } from "../../utils";
+import { Label } from "../../Components/Layout/Label";
 
 export default function CreateProfilePage() {
   const dispatch = useDispatch();
@@ -149,9 +150,8 @@ const {id}=useParams();
         await dispatch(updateProfile({ id: id, updates: formData }));
         alert("✅ Profile updated successfully!");
       } else {
-     const response =  await dispatch(createProfile(formData));
+    await dispatch(createProfile(formData));
         alert("✅ Profile created successfully!");
-        console.log(response)
 
       }
       navigate("/user/profile");
@@ -162,20 +162,15 @@ const {id}=useParams();
     }
   };
 
-  const Label = ({ icon: Icon, children }) => (
-    <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
-      <Icon className="w-4 h-4" />
-      {children}
-    </label>
-  );
+
 
   const ErrorMsg = ({ msg }) =>
     msg ? <p className="text-xs text-red-600 mt-1">{msg}</p> : null;
 
   return (
-    <main className="max-w-3xl mx-auto py-10 px-4">
+    <main className="ml-[15rem] max-w-[100%]  pt-5 px-4">
       <h1 className="text-3xl font-bold text-center mb-6">
-        {id ? "✏️ Edit Profile" : "👤 Create Your Profile"}
+        {id ? "✏️ Edit Profile" : "👤 Create Your Matchmaking Profile"}
       </h1>
 
       <div className="w-full bg-gray-200 rounded-full h-2 mb-8">

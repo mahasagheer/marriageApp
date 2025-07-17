@@ -2,16 +2,22 @@
 const mongoose = require('mongoose');
 
 const agencySchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   date: {
     type: Date,
     default: Date.now
   },
+
   businessNo: {
     type: String,
     required: true,
     unique: true
   },
-  custcNo: {
+  cnicNo: {
     type: String,
     unique: true
   },
@@ -33,7 +39,7 @@ const agencySchema = new mongoose.Schema({
     enum: ['verified', 'pending', 'rejected'],
     default: 'pending'
   },
-  documents: [{
+  images: [{
     type: String // Array of file paths or URLs
   }],
   address: {
@@ -47,9 +53,14 @@ const agencySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  profile: {
+  description: {
     type: String,
     default: ''
+  },
+ 
+  isActive: {
+    type: Boolean,
+
   },
   isVerified: {
     type: Boolean,

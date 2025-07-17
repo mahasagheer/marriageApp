@@ -19,19 +19,21 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use('/api/sample', require('./routes/sample'));
+const agencyRoutes= require('./routes/agency')
 const authRoutes = require('./routes/auth');
+const hallRoutes = require('./routes/halls');
+const bookingRoutes = require('./routes/booking');
+const userProfileRoutes= require('./routes/userProfile')
+
 app.use('/api/auth', authRoutes);
 // Register /api/users endpoint directly
 app.use('/api', authRoutes);
-const hallRoutes = require('./routes/halls');
 app.use('/api/halls', hallRoutes);
-app.use('/api/menus', require('./routes/menus'));
 app.use('/api/decorations', require('./routes/decorations'));
-const bookingRoutes = require('./routes/booking');
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/booking', bookingRoutes);
-const userProfileRoutes= require('./routes/userProfile')
 app.use("/api/userProfile", userProfileRoutes)
+app.use('/api/agency', agencyRoutes);
 // Basic route
 app.get('/', (req, res) => {
   res.send('Server is running');

@@ -52,6 +52,7 @@ export const LoginModal = ({ onClose, onSwitch, label }) => {
           if (user.role === "hall-owner") navigate("/owner");
           else if (user.role === "admin") navigate("/admin");
           else if (user.role === "manager") navigate("/manager");
+          else if(user.role ==="agency") navigate("/agency")
           else if(user.role ==='user' && label==='hall') navigate("/hall");
           else if(user.role==='user' && label==='matches') navigate('/user/profile')
           else navigate("/");
@@ -112,6 +113,8 @@ export const LoginModal = ({ onClose, onSwitch, label }) => {
                   { value: "user", label: "User" },
                   { value: "hall-owner", label: "Hall Owner" },
                   { value: "manager", label: "Manager" },
+                  { value: "agency", label: "Agency" },
+
                 ]}
                 required
               />

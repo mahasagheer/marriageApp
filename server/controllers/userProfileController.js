@@ -60,7 +60,7 @@ getProfileById = async (req, res) => {
 
 getProfileByuserId = async (req, res) => {
   try {
-    const profile = await UserProfile.findOneAndUpdate({userId:req.params.id}).populate('userId', 'email phone') // Specify which user fields to include
+    const profile = await UserProfile.findOne({userId:req.params.id}).populate('userId', 'email phone') // Specify which user fields to include
     .exec();
     if (!profile) return res.status(404).json({ message: "Profile not found" });
 

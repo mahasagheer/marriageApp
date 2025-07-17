@@ -17,12 +17,8 @@ const OwnerHalls = () => {
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
-    if (user?.role === 'manager') {
-      dispatch(fetchManagerHalls());
-    } else {
-      dispatch(fetchHalls());
-    }
-  }, [dispatch, user?.role]);
+    dispatch(fetchHalls());
+  }, [dispatch]);
 
   const handleAddHall = (formData) => {
     dispatch(addHall(formData));
@@ -35,14 +31,10 @@ const OwnerHalls = () => {
       setSelectedHall(null);
       setTimeout(() => {
         dispatch(resetSuccess());
-        if (user?.role === 'manager') {
-          dispatch(fetchManagerHalls());
-        } else {
-          dispatch(fetchHalls());
-        }
+        dispatch(fetchHalls());
       }, 2000);
     }
-  }, [success, dispatch, user?.role]);
+  }, [success, dispatch]);
 
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this hall?")) {

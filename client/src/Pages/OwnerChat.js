@@ -4,7 +4,7 @@ import { fetchChatSessions, fetchMessages, sendMessageThunk, addMessage, markMes
 import { getSocket, disconnectSocket } from '../socket';
 import { FiFileText } from 'react-icons/fi';
 
-const OwnerChat = ({ hallId, booking }) => {
+const OwnerChat = ({ hallId, booking, isAdmin }) => {
   // Remove local sessions state
   // const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -24,10 +24,12 @@ const OwnerChat = ({ hallId, booking }) => {
 
   // Fetch all unique chat sessions for this hall using Redux
   useEffect(() => {
-    if (hallId) {
+    if (isAdmin) {
+      dispatch(fetchChatSessions()); // fetch all sessions for admin
+    } else if (hallId) {
       dispatch(fetchChatSessions(hallId));
     }
-  }, [dispatch, hallId]);
+  }, [dispatch, hallId, isAdmin]);
 
   // Select session based on booking or default to most recent
   useEffect(() => {

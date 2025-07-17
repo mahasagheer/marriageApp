@@ -24,14 +24,14 @@ const StatusBadge = ({ event }) => {
   if (event.status) {
     // Booking event
     return (
-      <span
-        className={
-          event.status === 'approved'
-            ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-400 shadow'
-            : event.status === 'pending'
-            ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow'
-            : event.status === 'rejected'
-            ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-400 shadow'
+  <span
+    className={
+      event.status === 'approved'
+        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-400 shadow'
+        : event.status === 'pending'
+        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow'
+        : event.status === 'rejected'
+        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-400 shadow'
             : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
         }
         style={{ pointerEvents: 'none' }}
@@ -48,13 +48,13 @@ const StatusBadge = ({ event }) => {
       className={
         event.isBooked
           ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-marriageHotPink text-white border-2 border-marriageHotPink shadow'
-          : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
-      }
-      style={{ pointerEvents: 'none' }}
-    >
-      {event.title}
-    </span>
-  );
+        : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
+    }
+    style={{ pointerEvents: 'none' }}
+  >
+    {event.title}
+  </span>
+);
 };
 
 export const MyBookings = () => {
@@ -156,30 +156,34 @@ export const MyBookings = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-12">
-            {halls.map((hall) => (
-              <div key={hall._id} className="bg-white rounded-xl shadow p-6">
-                <h3 className="text-2xl font-semibold mb-4 text-marriageHotPink flex items-center gap-4">
-                  {hall.name} - Bookings Calendar
-                </h3>
+            {halls.map((hall) => {
+              const events = hallCalendarEvents[hall._id] || [];
+              console.log('Calendar events for hall', hall.name, events);
+              return (
+                <div key={hall._id} className="bg-white rounded-xl shadow p-6">
+                  <h3 className="text-2xl font-semibold mb-4 text-marriageHotPink flex items-center gap-4">
+                    {hall.name} - Bookings Calendar
+                  </h3>
             
-                {hallCalendarLoading[hall._id] ? (
-                  <div className="text-center text-gray-400">Loading calendar...</div>
-                ) : (
-                  <Calendar
-                    localizer={localizer}
-                    events={hallCalendarEvents[hall._id] || []}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: 400 }}
-                    selectable
-                    onSelectSlot={(slotInfo) => handleDateClick(slotInfo, hall)}
-                    eventPropGetter={eventStyleGetter}
-                    dayPropGetter={(date) => dayPropGetter(date, hall)}
-                    components={{ event: StatusBadge }}
-                  />
-                )}
-              </div>
-            ))}
+                  {hallCalendarLoading[hall._id] ? (
+                    <div className="text-center text-gray-400">Loading calendar...</div>
+                  ) : (
+                    <Calendar
+                      localizer={localizer}
+                      events={events}
+                      startAccessor="start"
+                      endAccessor="end"
+                      style={{ height: 400 }}
+                      selectable
+                      onSelectSlot={(slotInfo) => handleDateClick(slotInfo, hall)}
+                      eventPropGetter={eventStyleGetter}
+                      dayPropGetter={(date) => dayPropGetter(date, hall)}
+                      components={{ event: StatusBadge }}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
         {/* Modal for date selection */}

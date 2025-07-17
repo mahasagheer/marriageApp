@@ -247,29 +247,26 @@ export const fetchHallCalendarData = createAsyncThunk(
       });
       if (!bookingsRes.ok) throw new Error('Failed to fetch bookings');
       const bookingsData = await bookingsRes.json();
+      // Always treat as array
+      const bookingsArr = Array.isArray(bookingsData) ? bookingsData : bookingsData.bookings || [];
       // Fetch available dates
       const datesRes = await fetch(`${apiUrl}/halls/${hallId}/available-dates`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!datesRes.ok) throw new Error('Failed to fetch available dates');
       const datesData = await datesRes.json();
-      // Map bookings to calendar events
-      const bookingEvents = bookingsData.bookings.map(booking => {
+      // Map bookings to calendar events with status
+      const bookingEvents = bookingsArr.map(booking => {
         const dateObj = new Date(booking.bookingDate);
         const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        let color = '';
-        if (booking.status === 'approved') color = 'bg-green-100 text-green-700 border-green-400';
-        else if (booking.status === 'pending') color = 'bg-yellow-100 text-yellow-700 border-yellow-400';
-        else if (booking.status === 'rejected') color = 'bg-red-100 text-red-700 border-red-400';
         return {
           id: booking._id,
-          title: `${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}${timeStr ? ' (' + timeStr + ')' : ''}`,
+          title: `${booking.status ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1) : 'Booking'}${booking.guestName ? ' - ' + booking.guestName : ''}${booking.guestEmail ? ' (' + booking.guestEmail + ')' : ''}${timeStr ? ' (' + timeStr + ')' : ''}`,
           start: dateObj,
           end: dateObj,
           status: booking.status,
           time: timeStr,
           allDay: false,
-          color,
           raw: booking,
         };
       });

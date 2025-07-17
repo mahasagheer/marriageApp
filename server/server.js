@@ -29,6 +29,7 @@ app.use('/api/menus', require('./routes/menus'));
 app.use('/api/decorations', require('./routes/decorations'));
 const bookingRoutes = require('./routes/booking');
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/booking', bookingRoutes);
 const userProfileRoutes= require('./routes/userProfile')
 app.use("/api/userProfile", userProfileRoutes)
 // Basic route
@@ -38,6 +39,7 @@ app.get('/', (req, res) => {
 
 const server = http.createServer(app);
 const io = socketio(server, { cors: { origin: '*' } });
+app.set('io', io);
 
 io.on('connection', (socket) => {
   // Join a room for a specific booking

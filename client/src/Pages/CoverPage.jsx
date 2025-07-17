@@ -1,7 +1,8 @@
-import React from "react";
+/* CoverPage.jsx */
+import React, {  useState } from "react";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { LoginModal } from "../Components/loginModal";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -12,17 +13,26 @@ const cardVariants = {
   }),
 };
 
-const CoverPage = () => {
-  const navigate = useNavigate();
+export default function CoverPage() {
+  const [open, setOpen] = useState(false);
+
+  /* ② Grab state, setter, *and* helpers from the hook */
+  const [label, setLabel, ] =useState("")
+
+  /* ③ One handler that records which card was clicked */
+  const handleCardClick = (type)=>{
+    setLabel(type)
+    setOpen(true)
+  }
 
   return (
     <motion.div
-      className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-red-700 via-pink-600 to-rose-600"
+      className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-marriagePink via-marriageHotPink to-marriageRed"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
     >
-      {/* Floating Hearts Animation */}
+      {/* Floating Hearts */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(8)].map((_, i) => (
           <motion.div
@@ -50,18 +60,17 @@ const CoverPage = () => {
       </div>
 
       {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-black bg-opacity-60" />
+      <div className="absolute inset-0 bg-black bg-opacity-30" />
 
       {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-white px-4">
-        {/* Animated Heading */}
         <motion.h1
           className="text-4xl md:text-6xl font-bold mb-10 text-center drop-shadow-lg"
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.8 }}
         >
-          Welcome to RishtaConnect
+          Welcome to WedLink
         </motion.h1>
 
         {/* Cards */}
@@ -85,19 +94,18 @@ const CoverPage = () => {
               </p>
               <button
                 className="bg-white text-black px-5 py-2 rounded-full hover:bg-gray-200 transition"
-                onClick={() => {
-                  if (i === 0) navigate("/rishta");
-                  if (i == 1) navigate("/hall");
-                }}
+                onClick={() => handleCardClick(i === 0 ? "matches" : "hall")}
               >
                 {i === 0 ? "Explore Matches" : "Book a Hall"}
               </button>
             </motion.div>
           ))}
         </div>
+
+        
       </div>
+
+      {open && <LoginModal onClose={() => setOpen(false)}  label={label}/>}
     </motion.div>
   );
-};
-
-export default CoverPage;
+}

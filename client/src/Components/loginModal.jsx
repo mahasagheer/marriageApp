@@ -7,7 +7,7 @@ import { signup, login } from "../slice/authSlice";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-export const LoginModal = ({ onClose, onSwitch }) => {
+export const LoginModal = ({ onClose, onSwitch, label }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -21,8 +21,7 @@ export const LoginModal = ({ onClose, onSwitch }) => {
   const { loading, error, success } = useSelector((state) => state.auth);
   const { login: contextLogin } = useAuth();
   const navigate = useNavigate();
-
-  const handleChange = (e) => {
+   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -49,10 +48,12 @@ export const LoginModal = ({ onClose, onSwitch }) => {
           const { user, token } = action.payload;
           contextLogin(user, token);
           // Redirect based on role
+          console.log(user.role, label)
           if (user.role === "hall-owner") navigate("/owner");
           else if (user.role === "admin") navigate("/admin");
           else if (user.role === "manager") navigate("/manager");
-          else if(user.role ==='user') navigate("/user");
+          else if(user.role ==='user' && label==='hall') navigate("/hall");
+          else if(user.role==='user' && label==='matches') navigate('/user/profile')
           else navigate("/");
           onClose && onClose();
         }

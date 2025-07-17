@@ -2,7 +2,7 @@ import logo from "../../assets/logo.png";
 import LogoTwo from "../../assets/logoTwo.png";
 
 export const Footer = () => (
-  <footer className="bg-[#0a1333] text-white pt-12 pb-4 px-4 mt-16">
+  <footer className="bg-[#0a1333] text-white pt-12 pb-4 px-4">
     <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-10 md:gap-0">
       {/* Left: Logo, description, app buttons */}
       <div className="flex-1 min-w-[220px]">

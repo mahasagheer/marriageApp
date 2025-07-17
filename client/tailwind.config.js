@@ -11,6 +11,9 @@ module.exports = {
         marriageHotPink: '#FF0B55',
         marriageRed: '#CF0F47',
       },
+      backgroundColor: {
+        'marriageGradient': 'linear-gradient(#FFDEDE, #FF0B55, #CF0F47)',
+      },
     },
   },
   plugins: [],

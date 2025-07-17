@@ -322,7 +322,7 @@ exports.getBookingsByHall = async (req, res) => {
     }
     // Manager can access assigned halls
     if (user.role === 'manager' && hall.managers.some(m => m.manager.toString() === user._id.toString())) {
-      const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
+    const bookings = await Booking.find({ hallId }).populate('menuId').populate('decorationIds');
       return res.json(bookings);
     }
     // Otherwise forbidden

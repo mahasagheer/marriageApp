@@ -73,7 +73,7 @@ export const MyBookings = () => {
     if (user?.role === 'manager') {
       dispatch(fetchManagerHalls());
     } else {
-      dispatch(fetchHalls());
+    dispatch(fetchHalls());
     }
   }, [dispatch, user?.role]);
 
@@ -160,28 +160,28 @@ export const MyBookings = () => {
               const events = hallCalendarEvents[hall._id] || [];
               console.log('Calendar events for hall', hall.name, events);
               return (
-                <div key={hall._id} className="bg-white rounded-xl shadow p-6">
-                  <h3 className="text-2xl font-semibold mb-4 text-marriageHotPink flex items-center gap-4">
-                    {hall.name} - Bookings Calendar
-                  </h3>
+              <div key={hall._id} className="bg-white rounded-xl shadow p-6">
+                <h3 className="text-2xl font-semibold mb-4 text-marriageHotPink flex items-center gap-4">
+                  {hall.name} - Bookings Calendar
+                </h3>
             
-                  {hallCalendarLoading[hall._id] ? (
-                    <div className="text-center text-gray-400">Loading calendar...</div>
-                  ) : (
-                    <Calendar
-                      localizer={localizer}
+                {hallCalendarLoading[hall._id] ? (
+                  <div className="text-center text-gray-400">Loading calendar...</div>
+                ) : (
+                  <Calendar
+                    localizer={localizer}
                       events={events}
-                      startAccessor="start"
-                      endAccessor="end"
-                      style={{ height: 400 }}
-                      selectable
-                      onSelectSlot={(slotInfo) => handleDateClick(slotInfo, hall)}
-                      eventPropGetter={eventStyleGetter}
-                      dayPropGetter={(date) => dayPropGetter(date, hall)}
-                      components={{ event: StatusBadge }}
-                    />
-                  )}
-                </div>
+                    startAccessor="start"
+                    endAccessor="end"
+                    style={{ height: 400 }}
+                    selectable
+                    onSelectSlot={(slotInfo) => handleDateClick(slotInfo, hall)}
+                    eventPropGetter={eventStyleGetter}
+                    dayPropGetter={(date) => dayPropGetter(date, hall)}
+                    components={{ event: StatusBadge }}
+                  />
+                )}
+              </div>
               );
             })}
           </div>

@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPhone, FiShoppingCart, FiX, FiArrowRight, FiCalendar, FiClock, FiPlus } from "react-icons/fi";
+import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPhone, FiShoppingCart, FiX, FiArrowRight, FiCalendar, FiClock, FiPlus, FiArrowLeft } from "react-icons/fi";
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchMessages, sendMessageThunk, addMessage, markMessagesRead } from '../slice/chatSlice';
 import { fetchPublicHallDetails } from '../slice/hallSlice';
 import { getSocket, disconnectSocket } from '../socket';
 import { v4 as uuidv4 } from 'uuid';
+import { NavBar } from "../Components/Layout/navbar";
+import { Footer } from "../Components/Layout/Footer";
 
 const PublicHallDetail = () => {
   const { id } = useParams();
@@ -63,6 +65,8 @@ const PublicHallDetail = () => {
     { key: 'menu', label: "Which menu package would you like?", type: 'text' },
     { key: 'notes', label: "Any special notes or requests?", type: 'text', optional: true },
   ];
+  // Add currentImageIndex for modal navigation
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     dispatch(fetchPublicHallDetails(id));
@@ -79,6 +83,12 @@ const PublicHallDetail = () => {
     return sum + decoration.addOns.filter((addOn) => addOnNames.includes(addOn.name)).reduce((s, addOn) => s + (addOn.price || 0), 0);
   }, 0);
   const totalPrice = selectedMenuBasePrice + selectedMenuAddOnsPrice + selectedDecorationAddOnsPrice;
+
+  // Helper to open modal at specific index
+  const openImagePreview = (idx) => {
+    setCurrentImageIndex(idx);
+    setImagePreview({ open: true, src: `http://localhost:5000/${hall.images[idx].replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}` });
+  };
 
   // Socket.io setup
   useEffect(() => {
@@ -126,27 +136,29 @@ const PublicHallDetail = () => {
   if (!hall) return <div className="text-center text-gray-400 py-10">Hall not found.</div>;
 
   return (
-    <div className="min-h-screen bg-white font-sans px-4 py-10">
-      <div className="max-w-5xl mx-auto">
-        {/* Hall Details */}
-        <div className="bg-white rounded-xl shadow p-6">
+<>
+<NavBar/>
+    <div className="min-h-screen bg-gradient-to-br from-white via-marriagePink/10 to-marriagePink/5 font-sans px-2 sm:px-4 py-4 sm:py-10">
+      <div className="max-w-5xl mx-auto w-full">
+        {/* Hall Details Card */}
+        <div className="bg-white rounded-3xl shadow-xl p-2 sm:p-6 mb-6 border border-marriagePink/10">
           {/* Image Gallery */}
           {hall.images && hall.images.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-6">
               {hall.images.slice(0, 6).map((img, idx) => (
                 <img
                   key={idx}
                   src={`http://localhost:5000/${img.replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}`}
                   alt="hall"
-                  className="w-full h-40 object-cover rounded-lg border cursor-pointer hover:shadow-lg transition"
-                  onClick={() => setImagePreview({ open: true, src: `http://localhost:5000/${img.replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}` })}
+                  className="w-full h-28 sm:h-40 md:h-48 object-cover rounded-xl border cursor-pointer hover:shadow-lg transition duration-200"
+                  onClick={() => openImagePreview(idx)}
                 />
               ))}
             </div>
           )}
           {/* Image Preview Modal */}
           {imagePreview.open && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
               <div className="relative max-w-3xl w-full flex flex-col items-center">
                 <button
                   onClick={() => setImagePreview({ open: false, src: null })}
@@ -154,10 +166,34 @@ const PublicHallDetail = () => {
                 >
                   &times;
                 </button>
+                {/* Prev Button */}
+                <button
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-marriageHotPink text-marriageHotPink hover:text-white rounded-full p-2 shadow-lg text-3xl z-20"
+                  onClick={() => {
+                    const newIdx = (currentImageIndex - 1 + hall.images.length) % hall.images.length;
+                    setCurrentImageIndex(newIdx);
+                    setImagePreview({ open: true, src: `http://localhost:5000/${hall.images[newIdx].replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}` });
+                  }}
+                  aria-label="Previous image"
+                >
+                  <FiArrowLeft />
+                </button>
+                {/* Next Button */}
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-marriageHotPink text-marriageHotPink hover:text-white rounded-full p-2 shadow-lg text-3xl z-20"
+                  onClick={() => {
+                    const newIdx = (currentImageIndex + 1) % hall.images.length;
+                    setCurrentImageIndex(newIdx);
+                    setImagePreview({ open: true, src: `http://localhost:5000/${hall.images[newIdx].replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}` });
+                  }}
+                  aria-label="Next image"
+                >
+                  <FiArrowRight />
+                </button>
                 <img
                   src={imagePreview.src}
                   alt="Preview"
-                  className="max-h-[80vh] w-auto rounded-xl shadow-lg border"
+                  className="max-h-[80vh] w-auto rounded-2xl shadow-2xl border"
                 />
               </div>
             </div>
@@ -165,7 +201,7 @@ const PublicHallDetail = () => {
           {/* Hall Title & Location */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
             <div>
-              <h2 className="text-3xl font-bold text-marriageHotPink mb-1 font-mono">{hall.name}</h2>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-marriageHotPink mb-1 font-mono drop-shadow">{hall.name}</h2>
               <div className="flex items-center text-gray-500 text-sm mb-2">
                 <FiMapPin className="mr-1" /> {hall.location}
               </div>
@@ -175,14 +211,14 @@ const PublicHallDetail = () => {
                   <span>{hall.phone}</span>
                   <button
                     onClick={() => window.open(`tel:${hall.phone}`)}
-                    className="ml-2 text-marriageHotPink hover:text-marriageHotPink/80 font-semibold"
+                    className="ml-2 text-marriageHotPink hover:text-marriageHotPink/80 font-semibold underline underline-offset-2"
                   >
                     Call Now
                   </button>
                 </div>
               )}
             </div>
-            <div className="flex gap-4 items-center">
+            <div className="flex flex-wrap gap-2 sm:gap-4 items-center justify-start md:justify-end mt-2 md:mt-0">
               <div className="flex items-center gap-2 bg-marriagePink/10 px-4 py-2 rounded-lg">
                 <FiUsers className="text-marriageHotPink" />
                 <span className="font-semibold text-gray-700">{hall.capacity} Guests</span>
@@ -191,73 +227,62 @@ const PublicHallDetail = () => {
                 <FiDollarSign className="text-marriageHotPink" />
                 <span className="font-semibold text-gray-700">{hall.price} PKR</span>
               </div>
-             {/* Cart button after hall price section */}
-
               <button
-              className="flex items-center gap-2 px-6 py-3 rounded bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition shadow"
-              title="View Cart"
-              onClick={() => setShowCartDrawer(true)}
-            >
-              <FiShoppingCart className="text-2xl" />
-              View Cart
-            </button>
+                className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition shadow mt-2 sm:mt-0"
+                title="View Cart"
+                onClick={() => setShowCartDrawer(true)}
+              >
+                <FiShoppingCart className="text-xl sm:text-2xl" />
+                View Cart
+              </button>
             </div>
           </div>
           {/* Description */}
-          <div className="text-gray-700 mb-6 text-lg">
+          <div className="text-gray-700 mb-6 text-base sm:text-lg leading-relaxed">
             {hall.description}
           </div>
           {/* Facilities Section */}
           {hall.facilities && hall.facilities.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-3">Facilities</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">Facilities</h3>
               <div className="flex flex-wrap gap-2">
                 {hall.facilities.map((facility, idx) => (
-                  <span key={idx} className="inline-flex items-center gap-2 bg-marriagePink/10 text-marriageHotPink px-4 py-2 rounded-full text-sm font-semibold">
+                  <span key={idx} className="inline-flex items-center gap-2 bg-marriagePink/10 text-marriageHotPink px-4 py-2 rounded-full text-xs sm:text-sm font-semibold">
                     <FiCheckCircle className="text-green-500" /> {facility}
                   </span>
                 ))}
               </div>
             </div>
-          )}         
+          )}
         </div>
         {/* Menu Section */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <h3 className="text-2xl font-bold flex items-center gap-2 text-marriageHotPink mb-4">
+        <div className="bg-white rounded-3xl shadow-xl p-2 sm:p-6 mb-6 border border-marriagePink/10">
+          <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2 text-marriageHotPink mb-4">
             <FiUsers className="text-marriageHotPink" /> Menu Packages
           </h3>
           {menus.length === 0 ? (
             <div className="text-gray-400">No menu packages available.</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {menus.map((menu) => (
-                <div key={menu._id} className={`bg-marriagePink/10 rounded-lg p-4 shadow ${selectedMenuId === menu._id ? 'ring-2 ring-marriageHotPink' : ''}`}> 
+                <div key={menu._id} className={`bg-marriagePink/10 rounded-xl p-4 shadow ${selectedMenuId === menu._id ? 'ring-2 ring-marriageHotPink' : ''} flex flex-col h-full`}>
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-lg font-bold text-marriageHotPink">{menu.name}</h4>
                     <button
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                        selectedMenuId === menu._id 
-                          ? 'bg-marriageHotPink text-white shadow-lg scale-105' 
-                          : 'bg-white text-marriageHotPink border-2 border-marriageHotPink hover:bg-marriagePink/10 hover:scale-105'
-                      }`}
-                      onClick={() => {
-                        setSelectedMenuId(menu._id);
-                        setSelectedMenuAddOns([]);
-                      }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${selectedMenuId === menu._id ? 'bg-marriageHotPink text-white shadow-lg scale-105' : 'bg-white text-marriageHotPink border-2 border-marriageHotPink hover:bg-marriagePink/10 hover:scale-105'}`}
+                      onClick={() => { setSelectedMenuId(menu._id); setSelectedMenuAddOns([]); }}
                       title={selectedMenuId === menu._id ? 'Menu in cart' : 'Add menu to cart'}
                     >
                       <FiShoppingCart className="text-lg" />
-                      <span className="font-semibold">
-                        {selectedMenuId === menu._id ? 'In Cart' : 'Add to Cart'}
-                      </span>
+                      <span className="font-semibold">{selectedMenuId === menu._id ? 'In Cart' : 'Add to Cart'}</span>
                     </button>
                   </div>
-                  <div className="text-gray-700 mb-2">{menu.description}</div>
+                  <div className="text-gray-700 mb-2 text-sm sm:text-base">{menu.description}</div>
                   <div className="text-gray-800 font-semibold mb-2">Price: {menu.basePrice || menu.price} PKR</div>
                   {menu.items && menu.items.length > 0 && (
                     <div className="mb-2">
                       <div className="font-semibold text-marriageHotPink">Menu Items:</div>
-                      <ul className="list-disc pl-5 text-gray-700">
+                      <ul className="list-disc pl-5 text-gray-700 text-sm">
                         {menu.items.map((item, idx) => (
                           <li key={idx}>{item}</li>
                         ))}
@@ -267,7 +292,7 @@ const PublicHallDetail = () => {
                   {menu.addOns && menu.addOns.length > 0 && selectedMenuId === menu._id && (
                     <div className="mb-2">
                       <div className="font-semibold text-marriageHotPink">Add-Ons:</div>
-                      <ul className="list-disc pl-5 text-gray-700">
+                      <ul className="list-disc pl-5 text-gray-700 text-sm">
                         {menu.addOns.map((addOn, idx) => (
                           <li key={idx}>
                             <label className="inline-flex items-center gap-2">
@@ -295,32 +320,24 @@ const PublicHallDetail = () => {
           )}
         </div>
         {/* Decoration Section */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <h3 className="text-2xl font-bold flex items-center gap-2 text-marriageHotPink mb-4">
+        <div className="bg-white rounded-3xl shadow-xl p-2 sm:p-6 mb-6 border border-marriagePink/10">
+          <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2 text-marriageHotPink mb-4">
             <FiUsers className="text-marriageHotPink" /> Decoration Packages
           </h3>
           {decorations.length === 0 ? (
             <div className="text-gray-400">No decoration packages available.</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {decorations.map((decoration) => (
-                <div key={decoration._id} className={`bg-marriagePink/10 rounded-lg p-4 shadow ${selectedDecorationIds.includes(decoration._id) ? 'ring-2 ring-marriageHotPink' : ''}`}>
+                <div key={decoration._id} className={`bg-marriagePink/10 rounded-xl p-4 shadow ${selectedDecorationIds.includes(decoration._id) ? 'ring-2 ring-marriageHotPink' : ''} flex flex-col h-full`}>
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-lg font-bold text-marriageHotPink">{decoration.name}</h4>
                     <button
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                        selectedDecorationIds.includes(decoration._id)
-                          ? 'bg-marriageHotPink text-white shadow-lg scale-105' 
-                          : 'bg-white text-marriageHotPink border-2 border-marriageHotPink hover:bg-marriagePink/10 hover:scale-105'
-                      }`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${selectedDecorationIds.includes(decoration._id) ? 'bg-marriageHotPink text-white shadow-lg scale-105' : 'bg-white text-marriageHotPink border-2 border-marriageHotPink hover:bg-marriagePink/10 hover:scale-105'}`}
                       onClick={() => {
                         if (selectedDecorationIds.includes(decoration._id)) {
                           setSelectedDecorationIds(selectedDecorationIds.filter(id => id !== decoration._id));
-                          setSelectedDecorationAddOns(prev => {
-                            const newState = { ...prev };
-                            delete newState[decoration._id];
-                            return newState;
-                          });
+                          setSelectedDecorationAddOns(prev => { const newState = { ...prev }; delete newState[decoration._id]; return newState; });
                         } else {
                           setSelectedDecorationIds([...selectedDecorationIds, decoration._id]);
                         }
@@ -328,17 +345,15 @@ const PublicHallDetail = () => {
                       title={selectedDecorationIds.includes(decoration._id) ? 'Decoration in cart' : 'Add decoration to cart'}
                     >
                       <FiShoppingCart className="text-lg" />
-                      <span className="font-semibold">
-                        {selectedDecorationIds.includes(decoration._id) ? 'In Cart' : 'Add to Cart'}
-                      </span>
+                      <span className="font-semibold">{selectedDecorationIds.includes(decoration._id) ? 'In Cart' : 'Add to Cart'}</span>
                     </button>
                   </div>
-                  <div className="text-gray-700 mb-2">{decoration.description}</div>
+                  <div className="text-gray-700 mb-2 text-sm sm:text-base">{decoration.description}</div>
                   <div className="text-gray-800 font-semibold mb-2">Price: {decoration.price} PKR</div>
                   {decoration.addOns && decoration.addOns.length > 0 && selectedDecorationIds.includes(decoration._id) && (
                     <div className="mb-2">
                       <div className="font-semibold text-marriageHotPink">Add-Ons:</div>
-                      <ul className="list-disc pl-5 text-gray-700">
+                      <ul className="list-disc pl-5 text-gray-700 text-sm">
                         {decoration.addOns.map((addOn, idx) => (
                           <li key={idx}>
                             <label className="inline-flex items-center gap-2">
@@ -370,7 +385,7 @@ const PublicHallDetail = () => {
         </div>
         {/* Floating Chatbot Button */}
         <button
-          className="fixed bottom-3 right-3 z-50 bg-marriageHotPink text-white rounded-full shadow-lg w-16 h-16 flex items-center justify-center text-3xl hover:bg-marriageRed transition"
+          className="fixed bottom-3 right-3 z-50 bg-marriageHotPink text-white rounded-full shadow-lg w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-2xl sm:text-3xl hover:bg-marriageRed transition"
           title="Contact Event Support"
           onClick={() => setShowSupportModal(true)}
         >
@@ -609,19 +624,27 @@ const PublicHallDetail = () => {
         {showCartDrawer && (
           <div className="fixed inset-0 z-50 flex">
             <div className="flex-1 bg-black bg-opacity-40" onClick={() => setShowCartDrawer(false)} />
-            <div className="w-full max-w-md bg-white h-full shadow-2xl p-8 relative flex flex-col">
+            <div className="w-full max-w-md bg-white h-full shadow-2xl p-0 relative flex flex-col rounded-l-3xl animate-fadeInRight">
               <button
                 onClick={() => setShowCartDrawer(false)}
-                className="absolute top-4 right-4 text-marriageRed text-2xl font-bold hover:text-marriageHotPink"
+                className="absolute top-4 right-4 text-marriageRed text-2xl font-bold hover:text-marriageHotPink z-10"
               >
                 <FiX />
               </button>
-              <h2 className="text-2xl font-extrabold text-marriageRed mb-4 font-serif">Book This Hall</h2>
-              <div className="flex-1 overflow-y-auto">
+              {/* Header */}
+              <div className="text-marriageHotPink rounded-tl-3xl rounded-tr-3xl px-8 py-6 flex items-center gap-3">
+                <FiShoppingCart className="text-marriageHotPink text-3xl" />
+                <h2 className="text-2xl font-bold text-marriageHotPink font-serif flex-1">Book This Hall</h2>
+              </div>
+              {/* Main content scrollable */}
+              <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4">
                 {/* Stepper */}
                 <div className="flex justify-between mb-6">
                   {[1,2,3,4].map(step => (
-                    <div key={step} className={`flex-1 text-center font-bold py-2 rounded ${bookingStep === step ? 'bg-marriageHotPink text-white' : 'bg-marriagePink/20 text-marriageHotPink'}`}>{step}</div>
+                    <div key={step} className={`flex-1 text-center font-bold py-2 rounded-lg mx-1 flex flex-col items-center ${bookingStep === step ? 'bg-marriageHotPink text-white shadow-lg scale-105' : 'bg-marriagePink/20 text-marriageHotPink'}`}>
+                      <span className="text-lg">{step}</span>
+                      <span className="text-xs font-normal">{['Date/Time','Menu','Guest','Review'][step-1]}</span>
+                    </div>
                   ))}
                 </div>
                 {/* Step 1: Date/Time */}
@@ -658,32 +681,29 @@ const PublicHallDetail = () => {
                         <FiClock className="absolute right-3 top-1/2 -translate-y-1/2 text-marriagePink pointer-events-none" />
                       </div>
                     </div>
-                    <button className="w-full py-3 rounded bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition mt-4" onClick={() => bookingDate && bookingTime && setBookingStep(2)} disabled={!bookingDate || !bookingTime}>Next</button>
                   </>
                 )}
                 {/* Step 2: Menu/Decorations */}
                 {bookingStep === 2 && (
                   <>
-                    <div className="mb-4">
-                      <span className="font-semibold">Menu:</span> {selectedMenu ? selectedMenu.name : 'None selected'}
+                    <div className="mb-4 bg-marriagePink/10 rounded-lg p-3">
+                      <span className="font-semibold text-marriageHotPink">Menu:</span> {selectedMenu ? selectedMenu.name : <span className="text-gray-400">None selected</span>}
                     </div>
                     {selectedMenu && (
-                      <div className="mb-4">
-                        <span className="font-semibold">Menu Add-Ons:</span> {selectedMenuAddOns.length > 0 ? selectedMenuAddOns.join(', ') : 'None'}
+                      <div className="mb-4 bg-marriagePink/10 rounded-lg p-3">
+                        <span className="font-semibold text-marriageHotPink">Menu Add-Ons:</span> {selectedMenuAddOns.length > 0 ? selectedMenuAddOns.join(', ') : <span className="text-gray-400">None</span>}
                       </div>
                     )}
-                    <div className="mb-4">
-                      <span className="font-semibold">Decoration Add-Ons:</span> {
+                    <div className="mb-4 bg-marriagePink/10 rounded-lg p-3">
+                      <span className="font-semibold text-marriageHotPink">Decoration Add-Ons:</span> {
                         Object.entries(selectedDecorationAddOns).flatMap(([decId, addOns]) =>
                           addOns.map(name => {
                             const dec = decorations.find(d => d._id === decId);
                             return dec ? `${dec.name}: ${name}` : null;
                           })
-                        ).filter(Boolean).join(', ') || 'None'}
+                        ).filter(Boolean).join(', ') || <span className="text-gray-400">None</span>}
                     </div>
                     <div className="text-lg font-bold text-marriageHotPink mt-2">Total Price: {totalPrice} PKR</div>
-                    <button className="w-full py-3 rounded bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition mt-4" onClick={() => setBookingStep(3)}>Next</button>
-                    <button className="w-full py-3 rounded bg-gray-200 text-marriageHotPink font-bold hover:bg-gray-300 transition mt-2" onClick={() => setBookingStep(1)}>Back</button>
                   </>
                 )}
                 {/* Step 3: Guest Info */}
@@ -701,103 +721,103 @@ const PublicHallDetail = () => {
                       <label className="font-bold mb-2 text-marriageHotPink" htmlFor="guest-phone">Phone Number</label>
                       <input id="guest-phone" type="tel" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-marriageHotPink focus:outline-none bg-white text-gray-700 shadow-sm" value={guestPhone} onChange={e => setGuestPhone(e.target.value)} />
                     </div>
-                    <button className="w-full py-3 rounded bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition mt-4" onClick={() => guestName && guestEmail && guestPhone && setBookingStep(4)} disabled={!guestName || !guestEmail || !guestPhone}>Next</button>
-                    <button className="w-full py-3 rounded bg-gray-200 text-marriageHotPink font-bold hover:bg-gray-300 transition mt-2" onClick={() => setBookingStep(2)}>Back</button>
                   </>
                 )}
                 {/* Step 4: Review & Confirm */}
                 {bookingStep === 4 && (
                   <>
-                    <div className="mb-4">
-                      <span className="font-semibold">Date:</span> {bookingDate}
+                    <div className="mb-4 bg-marriagePink/10 rounded-lg p-3 flex flex-col gap-1">
+                      <span className="font-semibold text-marriageHotPink">Date:</span> {bookingDate}
+                      <span className="font-semibold text-marriageHotPink">Time:</span> {bookingTime ? (() => { const [h, m] = bookingTime.split(":"); let hour = parseInt(h, 10); const ampm = hour >= 12 ? "PM" : "AM"; hour = hour % 12 || 12; return `${hour} ${ampm}`; })() : 'Not selected'}
+                      <span className="font-semibold text-marriageHotPink">Menu:</span> {selectedMenu ? selectedMenu.name : 'None selected'}
+                      {selectedMenu && <span className="font-semibold text-marriageHotPink">Menu Add-Ons:</span>}{selectedMenu && (selectedMenuAddOns.length > 0 ? selectedMenuAddOns.join(', ') : 'None')}
+                      <span className="font-semibold text-marriageHotPink">Selected Decorations:</span> {selectedDecorationIds.length > 0 ? decorations.filter(d => selectedDecorationIds.includes(d._id)).map(d => d.name).join(', ') : 'None'}
+                      <span className="font-semibold text-marriageHotPink">Decoration Add-Ons:</span> {Object.entries(selectedDecorationAddOns).flatMap(([decId, addOns]) => addOns.map(name => { const dec = decorations.find(d => d._id === decId); return dec ? `${dec.name}: ${name}` : null; })).filter(Boolean).join(', ') || 'None'}
+                      <span className="font-semibold text-marriageHotPink">Your Name:</span> {guestName}
+                      <span className="font-semibold text-marriageHotPink">Email:</span> {guestEmail}
+                      <span className="font-semibold text-marriageHotPink">Phone:</span> {guestPhone}
                     </div>
-                    <div className="mb-4">
-                      <span className="font-semibold">Time:</span> {bookingTime ? (() => { const [h, m] = bookingTime.split(":"); let hour = parseInt(h, 10); const ampm = hour >= 12 ? "PM" : "AM"; hour = hour % 12 || 12; return `${hour} ${ampm}`; })() : 'Not selected'}
-                    </div>
-                <div className="mb-4">
-                  <span className="font-semibold">Menu:</span> {selectedMenu ? selectedMenu.name : 'None selected'}
-                </div>
-                {selectedMenu && (
-                  <div className="mb-4">
-                    <span className="font-semibold">Menu Add-Ons:</span> {selectedMenuAddOns.length > 0 ? selectedMenuAddOns.join(', ') : 'None'}
-                  </div>
-                )}
-                <div className="mb-4">
-                  <span className="font-semibold">Selected Decorations:</span> {
-                    selectedDecorationIds.length > 0 
-                      ? decorations.filter(d => selectedDecorationIds.includes(d._id)).map(d => d.name).join(', ')
-                      : 'None'
-                  }
-                </div>
-                <div className="mb-4">
-                  <span className="font-semibold">Selected Decorations:</span> {
-                    selectedDecorationIds.length > 0 
-                      ? decorations.filter(d => selectedDecorationIds.includes(d._id)).map(d => d.name).join(', ')
-                      : 'None'
-                  }
-                </div>
-                <div className="mb-4">
-                  <span className="font-semibold">Decoration Add-Ons:</span> {
-                    Object.entries(selectedDecorationAddOns).flatMap(([decId, addOns]) =>
-                      addOns.map(name => {
-                        const dec = decorations.find(d => d._id === decId);
-                        return dec ? `${dec.name}: ${name}` : null;
-                      })
-                    ).filter(Boolean).join(', ') || 'None'}
-                </div>
-                <div className="mb-4">
-                      <span className="font-semibold">Your Name:</span> {guestName}
-                    </div>
-                    <div className="mb-4">
-                      <span className="font-semibold">Email:</span> {guestEmail}
-                    </div>
-                    <div className="mb-4">
-                      <span className="font-semibold">Phone:</span> {guestPhone}
-                </div>
-                <div className="text-lg font-bold text-marriageHotPink mt-2">Total Price: {totalPrice} PKR</div>
-                <button
-                  className="mt-6 px-6 py-3 rounded bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition w-full"
-                  onClick={async () => {
-                    console.log("Confirm Booking clicked");
-                    setBookingStatus(null);
-                    const payload = {
-                      hallId: hall._id,
-                      bookingDate: bookingDate + (bookingTime ? ('T' + bookingTime) : ''),
-                      menuId: selectedMenuId,
-                      selectedAddOns: selectedMenuAddOns,
-                      decorationIds: selectedDecorationIds,
-                      guestName,
-                      guestEmail,
-                      guestPhone,
-                    };
-                    console.log("Booking payload:", payload);
-                    try {
-                      const res = await fetch('http://localhost:5000/api/sample/public-booking', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload),
-                      });
-                      const data = await res.json();
-                      console.log("Booking response:", data);
-                      if (!res.ok) throw new Error(data.message || 'Booking failed');
-                      setBookingStatus({ success: 'Booking successful! We will contact you soon.' });
-                    } catch (err) {
-                      console.error("Booking error:", err);
-                      setBookingStatus({ error: err.message });
-                    }
-                    console.log("bookingStatus after set:", bookingStatus);
-                  }}
-                      disabled={!bookingDate || !bookingTime || !selectedMenuId || !guestName || !guestEmail || !guestPhone}
-                >
-                      Confirm Booking
-                </button>
-                    <button className="w-full py-3 rounded bg-gray-200 text-marriageHotPink font-bold hover:bg-gray-300 transition mt-2" onClick={() => setBookingStep(3)}>Back</button>
-                {bookingStatus && bookingStatus.success && (
-                  <div className="mt-4 text-green-600 font-semibold">{bookingStatus.success}</div>
-                )}
-                {bookingStatus && bookingStatus.error && (
-                  <div className="mt-4 text-marriageRed font-semibold">{bookingStatus.error}</div>
+                    <div className="text-lg font-bold text-marriageHotPink mt-2">Total Price: {totalPrice} PKR</div>
+                    {bookingStatus && bookingStatus.success && (
+                      <div className="mt-4 text-green-600 font-semibold text-center">{bookingStatus.success}</div>
                     )}
+                    {bookingStatus && bookingStatus.error && (
+                      <div className="mt-4 text-marriageRed font-semibold text-center">{bookingStatus.error}</div>
+                    )}
+                  </>
+                )}
+              </div>
+              {/* Action Buttons fixed at bottom */}
+              <div className="px-6 py-4 bg-white border-t border-marriagePink/20 flex flex-col gap-2 sticky bottom-0 z-10">
+                {/* Step 1 Buttons */}
+                {bookingStep === 1 && (
+                  <button className="w-full py-3 rounded-xl bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition shadow-lg" onClick={() => bookingDate && bookingTime && setBookingStep(2)} disabled={!bookingDate || !bookingTime}>Next</button>
+                )}
+                {/* Step 2 Buttons */}
+                {bookingStep === 2 && (
+                  <>
+                                    <div className="flex gap-4">
+
+                    <button className="w-full py-3 rounded-xl bg-gray-200 text-marriageHotPink font-bold hover:bg-gray-300 transition shadow" onClick={() => setBookingStep(1)}>Back</button>
+                    <button className="w-full py-3 rounded-xl bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition shadow-lg" onClick={() => setBookingStep(3)}>Next</button>
+
+                  </div>
+                  </>
+                )}
+                {/* Step 3 Buttons */}
+                {bookingStep === 3 && (
+                  <>
+                  <div className="flex gap-4">
+                    <button className="w-full py-3 rounded-xl bg-gray-200 text-marriageHotPink font-bold hover:bg-gray-300 transition shadow" onClick={() => setBookingStep(2)}>Back</button>
+                    <button className="w-full py-3 rounded-xl bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition shadow-lg" onClick={() => guestName && guestEmail && guestPhone && setBookingStep(4)} disabled={!guestName || !guestEmail || !guestPhone}>Next</button>
+
+                    </div>
+                  </>
+                )}
+                {/* Step 4 Buttons */}
+                {bookingStep === 4 && (
+                  <>
+                                                      <div className="flex gap-4">
+
+                  
+                    <button className="w-full py-3 rounded-xl bg-gray-200 text-marriageHotPink font-bold hover:bg-gray-300 transition shadow" onClick={() => setBookingStep(3)}>Back</button>
+                    <button
+                      className="px-6 py-3 rounded-xl bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition w-full shadow-lg"
+                      onClick={async () => {
+                        console.log("Confirm Booking clicked");
+                        setBookingStatus(null);
+                        const payload = {
+                          hallId: hall._id,
+                          bookingDate: bookingDate + (bookingTime ? ('T' + bookingTime) : ''),
+                          menuId: selectedMenuId,
+                          selectedAddOns: selectedMenuAddOns,
+                          decorationIds: selectedDecorationIds,
+                          guestName,
+                          guestEmail,
+                          guestPhone,
+                        };
+                        console.log("Booking payload:", payload);
+                        try {
+                          const res = await fetch('http://localhost:5000/api/sample/public-booking', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                          });
+                          const data = await res.json();
+                          console.log("Booking response:", data);
+                          if (!res.ok) throw new Error(data.message || 'Booking failed');
+                          setBookingStatus({ success: 'Booking successful! We will contact you soon.' });
+                        } catch (err) {
+                          console.error("Booking error:", err);
+                          setBookingStatus({ error: err.message });
+                        }
+                        console.log("bookingStatus after set:", bookingStatus);
+                      }}
+                      disabled={!bookingDate || !bookingTime || !selectedMenuId || !guestName || !guestEmail || !guestPhone}
+                    >
+                      Confirm Booking
+                    </button>
+                 </div>
                   </>
                 )}
               </div>
@@ -806,6 +826,8 @@ const PublicHallDetail = () => {
         )}
       </div>
     </div>
+    <Footer/>
+    </>
   );
 };
 

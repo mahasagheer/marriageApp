@@ -291,7 +291,7 @@ const OwnerDashboard = () => {
           </button>
           <div className="bg-white rounded-3xl shadow-2xl border-2 border-marriagePink p-0 max-w-4xl w-full h-[44rem] flex flex-col overflow-hidden relative">
             <div className="flex-1 flex flex-col bg-gradient-to-br from-white via-marriagePink/10 to-marriagePink/5">
-              <OwnerChat hallId={user?.role === 'admin' ? null : (showChat.booking ? showChat.booking.hallId?._id : bookings[0]?.hallId?._id)} bookings={bookings} booking={showChat.booking} isAdmin={user?.role === 'admin'} />
+              <OwnerChat hallId={user?.role === 'admin' ? null : (showChat.booking ? showChat.booking.hallId?._id : bookings[0]?.hallId?._id)} bookings={bookings} booking={showChat.booking} isAdmin={user?.role === 'admin'} disableSend={user?.role === 'admin' || user?.role === 'manager'} />
             </div>
           </div>
         </div>
@@ -429,7 +429,7 @@ const OwnerDashboard = () => {
                             </>
                           )
                         )}
-                      </div>
+                    </div>
                     )}
                     {activeTab === 'menu' && (
                     <div>

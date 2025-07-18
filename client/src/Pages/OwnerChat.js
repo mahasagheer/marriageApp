@@ -4,7 +4,7 @@ import { fetchChatSessions, fetchMessages, sendMessageThunk, addMessage, markMes
 import { getSocket, disconnectSocket } from '../socket';
 import { FiFileText } from 'react-icons/fi';
 
-const OwnerChat = ({ hallId, booking, isAdmin }) => {
+const OwnerChat = ({ hallId, booking, isAdmin, disableSend }) => {
   // Remove local sessions state
   // const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -192,13 +192,16 @@ const OwnerChat = ({ hallId, booking, isAdmin }) => {
         <form className="flex gap-2 items-end mt-auto px-6 py-4 border-t border-marriagePink/30 bg-white sticky bottom-0 rounded-b-3xl" onSubmit={handleSend}>
           <input
             className="flex-1 px-4 py-2 rounded-full border-2 border-marriagePink focus:ring-2 focus:ring-marriageHotPink focus:outline-none bg-white text-marriageHotPink shadow"
-            placeholder="Type your message..."
+            placeholder={disableSend ? "Sending disabled for this role" : "Type your message..."}
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
+            disabled={disableSend}
           />
           <button
             type="submit"
             className="px-4 py-2 rounded-full bg-marriageHotPink text-white font-bold hover:bg-marriageRed transition shadow text-lg"
+            disabled={disableSend}
+            title={disableSend ? "Admins and managers cannot send messages from this chat" : "Send"}
           >
             Send
           </button>

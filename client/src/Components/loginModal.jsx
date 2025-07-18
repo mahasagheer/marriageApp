@@ -54,7 +54,7 @@ export const LoginModal = ({ onClose, onSwitch, label }) => {
           else if (user.role === "manager") navigate("/manager");
           else if(user.role ==="agency") navigate("/agency")
           else if(user.role ==='user' && label==='hall') navigate("/hall");
-          else if(user.role==='user' && label==='matches') navigate('/user/profile')
+          else if(user.role==='user' && label==='matches') navigate('/home')
           else navigate("/");
           onClose && onClose();
         }

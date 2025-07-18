@@ -24,10 +24,12 @@ import {
   FiArrowRight,
   FiArrowLeft,
   FiUploadCloud,
+  FiPenTool,
 } from "react-icons/fi";
 import { RadioInput } from "../../Components/Layout/radioButton";
 import { genderOptions, maritalStatusOptions } from "../../utils";
 import { Label } from "../../Components/Layout/Label";
+import {  UserCircle2,  } from "lucide-react";
 
 export default function CreateProfilePage() {
   const dispatch = useDispatch();
@@ -168,10 +170,20 @@ const {id}=useParams();
     msg ? <p className="text-xs text-red-600 mt-1">{msg}</p> : null;
 
   return (
-    <main className="ml-[15rem] max-w-[100%]  pt-5 px-4">
-      <h1 className="text-3xl font-bold text-center mb-6">
-        {id ? "✏️ Edit Profile" : "👤 Create Your Matchmaking Profile"}
-      </h1>
+    <main className="max-w-[100%]  bg-white py-10 px-4">
+  <h1 className="text-3xl font-bold text-center mb-6 flex items-center justify-center gap-2">
+  {id ? (
+    <>
+      <FiPenTool className="w-8 h-8 text-red-600" />
+      <span>Edit Profile</span>
+    </>
+  ) : (
+    <>
+      <UserCircle2 className="w-8 h-8 text-red-600" />
+      <span>Create Your Matchmaking Profile</span>
+    </>
+  )}
+</h1>
 
       <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
         <div

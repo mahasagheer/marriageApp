@@ -14,6 +14,10 @@ import PublicHallDetail from "../Pages/PublicHallDetail";
 import CustomDealBooking from '../Pages/CustomDealBooking';
 import AdminAssignManagerPage from '../Pages/AdminAssignManagerPage';
 import UserProfileDisplay from "../Pages/Phase_2/ProfilePageUser";
+import AgencyDashboard from "../Pages/Phase_2/AgencyDashboard";
+import { AgencyProfile } from "../Pages/Phase_2/AgencyProfileForm";
+import { AgencyProfileDisplay } from "../Pages/Phase_2/AgencyProfile";
+import AgencyListing from "../Pages/Phase_2/AgenciesListing";
 
 export const router = createBrowserRouter([
   // {
@@ -33,6 +37,16 @@ export const router = createBrowserRouter([
     )
   },
 {
+  path: "/user/addProfile",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <OwnerLayout>
+        <UserProfileForm />
+        </OwnerLayout>
+      </ProtectedRoute>
+    )
+},
+{
   path: "/user/addProfile/:id",
     element: (
       <ProtectedRoute allowedRoles={['user']}>
@@ -43,11 +57,61 @@ export const router = createBrowserRouter([
     )
 },
 {
+  path: "/agency/addProfile",
+    element: (
+      <ProtectedRoute allowedRoles={['agency']}>
+        <OwnerLayout>
+        <AgencyProfile />
+        </OwnerLayout>
+      </ProtectedRoute>
+    )
+},
+{
+  path: "/agency",
+    element: (
+      <ProtectedRoute allowedRoles={['agency']}>
+        <OwnerLayout>
+        <AgencyDashboard />
+        </OwnerLayout>
+      </ProtectedRoute>
+    )
+},
+{
+  path: "/agency/addProfile/:id",
+    element: (
+      <ProtectedRoute allowedRoles={['agency']}>
+        <OwnerLayout>
+        <AgencyProfile />
+        </OwnerLayout>
+      </ProtectedRoute>
+    )
+},
+{
   path: "/user/profile",
     element: (
       <ProtectedRoute allowedRoles={['user']}>
         <OwnerLayout>
         <UserProfileDisplay />
+        </OwnerLayout>
+      </ProtectedRoute>
+    )
+},
+{
+  path: "/agency/profile",
+    element: (
+      <ProtectedRoute allowedRoles={['agency']}>
+        <OwnerLayout>
+        <AgencyProfileDisplay />
+        </OwnerLayout>
+      </ProtectedRoute>
+    )
+},
+{
+  path: "/user/agencies",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <OwnerLayout>
+        <AgencyListing />
         </OwnerLayout>
       </ProtectedRoute>
     )

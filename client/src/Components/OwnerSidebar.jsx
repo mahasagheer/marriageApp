@@ -46,6 +46,12 @@ const OwnerSidebar = () => {
       { label: "Agencies", icon: FaBuilding, to: "/user/agencies" },
       { label: "Forms", icon: FaUserPlus, to: "/user/forms" },
     ]
+  }else if(user?.role==="agency"){
+    navLinks=[
+      { label: "Agency Dashboard", icon: FaBuilding, to: "/agency" },
+      { label: "Agency Profile", icon: FaBuilding, to: "/agency/profile" },
+      { label: "Candidates", icon: FiUser, to: "/agency/candidates" },
+    ]
   }
 
   const handleLogout = () => {

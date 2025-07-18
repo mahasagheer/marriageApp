@@ -9,9 +9,15 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required.' });
     }
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    const existingEmailUser = await User.findOne({ email });
+    if (existingEmailUser) {
       return res.status(409).json({ message: 'User already exists with this email.' });
+    }
+
+    // Check if phone already exists
+    const existingPhoneUser = await User.findOne({ phone });
+    if (existingPhoneUser) {
+      return res.status(409).json({ message: 'User already exists with this phone number.' });
     }
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);

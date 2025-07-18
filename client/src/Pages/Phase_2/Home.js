@@ -8,11 +8,15 @@ import match from "../../assets/match.png";
 import { motion } from "framer-motion";
 import { NavBar } from "../../Components/Layout/navbar";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export const HeroSection = () => {
+  const { user } = useAuth();
+
   const navigate=useNavigate()
   const handleProfileModal = () => {
-    navigate("/user/addProfile")
+    if(user.role ==="user") navigate("/user/addProfile")
+      else if(user.role==="agency") navigate("/agency/addProfile")
   };
   
   return(

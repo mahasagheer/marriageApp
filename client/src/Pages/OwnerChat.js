@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchChatSessions, fetchMessages, sendMessageThunk, addMessage, markMessagesRead } from '../slice/chatSlice';
 import { getSocket, disconnectSocket } from '../socket';
@@ -21,6 +21,7 @@ const OwnerChat = ({ hallId, booking, isAdmin, disableSend }) => {
   const sessionsLoading = useSelector(state => state.chat.sessionsLoading);
   const sessionsError = useSelector(state => state.chat.sessionsError);
   const ownerEmail = localStorage.getItem('ownerEmail'); // or get from Redux/auth
+  const messagesEndRef = useRef(null);
 
   // Fetch all unique chat sessions for this hall using Redux
   useEffect(() => {
@@ -78,6 +79,13 @@ const OwnerChat = ({ hallId, booking, isAdmin, disableSend }) => {
       dispatch(markMessagesRead({ bookingId: selectedSession.bookingId, reader: 'owner' }));
     }
   }, [selectedSession, dispatch]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatState.messages]);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -167,22 +175,25 @@ const OwnerChat = ({ hallId, booking, isAdmin, disableSend }) => {
             chatState.messages.length === 0 ? (
               <div className="text-gray-400 text-center mt-8">No messages yet.</div>
             ) : (
-              chatState.messages.map((msg, idx) => (
-                <div key={idx} className={`mb-3 flex ${msg.sender === 'owner' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
-                  <div className={`relative max-w-[75%] px-4 py-2 rounded-2xl shadow-lg ${msg.sender === 'owner' ? 'bg-marriageHotPink text-white rounded-br-none mr-2' : 'bg-white text-marriageHotPink border border-marriagePink rounded-bl-none ml-2'}`}
-                    style={{ transition: 'box-shadow 0.2s' }}
-                  >
-                    <div className="whitespace-pre-line break-words text-base">{msg.text}</div>
-                    <div className="text-xs text-right mt-1 opacity-60">
-                      {msg.sender === 'owner' ? 'You' : 'Client'}
-                      {msg.createdAt && (
-                        <span className="ml-2">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      )}
-                      {!msg.read && msg.sender !== 'owner' && <span className="ml-2 text-marriageRed">● Unread</span>}
+              <>
+                {chatState.messages.map((msg, idx) => (
+                  <div key={idx} className={`mb-3 flex ${msg.sender === 'owner' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
+                    <div className={`relative max-w-[75%] px-4 py-2 rounded-2xl shadow-lg ${msg.sender === 'owner' ? 'bg-marriageHotPink text-white rounded-br-none mr-2' : 'bg-white text-marriageHotPink border border-marriagePink rounded-bl-none ml-2'}`}
+                      style={{ transition: 'box-shadow 0.2s' }}
+                    >
+                      <div className="whitespace-pre-line break-words text-base">{msg.text}</div>
+                      <div className="text-xs text-right mt-1 opacity-60">
+                        {msg.sender === 'owner' ? 'You' : 'Client'}
+                        {msg.createdAt && (
+                          <span className="ml-2">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        )}
+                        {!msg.read && msg.sender !== 'owner' && <span className="ml-2 text-marriageRed">● Unread</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+                <div ref={messagesEndRef} />
+              </>
             )
           ) : (
             <div className="text-gray-400 flex-1 flex items-center justify-center">Select a chat to view messages</div>

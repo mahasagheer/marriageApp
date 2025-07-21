@@ -7,6 +7,8 @@ import { FiUser, FiMessageSquare, FiList, FiCheckCircle, FiXCircle, FiClock, FiU
 import OwnerChat from './OwnerChat';
 import CreateCustomDealModal from '../Components/CreateCustomDealModal';
 import OwnerSidebar from '../Components/OwnerSidebar';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const OwnerDashboard = () => {
   const dispatch = useDispatch();
@@ -83,7 +85,13 @@ const OwnerDashboard = () => {
     setPaymentError("");
     dispatch(verifyPayment({ paymentId: payment._id, status }))
       .unwrap()
-      .then((data) => setPayment(data))
+      .then(() => {
+        // Immediately fetch the updated payment details
+        dispatch(fetchPaymentByBookingId(selectedBooking._id))
+          .unwrap()
+          .then((data) => setPayment(data))
+          .catch((err) => setPaymentError(err));
+      })
       .catch((err) => setPaymentError(err))
       .finally(() => setPaymentLoading(false));
   };
@@ -120,27 +128,39 @@ const OwnerDashboard = () => {
   // Determine hallId for custom deal (use first booking's hallId if available)
   const hallId = bookings.length > 0 ? bookings[0].hallId?._id || bookings[0].hallId : null;
 
+  // Show toast for booking status update
+  useEffect(() => {
+    if (Object.values(actionStatus).includes('error')) {
+      toast.error('Error updating booking status!');
+    } else if (Object.values(actionStatus).includes('loading')) {
+      // Optionally show a loading toast
+    } else if (Object.values(actionStatus).includes('success')) {
+      toast.success('Booking status updated successfully!');
+    }
+  }, [actionStatus]);
+
   return (
-    <div className="flex min-h-screen">
-      <OwnerSidebar />
-      <div className="flex-1 ml-[15%] p-4 md:p-8 bg-gray-50 min-h-screen">
+    <>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
+      <div className="min-h-screen bg-gray-50">
+        <div className="px-2 sm:px-4 py-2 sm:py-4 transition-all duration-300 w-full">
       {/* Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-marriagePink flex items-center justify-center text-marriageHotPink text-3xl font-bold shadow">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 sm:mb-8">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-marriagePink flex items-center justify-center text-marriageHotPink text-xl sm:text-2xl md:text-3xl font-bold shadow">
             <FiUser />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-marriageHotPink mb-1">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-marriageHotPink mb-1">
               Welcome, {userName}!
             </h1>
-            <div className="text-gray-500 text-sm">Manage your hall bookings and chat with clients.</div>
+                <div className="text-gray-500 text-xs sm:text-sm">Manage your hall bookings and chat with clients.</div>
           </div>
         </div>
           {/* Create Custom Deal Button */}
-          <div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center w-full sm:w-auto">
             <button
-              className="mb-4 px-5 mr-5 py-2 rounded-lg bg-marriageHotPink text-white font-bold shadow hover:bg-marriageRed transition text-lg"
+                className="px-4 py-2 rounded-lg bg-marriageHotPink text-white font-bold shadow hover:bg-marriageRed transition text-sm sm:text-base md:text-lg w-full sm:w-auto"
               onClick={() => setShowCustomDealModal(true)}
               disabled={!hallId}
               title={!hallId ? 'No hall available for custom deal' : ''}
@@ -150,9 +170,8 @@ const OwnerDashboard = () => {
             {showCustomDealModal && (
               <CreateCustomDealModal hallId={hallId} onClose={() => setShowCustomDealModal(false)} />
             )}
-
         <button
-          className="relative px-5 py-2 rounded-lg bg-marriageHotPink text-white font-bold shadow hover:bg-marriageRed transition text-lg"
+                className="relative px-4 py-2 rounded-lg bg-marriageHotPink text-white font-bold shadow hover:bg-marriageRed transition text-sm sm:text-base md:text-lg w-full sm:w-auto"
           onClick={() => setShowChat(true)}
         >
           <FiMessageSquare className="inline-block mr-2" />
@@ -166,32 +185,31 @@ const OwnerDashboard = () => {
           </div>
       </div>
       {/* Booking Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center animate-fadeInUp">
-          <FiList className="text-marriageHotPink text-3xl mb-2" />
-          <div className="text-2xl font-bold">{bookingStats.total}</div>
-          <div className="text-gray-500">Total Bookings</div>
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="bg-white rounded-2xl shadow p-4 sm:p-6 flex flex-col items-center animate-fadeInUp">
+              <FiList className="text-marriageHotPink text-2xl sm:text-3xl mb-2" />
+              <div className="text-lg sm:text-2xl font-bold">{bookingStats.total}</div>
+              <div className="text-gray-500 text-xs sm:text-base">Bookings</div>
         </div>
-        <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center animate-fadeInUp">
-          <FiClock className="text-yellow-500 text-3xl mb-2" />
-          <div className="text-2xl font-bold">{bookingStats.pending}</div>
-          <div className="text-gray-500">Pending</div>
+            <div className="bg-white rounded-2xl shadow p-4 sm:p-6 flex flex-col items-center animate-fadeInUp">
+              <FiClock className="text-yellow-500 text-2xl sm:text-3xl mb-2" />
+              <div className="text-lg sm:text-2xl font-bold">{bookingStats.pending}</div>
+              <div className="text-gray-500 text-xs sm:text-base">Pending</div>
         </div>
-        <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center animate-fadeInUp">
-          <FiCheckCircle className="text-green-500 text-3xl mb-2" />
-          <div className="text-2xl font-bold">{bookingStats.approved}</div>
-          <div className="text-gray-500">Approved</div>
+            <div className="bg-white rounded-2xl shadow p-4 sm:p-6 flex flex-col items-center animate-fadeInUp">
+              <FiCheckCircle className="text-green-500 text-2xl sm:text-3xl mb-2" />
+              <div className="text-lg sm:text-2xl font-bold">{bookingStats.approved}</div>
+              <div className="text-gray-500 text-xs sm:text-base">Approved</div>
         </div>
-        <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center animate-fadeInUp">
-          <FiXCircle className="text-red-500 text-3xl mb-2" />
-          <div className="text-2xl font-bold">{bookingStats.rejected}</div>
-          <div className="text-gray-500">Rejected</div>
+            <div className="bg-white rounded-2xl shadow p-4 sm:p-6 flex flex-col items-center animate-fadeInUp">
+              <FiXCircle className="text-red-500 text-2xl sm:text-3xl mb-2" />
+              <div className="text-lg sm:text-2xl font-bold">{bookingStats.rejected}</div>
+              <div className="text-gray-500 text-xs sm:text-base">Rejected</div>
         </div>
       </div>
-
       {/* Bookings Table/Card */}
-      <div className="bg-white rounded-3xl shadow-lg p-6 animate-fadeInUp">
-        <h2 className="text-xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiUsers /> Bookings</h2>
+          <div className="bg-white rounded-3xl shadow-lg p-2 sm:p-4 md:p-6 animate-fadeInUp overflow-x-auto">
+            <h2 className="text-base sm:text-lg md:text-xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiUsers /> Bookings</h2>
         {loading ? (
           <div className="text-gray-400">Loading...</div>
         ) : error ? (
@@ -200,16 +218,16 @@ const OwnerDashboard = () => {
           <div className="text-gray-400">No bookings found.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white rounded-xl shadow">
+                <table className="min-w-full bg-white rounded-xl shadow text-xs sm:text-sm md:text-base">
               <thead>
                 <tr className="bg-marriagePink/20">
-                  <th className="py-2 px-4">Hall</th>
-                  <th className="py-2 px-4">Date</th>
-                  <th className="py-2 px-4">Time</th>
-                  <th className="py-2 px-4">Guest</th>
-                  <th className="py-2 px-4">Email</th>
-                  <th className="py-2 px-4">Status</th>
-                  <th className="py-2 px-4">Actions</th>
+                      <th className="py-2 px-2 sm:px-4">Hall</th>
+                      <th className="py-2 px-2 sm:px-4">Date</th>
+                      <th className="py-2 px-2 sm:px-4">Time</th>
+                      <th className="py-2 px-2 sm:px-4">Guest</th>
+                      <th className="py-2 px-2 sm:px-4">Email</th>
+                      <th className="py-2 px-2 sm:px-4">Status</th>
+                      <th className="py-2 px-2 sm:px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -224,19 +242,21 @@ const OwnerDashboard = () => {
                       onClick={() => handleBookingRowClick(b)}
                       style={{ boxShadow: '0 1px 4px 0 rgba(244,114,182,0.04)' }}
                     >
-                      <td className="py-2 px-4 font-semibold flex items-center gap-2">
+                          <td className="py-2 px-2 sm:px-4 font-semibold flex items-center gap-2">
                         {b.hallId?.name || '-'}
                       </td>
-                      <td className="py-2 px-4">{date}</td>
-                      <td className="py-2 px-4">{time}</td>
-                      <td className="py-2 px-4 flex items-center gap-2">
+                          <td className="py-2 px-2 sm:px-4">{date}</td>
+                          <td className="py-2 px-2 sm:px-4">{time}</td>
+                          <td className="py-2 px-2 sm:px-4 flex items-center gap-2">
                         {b.guestName || '-'}
                       </td>
-                      <td className="py-2 px-4">{b.guestEmail || '-'}</td>
-                      <td className="py-2 px-4 font-bold capitalize">
+                          <td className="py-2 px-2 sm:px-4 max-w-[7rem] truncate" title={b.guestEmail || '-'}>
+                            {b.guestEmail || '-'}
+                          </td>
+                          <td className="py-2 px-2 sm:px-4 font-bold capitalize">
                         <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${b.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : b.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{b.status}</span>
                       </td>
-                      <td className="py-2 px-4">
+                          <td className="py-2 px-2 sm:px-4">
                         <div className="flex gap-2 items-center">
                           {b.status === 'pending' && (
                             <>
@@ -277,12 +297,11 @@ const OwnerDashboard = () => {
           </div>
         )}
       </div>
-      {/* Owner Chat Modal */}
+          {/* Owner Chat Modal and Booking Detail Drawer remain unchanged for responsiveness */}
       {showChat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 animate-fadeIn">
-          {/* Close icon outside the modal */}
           <button
-            className="absolute top-[3%] right-[18%] rounded-full text-marriageRed text-4xl font-bold hover:text-marriageHotPink z-50 flex items-center justify-center"
+                className="absolute top-4 right-4 rounded-full text-marriageRed text-4xl font-bold hover:text-marriageHotPink z-50 flex items-center justify-center"
             onClick={() => setShowChat(false)}
             aria-label="Close chat"
             style={{ width: 48, height: 48 }}
@@ -296,7 +315,6 @@ const OwnerDashboard = () => {
           </div>
         </div>
       )}
-      {/* Booking Detail Drawer */}
       {showDrawer && selectedBooking && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="flex-1 bg-black bg-opacity-40" onClick={() => { setShowDrawer(false); dispatch(clearSelectedBooking()); }} />
@@ -308,6 +326,7 @@ const OwnerDashboard = () => {
             >
               <FiX />
             </button>
+                {/* Drawer content remains unchanged for responsiveness */}
               <div className="flex flex-1 flex-col gap-0 p-0 overflow-y-auto">
                 {/* Modern Tabs Navigation */}
                 <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-marriagePink/20 flex items-center px-8 pt-8 pb-2 gap-2 rounded-t-2xl shadow-sm">
@@ -321,7 +340,7 @@ const OwnerDashboard = () => {
                     className={`flex-1 flex items-center gap-2 justify-center px-4 py-2 rounded-t-lg font-bold transition-all duration-150 ${activeTab === 'user' ? 'bg-marriageHotPink text-white shadow' : 'bg-white text-marriageHotPink hover:bg-marriagePink/10'}`}
                     onClick={() => setActiveTab('user')}
                   >
-                    <FiUser className="text-lg" /> User Details
+                      <FiUser className="text-lg" /> Details
                   </button>
                   <button
                     className={`flex-1 flex items-center gap-2 justify-center px-4 py-2 rounded-t-lg font-bold transition-all duration-150 ${activeTab === 'decoration' ? 'bg-marriageHotPink text-white shadow' : 'bg-white text-marriageHotPink hover:bg-marriagePink/10'}`}
@@ -361,25 +380,29 @@ const OwnerDashboard = () => {
                             <div className="text-gray-400">Payment not made yet.</div>
                           )
                         ) : paymentError && paymentError.includes('Payment not found') ? (
-                          user?.role === 'manager' ? (
-                            <div className="mb-2">
-                              <label className="block text-marriageHotPink font-semibold mb-1">Payment Number (to share with user):</label>
-                              <input
-                                type="text"
-                                className="w-full border rounded px-3 py-2 mb-2"
-                                value={paymentNumberInput}
-                                onChange={e => setPaymentNumberInput(e.target.value)}
-                                placeholder="e.g. Bank Account or Mobile Wallet Number"
-                                disabled={paymentLoading || paymentSharing}
-                              />
-                              <button
-                                className="bg-marriageHotPink text-white px-4 py-2 rounded font-bold hover:bg-marriageRed transition"
-                                onClick={handleSharePaymentNumber}
-                                disabled={paymentLoading || paymentSharing || !paymentNumberInput}
-                              >
-                                {paymentSharing ? 'Sharing...' : 'Share Payment Number'}
-                              </button>
-                            </div>
+                          (user?.role === 'manager' || user?.role === 'admin') ? (
+                            selectedBooking && selectedBooking.status === 'rejected' ? (
+                              <div className="text-gray-400">Cannot send payment request for a rejected booking.</div>
+                            ) : (
+                              <div className="mb-2">
+                                <label className="block text-marriageHotPink font-semibold mb-1">Payment Number (to share with user):</label>
+                                <input
+                                  type="text"
+                                  className="w-full border rounded px-3 py-2 mb-2"
+                                  value={paymentNumberInput}
+                                  onChange={e => setPaymentNumberInput(e.target.value)}
+                                  placeholder="e.g. Bank Account or Mobile Wallet Number"
+                                  disabled={paymentLoading || paymentSharing}
+                                />
+                                <button
+                                  className="bg-marriageHotPink text-white px-4 py-2 rounded font-bold hover:bg-marriageRed transition"
+                                  onClick={handleSharePaymentNumber}
+                                  disabled={paymentLoading || paymentSharing || !paymentNumberInput}
+                                >
+                                  {paymentSharing ? 'Sharing...' : 'Share Payment Number'}
+                                </button>
+                              </div>
+                            )
                           ) : (
                             <div className="text-gray-400">No payment info available.</div>
                           )
@@ -408,7 +431,7 @@ const OwnerDashboard = () => {
                                 </div>
                               )}
                               {/* Manager actions */}
-                              {user?.role === 'manager' && payment?.status === 'awaiting_verification' && payment?.proofImage && (
+                              {(user?.role === 'manager' || user?.role === 'admin') && payment?.status === 'awaiting_verification' && payment?.proofImage && selectedBooking && selectedBooking.status !== 'rejected' && (
                                 <div className="flex gap-4 mt-2">
                                   <button
                                     className="px-4 py-2 bg-green-500 text-white rounded font-bold shadow hover:bg-green-700 transition"
@@ -425,6 +448,9 @@ const OwnerDashboard = () => {
                                     Reject Payment
                                   </button>
                                 </div>
+                              )}
+                              {(user?.role === 'manager' || user?.role === 'admin') && payment?.status === 'awaiting_verification' && payment?.proofImage && selectedBooking && selectedBooking.status === 'rejected' && (
+                                <div className="text-gray-400 mt-2">Cannot verify or reject payment for a rejected booking.</div>
                               )}
                             </>
                           )
@@ -501,9 +527,13 @@ const OwnerDashboard = () => {
                           <>
                             <div className="font-semibold text-marriageHotPink mb-2">Decoration IDs</div>
                             <ul className="list-disc pl-5 text-gray-700 text-base mb-1">
-                              {selectedBooking.decorationIds.map((id, idx) => (
-                                <li key={idx}>{typeof id === 'object' && id.name ? id.name : id}</li>
-                              ))}
+                                {selectedBooking.decorationIds.map((id, idx) => {
+                                  let name = typeof id === 'object' && id.name ? id.name : id;
+                                  let addOns = (typeof id === 'object' && id.addOns && Array.isArray(id.addOns) && id.addOns.length > 0)
+                                    ? ` (${id.addOns.map(a => a.name || a).join(', ')})`
+                                    : '';
+                                  return <li key={idx}>{name}{addOns}</li>;
+                                })}
                             </ul>
                           </>
                         ) : (
@@ -519,6 +549,7 @@ const OwnerDashboard = () => {
       )}
       </div>
   </div>
+    </>
 );
 };
 

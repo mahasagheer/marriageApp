@@ -24,6 +24,7 @@ const authRoutes = require('./routes/auth');
 const hallRoutes = require('./routes/halls');
 const bookingRoutes = require('./routes/booking');
 const userProfileRoutes= require('./routes/userProfile')
+const menuRoutes = require('./routes/menus');
 
 app.use('/api/auth', authRoutes);
 // Register /api/users endpoint directly
@@ -34,6 +35,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/booking', bookingRoutes);
 app.use("/api/userProfile", userProfileRoutes)
 app.use('/api/agency', agencyRoutes);
+app.use('/api/menus', menuRoutes);
 // Basic route
 app.get('/', (req, res) => {
   res.send('Server is running');

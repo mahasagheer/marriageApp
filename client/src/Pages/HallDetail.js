@@ -11,6 +11,8 @@ import EditDecorationModal from "../Components/EditDecorationModal";
 import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPlus, FiEdit2, FiTrash2, FiX, FiPhone } from "react-icons/fi";
 import OwnerLayout from "../Components/OwnerLayout";
 import { Button } from "../Components/Layout/Button";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const HallDetail = () => {
   const { id } = useParams();
@@ -42,22 +44,36 @@ const HallDetail = () => {
       setAddMenuModalOpen(false);
       setEditMenuModalOpen(false);
       setSelectedMenu(null);
+      toast.success(selectedMenu ? 'Menu updated successfully!' : 'Menu added successfully!');
       setTimeout(() => {
         dispatch(resetMenuSuccess());
       }, 2000);
     }
-  }, [menuSuccess, dispatch]);
+  }, [menuSuccess, dispatch, selectedMenu]);
 
   useEffect(() => {
     if (decorationSuccess) {
       setAddDecorationModalOpen(false);
       setEditDecorationModalOpen(false);
       setSelectedDecoration(null);
+      toast.success(selectedDecoration ? 'Decoration updated successfully!' : 'Decoration added successfully!');
       setTimeout(() => {
         dispatch(resetDecorationSuccess());
       }, 2000);
     }
-  }, [decorationSuccess, dispatch]);
+  }, [decorationSuccess, dispatch, selectedDecoration]);
+
+  useEffect(() => {
+    if (menuError) {
+      toast.error(menuError);
+    }
+  }, [menuError]);
+
+  useEffect(() => {
+    if (decorationError) {
+      toast.error(decorationError);
+    }
+  }, [decorationError]);
 
   const handleAddMenu = (menuData) => {
     dispatch(createMenu(menuData));
@@ -101,7 +117,8 @@ const HallDetail = () => {
 
   return (
     <OwnerLayout>
-      <div className="ml-[15%] p-6">
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
+      <div className="p-6">
         {loading ? (
           <div className="text-center text-gray-400">Loading...</div>
         ) : error ? (
@@ -205,14 +222,6 @@ const HallDetail = () => {
                   onClick={() => setAddMenuModalOpen(true)}
                 />
               </div>
-              {menuSuccess && (
-                <div className="mb-4 text-green-600 text-center font-semibold">
-                  {selectedMenu ? 'Menu updated successfully!' : 'Menu added successfully!'}
-                </div>
-              )}
-              {menuError && (
-                <div className="mb-4 text-red-600 text-center font-semibold">{menuError}</div>
-              )}
               {menuLoading ? (
                 <div className="text-center text-gray-400">Loading menus...</div>
               ) : menus.length === 0 ? (
@@ -248,7 +257,7 @@ const HallDetail = () => {
                         </div>
                       )}
                       <div className="flex gap-2 mt-4">
-                        <Button btnText={<FiEdit2 />} btnColor="marriagePink" padding="px-3 py-2" onClick={() => handleEditMenu(menu)} />
+                        <Button btnText={<FiEdit2 />}  padding="px-3 py-2" onClick={() => handleEditMenu(menu)} />
                         <Button btnText={<FiTrash2 />} btnColor="marriageRed" padding="px-3 py-2" onClick={() => handleDeleteMenu(menu._id)} />
                       </div>
                     </div>
@@ -270,14 +279,6 @@ const HallDetail = () => {
                   onClick={() => setAddDecorationModalOpen(true)}
                 />
               </div>
-              {decorationSuccess && (
-                <div className="mb-4 text-green-600 text-center font-semibold">
-                  {selectedDecoration ? 'Decoration updated successfully!' : 'Decoration added successfully!'}
-                </div>
-              )}
-              {decorationError && (
-                <div className="mb-4 text-red-600 text-center font-semibold">{decorationError}</div>
-              )}
               {decorationLoading ? (
                 <div className="text-center text-gray-400">Loading decorations...</div>
               ) : decorations.length === 0 ? (
@@ -305,7 +306,7 @@ const HallDetail = () => {
                         </div>
                       )}
                       <div className="flex gap-2 mt-4">
-                        <Button btnText={<FiEdit2 />} btnColor="marriagePink" padding="px-3 py-2" onClick={() => handleEditDecoration(decoration)} />
+                        <Button btnText={<FiEdit2 />}  padding="px-3 py-2" onClick={() => handleEditDecoration(decoration)} />
                         <Button btnText={<FiTrash2 />} btnColor="marriageRed" padding="px-3 py-2" onClick={() => handleDeleteDecoration(decoration._id)} />
                       </div>
                     </div>

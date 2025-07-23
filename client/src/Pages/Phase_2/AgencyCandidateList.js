@@ -39,10 +39,10 @@ function AgencyCandidateList() {
 
     if (loading) return <div className="p-4 text-gray-700">Loading...</div>;
     if (error) return <div className="p-4 text-red-500">{error}</div>;
-    //   if (candidates?.length>0) return <div className="ml-[14rem] p-4 text-gray-600">No users have messaged you yet.</div>;
+    //   if (candidates?.length>0) return <div className="ml-[3rem] p-4 text-gray-600">No users have messaged you yet.</div>;
 
     return (
-        <div className="p-6 ml-[14rem] max-w-[90vw] mx-auto">
+        <div className="p-6 ml-[3rem] max-w-[90vw] mx-auto">
             <h2 className="text-2xl font-semibold mb-4">Matchmaking Requests</h2>
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white border border-gray-200 shadow-sm overflow-hidden rounded-xl">

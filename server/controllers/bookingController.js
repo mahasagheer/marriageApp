@@ -386,14 +386,21 @@ exports.sharePaymentNumber = async (req, res) => {
     const { bookingId } = req.params;
     const { paymentNumber } = req.body;
     if (!paymentNumber) return res.status(400).json({ message: 'Payment number required' });
-    // Only manager can share payment number for assigned hall
+    // Only manager (assigned) or admin can share payment number for assigned hall
     const booking = await Booking.findById(bookingId).populate('hallId');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     const hall = booking.hallId;
+    // Prevent sharing payment for rejected bookings
+    if (booking.status === 'rejected') {
+      return res.status(403).json({ message: 'Cannot send payment request for a rejected booking.' });
+    }
     if (
-      req.user.role !== 'manager' ||
+      req.user.role === 'manager' &&
       !hall.managers.some(m => m.manager.toString() === req.user._id.toString())
     ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
     // Ensure booking has a customDealToken
@@ -427,9 +434,9 @@ exports.sharePaymentNumber = async (req, res) => {
         text: `Dear ${booking.guestName || 'Guest'},\n\nPlease send your payment to: ${paymentNumber}\n\nYou can view your booking details and upload your payment screenshot here:\n${bookingLink}\n\nThank you!`,
       });
     }
-    res.json({ message: 'Payment number shared', payment });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json(payment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -474,7 +481,7 @@ exports.uploadPaymentProof = async (req, res) => {
   }
 };
 
-// Manager verifies or rejects payment
+// Manager or admin verifies or rejects payment
 exports.verifyPayment = async (req, res) => {
   try {
     const { paymentId } = req.params;
@@ -485,10 +492,18 @@ exports.verifyPayment = async (req, res) => {
     const payment = await Payment.findById(paymentId).populate({ path: 'bookingId', populate: { path: 'hallId' } });
     if (!payment) return res.status(404).json({ message: 'Payment not found' });
     const hall = payment.bookingId.hallId;
+    // Prevent verifying/rejecting payment for rejected bookings
+    if (payment.bookingId.status === 'rejected') {
+      return res.status(403).json({ message: 'Cannot verify or reject payment for a rejected booking.' });
+    }
+    // Allow admin for any hall, manager only if assigned
     if (
-      req.user.role !== 'manager' ||
+      req.user.role === 'manager' &&
       !hall.managers.some(m => m.manager.toString() === req.user._id.toString())
     ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
     payment.status = status;
@@ -497,28 +512,16 @@ exports.verifyPayment = async (req, res) => {
     const guestEmail = payment.bookingId.guestEmail;
     const guestName = payment.bookingId.guestName || 'Guest';
     if (guestEmail) {
-      let subject, text;
-      if (status === 'verified') {
-        subject = `Your payment for booking at ${hall.name} has been verified!`;
-        text = `Dear ${guestName},\n\nYour payment for your booking at ${hall.name} has been verified. Thank you for completing your payment!\n\nWe look forward to hosting your event.\n\nBest regards,\n${hall.name} Team`;
-      } else if (status === 'rejected') {
-        subject = `Your payment for booking at ${hall.name} was rejected`;
-        text = `Dear ${guestName},\n\nUnfortunately, your payment proof for your booking at ${hall.name} was rejected. Please contact us or re-upload your payment proof.\n\nIf you have questions, reply to this email.\n\nBest regards,\n${hall.name} Team`;
-      }
-      try {
         await transporter.sendMail({
           from: process.env.EMAIL_USER,
           to: guestEmail,
-          subject,
-          text,
-        });
-      } catch (emailError) {
-        console.error('Failed to send payment status email:', emailError);
-      }
+        subject: `Payment ${status === 'verified' ? 'Verified' : 'Rejected'} for Your Booking`,
+        text: `Dear ${guestName},\n\nYour payment for the booking at ${hall.name} has been ${status === 'verified' ? 'verified' : 'rejected'}.\n\nThank you!`,
+      });
     }
-    res.json({ message: `Payment ${status}`, payment });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json(payment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

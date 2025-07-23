@@ -96,7 +96,7 @@ const AddMenuModal = ({ open, onClose, onSubmit, hallId }) => {
 
           {/* Menu Items */}
           <div>
-            <label className="block mb-2 font-semibold text-marriagePink">Menu Items</label>
+            <label className="block mb-2 font-semibold text-marriageHotPink">Menu Items</label>
             {form.items.map((item, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <input
@@ -128,7 +128,7 @@ const AddMenuModal = ({ open, onClose, onSubmit, hallId }) => {
 
           {/* Add-ons */}
           <div>
-            <label className="block mb-2 font-semibold text-marriagePink">Add-ons (Optional)</label>
+            <label className="block mb-2 font-semibold text-marriageHotPink">Add-ons (Optional)</label>
             {form.addOns.map((addon, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <input

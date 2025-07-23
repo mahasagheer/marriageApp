@@ -1,37 +1,41 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import {  FiUsers, FiCalendar, FiFileText, FiBarChart2, FiSettings, FiMenu, FiUser } from "react-icons/fi";
-import { FaBuilding,  } from "react-icons/fa";
+import {  FiUsers, FiCalendar, FiFileText, FiBarChart2, FiSettings, FiMenu, FiUser, FiX } from "react-icons/fi";
+import {FaUserPlus, FaBuilding,  } from "react-icons/fa";
 
-
-const OwnerSidebar = () => {
+const OwnerSidebar = ({ onClose }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [open, setOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
   // Role-based nav links
   let navLinks = [];
   if (user?.role === 'hall-owner' || user?.role === 'manager') {
     navLinks = [
-      { to: `/${user?.role}`, label: 'Dashboard', icon: <FiBarChart2 /> },
-      { to: `/${user?.role}/halls`, label: 'Halls', icon: <FiFileText /> },
-      { to: `/${user?.role}/my-bookings`, label: 'My Bookings', icon: <FiCalendar /> },
+      { to: `/${user?.id}`, label: 'Dashboard', icon: <FiBarChart2 /> },
+      { to: `/${user?.id}/halls`, label: 'Halls', icon: <FiFileText /> },
+      { to: `/${user?.id}/my-bookings`, label: 'My Bookings', icon: <FiCalendar /> },
     ];
   } else if (user?.role === 'admin') {
     navLinks = [
-      { to: '/admin', label: 'Admin Dashboard', icon: <FiBarChart2 /> },
-      { to: '/admin/halls', label: 'All Halls', icon: <FiFileText /> },
-      { to: '/admin/my-bookings', label: 'All Bookings', icon: <FiCalendar /> },
-      { to: '/admin/associate-manager', label: 'Associate Manager', icon: <FiUsers /> },
+      { to:  `/${user?.id}`, label: 'Admin Dashboard', icon: <FiBarChart2 /> },
+      { to: `/${user?.id}/halls`, label: 'All Halls', icon: <FiFileText /> },
+      { to: `/${user?.id}/my-bookings`, label: 'All Bookings', icon: <FiCalendar /> },
+      { to: `/${user?.id}/associate-manager`, label: 'Associate Manager', icon: <FiUsers /> },
     ];
-  }else if(user?.role==="agency"){
+  } else if(user?.role ==="user"){
+    navLinks =  [
+      { label: "My Profile", icon: <FiUser />, to: "/user/profile" },
+      { label: "Agencies", icon: <FaBuilding />, to: "/user/agencies" },
+      { label: "Forms", icon: <FaUserPlus />, to: "/user/forms" },
+    ]
+  } else if(user?.role==="agency"){
     navLinks=[
-      { label: "Agency Dashboard", icon: FaBuilding, to: "/agency" },
-      { label: "Agency Profile", icon: FaBuilding, to: "/agency/profile" },
-      { label: "Candidates", icon: FiUser, to: "/agency/users" },
+      { label: "Agency Dashboard", icon: <FaBuilding />, to: "/agency" },
+      { label: "Agency Profile", icon: <FaBuilding />, to: "/agency/profile" },
+      { label: "Candidates", icon: <FaUserPlus />, to: "/agency/users" },
     ]
   }
 
@@ -55,66 +59,69 @@ const OwnerSidebar = () => {
   }, [showProfileDropdown]);
 
   return (
-    <>
-      {/* Mobile Hamburger */}
+    <aside
+      className={`fixed top-0 left-0 h-[98vh] w-[10vw] max-w-full bg-white text-gray-800 rounded-xl m-2 shadow-2xl border border-gray-200 z-40 flex flex-col transition-transform duration-300 md:translate-x-0 ${onClose ? 'translate-x-0' : ''}`}
+      style={{ minWidth: '16rem' }}
+    >
+      {/* Mobile close button */}
+      {onClose && (
       <button
-        className="md:hidden fixed top-4 bottom-8 left-4 z-50 bg-white p-2 rounded shadow-lg border border-gray-200"
-        onClick={() => setOpen(!open)}
-        aria-label="Open sidebar"
-      >
-        <FiMenu className="w-6 h-6 text-gray-700" />
+          className="absolute top-0 right-0 z-50 bg-transparent p-2 rounded-full md:hidden"
+          onClick={onClose}
+          aria-label="Close sidebar"
+        >
+          <FiX className="w-6 h-6 text-gray-700" />
       </button>
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white text-gray-800 rounded-xl m-2 shadow-lg border border-gray-200 z-40 flex flex-col`}
-      >
+      )}
         {/* Top section: logo and nav */}
         <div className="flex-1 flex flex-col">
-          <div className="flex items-center px-6 py-6 border-b border-gray-100">
+        <div className="flex items-center px-6 py-6 ">
             <img
               src="/logo192.png"
               alt="Logo"
-              className="h-8 w-8 object-contain rounded"
+            className="h-10 w-10 object-contain"
             />
-            <span className="ml-3 text-lg font-bold tracking-wide">WedLink</span>
+          <span className="ml-3 text-3xl font-bold tracking-wide text-marriageHotPink">WedLink</span>
           </div>
-          <nav className="flex flex-col gap-1 mt-4">
+        <nav className="flex flex-col gap-2 mt-6">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`flex items-center gap-3 px-6 py-2 rounded-lg font-medium transition hover:bg-gray-100 hover:text-marriageHotPink ${location.pathname === link.to ? "bg-gray-100 text-marriageHotPink" : "text-gray-800"}`}
-                onClick={() => setOpen(false)}
+              className={`flex items-center gap-4 px-6 py-3 rounded-lg font-medium transition hover:bg-marriagePink/10 hover:text-marriageHotPink focus:bg-marriagePink/20 focus:text-marriageHotPink ${location.pathname === link.to ? "bg-marriagePink/10 text-marriageHotPink" : "text-gray-800"}`}
+              onClick={onClose}
+              tabIndex={0}
               >
-                {link.icon}
-                <span className="flex-1">{link.label}</span>
+              <span className="text-xl">{link.icon}</span>
+              <span className="flex-1 text-base">{link.label}</span>
               </Link>
             ))}
           </nav>
         </div>
         {/* Bottom section: Profile card */}
         <div className="px-4 pb-4 pt-2 relative">
-          <div className="flex items-center bg-gray-50 rounded-xl p-3 gap-3 border border-gray-200">
-            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+        <div className="flex items-center bg-gray-50 rounded-xl p-3 gap-3 border border-gray-200 shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
               {user?.avatar ? (
                 <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-lg font-bold text-gray-700">{user?.name ? user.name[0].toUpperCase() : "👤"}</span>
+              <span className="text-xl font-bold text-gray-700">{user?.name ? user.name[0].toUpperCase() : "👤"}</span>
               )}
             </div>
             <div className="flex-1">
               <button
                 id="profile-dropdown-btn"
-                className="font-semibold text-gray-800 text-sm leading-tight text-left hover:underline focus:outline-none"
+              className="font-semibold text-gray-800 text-base leading-tight text-left hover:underline focus:outline-none"
                 onClick={() => setShowProfileDropdown((v) => !v)}
+              aria-label="Open profile dropdown"
               >
                 {user?.name || "Dianne Robertson"}
                 <div className="text-xs text-marriageHotPink">View Profile</div>
               </button>
             </div>
-            <button className="text-gray-400 hover:text-marriageHotPink p-1 rounded-full focus:outline-none">
-              <FiSettings size={18} />
-            </button>
+         {/**  <button className="text-gray-400 hover:text-marriageHotPink p-1 rounded-full focus:outline-none" aria-label="Settings">
+            <FiSettings size={20} />
+          </button>*/}
           </div>
           {/* Profile Dropdown */}
           {showProfileDropdown && (
@@ -139,22 +146,13 @@ const OwnerSidebar = () => {
                   )}
                 </div>
                 <h2 className="text-lg font-bold text-gray-800 mb-1">{user?.name || "No Name"}</h2>
-                <div className="text-marriageHotPink font-semibold mb-1">{user?.role || "User"}</div>
+                <div className="text-marriageHotPink text-sm mb-1">{user?.email || "User"}</div>
               </div>
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between border-b pb-1">
-                  <span className="text-gray-500 text-sm">Email:</span>
-                  <span className="font-medium text-gray-800 text-sm">{user?.email || "-"}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-1">
-                  <span className="text-gray-500 text-sm">Role:</span>
-                  <span className="font-medium text-gray-800 text-sm capitalize">{user?.role || "user"}</span>
-                </div>
-                {/* Add more user fields here if available */}
-              </div>
+              
               <button
                 onClick={handleLogout}
-                className="mt-2 w-full bg-marriageHotPink text-white py-2 rounded-lg font-semibold shadow hover:bg-marriagePink transition"
+              className="mt-2 w-full bg-marriageHotPink text-white py-2 rounded-lg font-semibold shadow transition"
+              aria-label="Logout"
               >
                 Logout
               </button>
@@ -162,14 +160,6 @@ const OwnerSidebar = () => {
           )}
         </div>
       </aside>
-      {/* Overlay for mobile */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-    </>
   );
 };
 

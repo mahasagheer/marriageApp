@@ -5,6 +5,7 @@ const decorationSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   addOns: [{ name: String, price: Number }],
+  status: { type: String, enum: ['active', 'closed', 'open'], default: 'active' },
 });
 
 module.exports = mongoose.model('Decoration', decorationSchema); 

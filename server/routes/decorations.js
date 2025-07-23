@@ -21,4 +21,6 @@ router.put('/:decorationId', auth, decorationController.updateDecoration);
 // Delete a specific decoration
 router.delete('/:decorationId', auth, decorationController.deleteDecoration);
 
+router.patch('/:decorationId/status', auth, decorationController.changeDecorationStatus);
+
 module.exports = router; 

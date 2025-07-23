@@ -22,6 +22,7 @@ const hallSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  status: { type: String, enum: ['active', 'closed', 'open'], default: 'active' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Hall', hallSchema); 

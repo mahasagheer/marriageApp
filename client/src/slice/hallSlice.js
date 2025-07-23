@@ -60,19 +60,23 @@ export const fetchHalls = createAsyncThunk(
   }
 );
 
-// Async thunk for deleting a hall
-export const deleteHall = createAsyncThunk(
-  'halls/deleteHall',
-  async (id, { rejectWithValue }) => {
+// Async thunk for changing hall status
+export const changeHallStatus = createAsyncThunk(
+  'halls/changeHallStatus',
+  async ({ id, status }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/halls/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch(`${apiUrl}/halls/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
       });
       const data = await response.json();
-      if (!response.ok) return rejectWithValue(data.message || 'Failed to delete hall');
-      return { id };
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to change status');
+      return data.hall;
     } catch (error) {
       return rejectWithValue(error.message || 'Network error');
     }
@@ -433,8 +437,14 @@ const hallSlice = createSlice({
         state.loading = false;
         state.error = action.payload || 'Failed to fetch halls';
       })
-      .addCase(deleteHall.fulfilled, (state, action) => {
-        state.halls = state.halls.filter(hall => hall._id !== action.payload.id);
+      .addCase(changeHallStatus.fulfilled, (state, action) => {
+        state.halls = state.halls.map(hall => hall._id === action.payload._id ? action.payload : hall);
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(changeHallStatus.rejected, (state, action) => {
+        state.error = action.payload || 'Failed to change hall status';
+        state.success = false;
       })
       .addCase(updateHall.pending, (state) => {
         state.loading = true;

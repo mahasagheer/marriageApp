@@ -88,6 +88,29 @@ export const deleteDecoration = createAsyncThunk(
   }
 );
 
+// Async thunk for changing decoration status
+export const changeDecorationStatus = createAsyncThunk(
+  'decorations/changeDecorationStatus',
+  async ({ decorationId, status }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/decorations/${decorationId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to change decoration status');
+      return data.decoration;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
 const decorationSlice = createSlice({
   name: 'decorations',
   initialState: {
@@ -154,6 +177,15 @@ const decorationSlice = createSlice({
       })
       .addCase(deleteDecoration.fulfilled, (state, action) => {
         state.decorations = state.decorations.filter(decoration => decoration._id !== action.payload.decorationId);
+      })
+      .addCase(changeDecorationStatus.fulfilled, (state, action) => {
+        state.decorations = state.decorations.map(decoration => decoration._id === action.payload._id ? action.payload : decoration);
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(changeDecorationStatus.rejected, (state, action) => {
+        state.error = action.payload || 'Failed to change decoration status';
+        state.success = false;
       });
   },
 });

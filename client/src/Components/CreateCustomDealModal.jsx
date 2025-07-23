@@ -99,127 +99,146 @@ const CreateCustomDealModal = ({ hallId, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="relative bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg animate-fadeInUp max-h-[90vh]">
-        <button
-          className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-400 hover:text-marriageHotPink text-xl sm:text-2xl focus:outline-none"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <FiX />
-        </button>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-marriageHotPink mb-4 sm:mb-6 text-center">Create Custom Deal</h2>
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Guest Name</label>
-              <input
-                name="guestName"
-                value={form.guestName}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
-                placeholder="Enter guest name"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Guest Email</label>
-              <input
-                name="guestEmail"
-                type="email"
-                value={form.guestEmail}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
-                placeholder="Enter guest email"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Guest Phone</label>
-              <input
-                name="guestPhone"
-                value={form.guestPhone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
-                placeholder="Enter guest phone"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Booking Date</label>
-              <input
-                name="bookingDate"
-                type="date"
-                value={form.bookingDate}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
-              />
-            </div>
-          </div>
-          {/* Menu Items Multi-Select */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Menu Items</label>
-            <Select
-              isMulti
-              name="menuItems"
-              options={menuOptions}
-              value={form.menuItems.map(item => ({ value: item, label: item }))}
-              onChange={handleMenuChange}
-              className="react-select-container"
-              classNamePrefix="react-select"
-              placeholder="Select or type menu items..."
-            />
-          </div>
-          {/* Decoration Items Multi-Select */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Decoration Items</label>
-            <Select
-              isMulti
-              name="decorationItems"
-              options={decorationOptions}
-              value={form.decorationItems.map(item => ({ value: item, label: item }))}
-              onChange={handleDecorationChange}
-              className="react-select-container"
-              classNamePrefix="react-select"
-              placeholder="Select or type decoration items..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Price</label>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-2 sm:px-4">
+    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8 animate-fadeInUp">
+      {/* Close Button */}
+      <button
+        className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-400 hover:text-marriageHotPink text-xl sm:text-2xl focus:outline-none"
+        onClick={onClose}
+        aria-label="Close"
+      >
+        <FiX />
+      </button>
+  
+      {/* Title */}
+      <h2 className="text-xl sm:text-2xl font-extrabold text-marriageHotPink mb-4 sm:mb-6 text-center">
+        Create Custom Deal
+      </h2>
+  
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+        {/* Guest Info */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Guest Name</label>
             <input
-              name="price"
-              type="number"
-              value={form.price}
+              name="guestName"
+              value={form.guestName}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
-              placeholder="Enter price"
+              placeholder="Enter guest name"
             />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Message/Details</label>
-            <textarea
-              name="message"
-              value={form.message}
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Guest Email</label>
+            <input
+              name="guestEmail"
+              type="email"
+              value={form.guestEmail}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition resize-none"
-              placeholder="Add any special details for the guest..."
-              rows={3}
+              required
+              className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
+              placeholder="Enter guest email"
             />
           </div>
-          {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 px-6 py-2 rounded-lg bg-marriageHotPink text-white font-bold shadow hover:bg-marriageRed transition text-lg disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Sending...' : 'Send Custom Deal'}
-          </button>
-        </form>
-      </div>
+        </div>
+  
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Guest Phone</label>
+            <input
+              name="guestPhone"
+              value={form.guestPhone}
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
+              placeholder="Enter guest phone"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Booking Date</label>
+            <input
+              name="bookingDate"
+              type="date"
+              value={form.bookingDate}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
+            />
+          </div>
+        </div>
+  
+        {/* Menu Items */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Menu Items</label>
+          <Select
+            isMulti
+            name="menuItems"
+            options={menuOptions}
+            value={form.menuItems.map(item => ({ value: item, label: item }))}
+            onChange={handleMenuChange}
+            className="react-select-container text-sm"
+            classNamePrefix="react-select"
+            placeholder="Select or type menu items..."
+          />
+        </div>
+  
+        {/* Decoration Items */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Decoration Items</label>
+          <Select
+            isMulti
+            name="decorationItems"
+            options={decorationOptions}
+            value={form.decorationItems.map(item => ({ value: item, label: item }))}
+            onChange={handleDecorationChange}
+            className="react-select-container text-sm"
+            classNamePrefix="react-select"
+            placeholder="Select or type decoration items..."
+          />
+        </div>
+  
+        {/* Price */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Price</label>
+          <input
+            name="price"
+            type="number"
+            value={form.price}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition"
+            placeholder="Enter price"
+          />
+        </div>
+  
+        {/* Message */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Message/Details</label>
+          <textarea
+            name="message"
+            value={form.message}
+            onChange={handleChange}
+            rows={3}
+            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-marriageHotPink focus:ring-2 focus:ring-marriagePink outline-none transition resize-none"
+            placeholder="Add any special details for the guest..."
+          />
+        </div>
+  
+        {/* Error */}
+        {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+  
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full mt-2 px-6 py-2 rounded-lg bg-marriageHotPink text-white font-bold shadow hover:bg-marriageRed transition text-base disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Sending...' : 'Send Custom Deal'}
+        </button>
+      </form>
     </div>
+  </div>
+  
   );
 };
 

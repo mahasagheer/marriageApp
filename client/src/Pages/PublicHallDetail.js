@@ -469,52 +469,48 @@ const PublicHallDetail = () => {
                                 >
                                   <form
                                     className="flex flex-col gap-4"
-                                    onSubmit={async e => {
+                                    onSubmit={async (e) => {
                                       e.preventDefault();
                                       if (formStep < bookingFormQuestions.length - 1) {
                                         setFormStep(formStep + 1);
                                       } else {
-                                        // Submit booking to backend
-                                        const bookingPayload = {
+                                        // Prevent submission if hall or hall._id is missing
+                                        if (!hall || !hall._id) {
+                                          alert('Hall information is not loaded. Please try again.');
+                                          return;
+                                        }
+                                        // Format time to 12-hour with AM/PM
+                                        let formattedTime = formData.time;
+                                        if (formData.time) {
+                                          const [h, m] = formData.time.split(":");
+                                          let hour = parseInt(h, 10);
+                                          const ampm = hour >= 12 ? "PM" : "AM";
+                                          hour = hour % 12 || 12;
+                                          formattedTime = `${hour}:${m} ${ampm}`;
+                                        }
+                                        // Format form data as a readable message
+                                        const details = [
+                                          `Full Name: ${formData.name}`,
+                                          `Email: ${formData.email}`,
+                                          `Phone: ${formData.phone}`,
+                                          `Date: ${formData.date}`,
+                                          `Time: ${formattedTime}`,
+                                          `Menu: ${formData.menu}`,
+                                          formData.notes ? `Notes: ${formData.notes}` : null
+                                        ].filter(Boolean).join('\n');
+                                        const messageText = `📋 Booking Form Details Submitted:\n${details}`;
+                                        const chatMsg = {
                                           hallId: hall._id,
                                           bookingId: bookingId || chatSessionId,
-                                          guestName: formData.name,
-                                          guestEmail: formData.email,
-                                          guestPhone: formData.phone,
-                                          selectedAddOns: selectedMenuAddOns || [],
-                                          decorationIds: selectedDecorationIds,
-                                          bookingDate: formData.date,
-                                          bookingTime: formData.time,
+                                          sender: 'client',
+                                          type: 'bookingDetails',
+                                          text: messageText,
+                                          data: formData,
                                         };
-                                        if (selectedMenuId) {
-                                          bookingPayload.menuId = selectedMenuId;
-                                        }
-                                        let bookingSuccess = false;
-                                        let bookingError = null;
-                                        try {
-                                          const res = await fetch('http://localhost:5000/api/halls/confirm-booking-from-chat', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify(bookingPayload),
-                                          });
-                                          const data = await res.json();
-                                          if (!res.ok) throw new Error(data.message || 'Booking failed');
-                                          bookingSuccess = true;
-                                        } catch (err) {
-                                          bookingError = err.message;
-                                        }
-                                        // Send chat message with booking details as before
                                         if (socket) {
-                                          socket.emit('sendMessage', {
-                                            hallId: hall._id,
-                                            bookingId: bookingId || chatSessionId,
-                                            sender: 'client',
-                                            type: 'bookingDetails',
-                                            text: bookingError
-                                              ? `❌ Booking failed: ${bookingError}`
-                                              : '✅ Booking details submitted! Your booking request has been sent to the hall owner.',
-                                            data: formData,
-                                          });
+                                          socket.emit('sendMessage', chatMsg);
+                                        } else {
+                                          dispatch(addMessage(chatMsg));
                                         }
                                         setShowBookingForm(false);
                                         setFormStep(0);
@@ -777,7 +773,7 @@ const PublicHallDetail = () => {
                 {/* Step 4 Buttons */}
                 {bookingStep === 4 && (
                   <>
-                                                      <div className="flex gap-4">
+                    <div className="flex gap-4">
 
                   
                     <button className="w-full py-3 rounded-xl bg-gray-200 text-marriageHotPink font-bold hover:bg-gray-300 transition shadow" onClick={() => setBookingStep(3)}>Back</button>

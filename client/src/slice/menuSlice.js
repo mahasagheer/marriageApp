@@ -88,6 +88,29 @@ export const deleteMenu = createAsyncThunk(
   }
 );
 
+// Async thunk for changing menu status
+export const changeMenuStatus = createAsyncThunk(
+  'menus/changeMenuStatus',
+  async ({ menuId, status }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/menus/${menuId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      const data = await response.json();
+      if (!response.ok) return rejectWithValue(data.message || 'Failed to change menu status');
+      return data.menu;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
 const menuSlice = createSlice({
   name: 'menus',
   initialState: {
@@ -154,6 +177,15 @@ const menuSlice = createSlice({
       })
       .addCase(deleteMenu.fulfilled, (state, action) => {
         state.menus = state.menus.filter(menu => menu._id !== action.payload.menuId);
+      })
+      .addCase(changeMenuStatus.fulfilled, (state, action) => {
+        state.menus = state.menus.map(menu => menu._id === action.payload._id ? action.payload : menu);
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(changeMenuStatus.rejected, (state, action) => {
+        state.error = action.payload || 'Failed to change menu status';
+        state.success = false;
       });
   },
 });

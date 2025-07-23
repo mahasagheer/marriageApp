@@ -1,12 +1,14 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
-import { fetchHalls, fetchHallCalendarData, addAvailableDate, updateAvailableDate, fetchManagerHalls } from "../slice/hallSlice";
+import { fetchHalls } from "../slice/hallSlice";
+import { fetchBookings, updateBookingStatus } from "../slice/bookingSlice";
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import OwnerLayout from "../Components/OwnerLayout";
-import { Dropdown } from "../Components/Layout/Dropdown";
-import { Button } from "../Components/Layout/Button";
+import { FiX, FiCalendar, FiUser, FiMail, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const locales = {
   'en-US': require('date-fns/locale/en-US'),
@@ -19,90 +21,95 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Custom Event badge component
 const StatusBadge = ({ event }) => {
-  if (event.status) {
-    // Booking event
-    return (
-  <span
-    className={
-      event.status === 'approved'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-400 shadow'
-        : event.status === 'pending'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow'
-        : event.status === 'rejected'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-400 shadow'
-            : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
-        }
-        style={{ pointerEvents: 'none' }}
-      >
-        {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-        {event.raw && event.raw.guestName ? ` - ${event.raw.guestName}` : ''}
-        {event.raw && event.raw.guestEmail ? ` (${event.raw.guestEmail})` : ''}
-      </span>
-    );
-  }
-  // Available/reserved date event
+  const firstName = event.guestName ? event.guestName.split(' ')[0] : '';
+  const baseClass =
+    'inline-flex items-center px-1 py-0 sm:px-3 sm:py-1 rounded-full text-xs font-semibold shadow border-2';
+
+  const statusStyles =
+    event.status === 'approved'
+      ? 'bg-green-100 text-green-700 border-green-400'
+      : event.status === 'pending'
+      ? 'bg-yellow-100 text-yellow-700 border-yellow-400'
+      : event.status === 'rejected'
+      ? 'bg-red-100 text-red-700 border-red-400'
+      : 'bg-amber-100 text-amber-700 border-amber-400';
+
   return (
-    <span
-      className={
-        event.isBooked
-          ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-marriageHotPink text-white border-2 border-marriageHotPink shadow'
-        : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
-    }
-    style={{ pointerEvents: 'none' }}
-  >
-    {event.title}
-  </span>
-);
+    <span className={`${baseClass} ${statusStyles}`} style={{ pointerEvents: 'none' }}>
+      {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+      {firstName && (
+        <span className="hidden sm:inline"> - {firstName}</span>
+      )}
+    </span>
+  );
 };
+
 
 export const MyBookings = () => {
   const dispatch = useDispatch();
-  const { halls, loading, hallCalendarEvents, hallCalendarLoading, hallCalendarError } = useSelector((state) => state.halls);
+  const { halls, loading } = useSelector((state) => state.halls);
+  const { bookings, actionStatus } = useSelector((state) => state.bookings);
   const user = JSON.parse(localStorage.getItem('user'));
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedHall, setSelectedHall] = useState(null);
-  const [reservedStatus, setReservedStatus] = useState('not_reserved');
-  const [saveLoading, setSaveLoading] = useState(false);
-  const [modalError, setModalError] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedBookings, setSelectedBookings] = useState([]);
+  const [drawerDate, setDrawerDate] = useState(null);
 
   useEffect(() => {
     if (user?.role === 'manager') {
-      dispatch(fetchManagerHalls());
+      dispatch(fetchHalls());
     } else {
-    dispatch(fetchHalls());
+      dispatch(fetchHalls());
     }
+    dispatch(fetchBookings());
   }, [dispatch, user?.role]);
 
   useEffect(() => {
-    if (!halls || halls.length === 0) return;
-    halls.forEach((hall) => {
-      dispatch(fetchHallCalendarData(hall._id));
-    });
-  }, [halls, dispatch]);
+    if (Object.values(actionStatus).includes('error')) {
+      toast.error('Error updating booking status!');
+    } else if (Object.values(actionStatus).includes('success')) {
+      toast.success('Booking status updated successfully!');
+    }
+  }, [actionStatus]);
 
-  const handleDateClick = (slotInfo, hall) => {
-    setSelectedDate(slotInfo.start);
-    setSelectedHall(hall);
-    // Check if this date is already reserved in hallCalendarEvents
-    const event = (hallCalendarEvents[hall._id] || []).find(ev =>
-      ev.start.toDateString() === slotInfo.start.toDateString()
-    );
-    setReservedStatus(event && event.isBooked ? 'reserved' : 'not_reserved');
-    setModalOpen(true);
+  const handleEventClick = (event) => {
+    setSelectedBookings([event.raw || event]);
+    setDrawerDate(event.start);
+    setDrawerOpen(true);
   };
 
-  // Custom event style getter for coloring badges
+  const handleDateClick = (slotInfo, hall) => {
+    const date = slotInfo.start;
+    const bookingsForDate = getBookingEventsForHall(hall._id).filter(ev =>
+      ev.start.toDateString() === date.toDateString()
+    );
+    if (bookingsForDate.length > 0) {
+      setSelectedBookings(bookingsForDate.map(ev => ev.raw || ev));
+      setDrawerDate(date);
+      setDrawerOpen(true);
+    }
+  };
+
+  const getBookingEventsForHall = (hallId) => {
+    return bookings
+      .filter(b => b.hallId && (b.hallId._id === hallId || b.hallId === hallId))
+      .map(b => ({
+        ...b,
+        title: b.guestName || 'Booking',
+        start: new Date(b.bookingDate),
+        end: new Date(new Date(b.bookingDate).getTime() + 2 * 60 * 60 * 1000),
+        raw: b,
+      }));
+  };
+
   const eventStyleGetter = (event) => {
     return {
       style: {
-        backgroundColor: event.isBooked ? '#ffffff' : '#ffffff', // marriageHotPink or amber-400
-        color: event.isBooked ? 'white' : '#b45309', // white for reserved, dark amber for available
+        backgroundColor: 'transparent',
+        color: '#b45309',
         borderRadius: '8px',
-        border: event.isBooked ? '2px solid #ffffff' : '2px solid #ffffff',
+        border: '2px solid transparent',
         fontWeight: 'bold',
         fontSize: '0.95rem',
         padding: '2px 8px',
@@ -110,116 +117,149 @@ export const MyBookings = () => {
     };
   };
 
-  // Custom dayPropGetter to color the date box background for reserved dates
-  const dayPropGetter = (date, selected) => {
-    // Check if this date is reserved for the current hall
-    if (!selectedHall) return {};
-    const events = hallCalendarEvents[selectedHall._id] || [];
-    const isReserved = events.some(ev => ev.isBooked && ev.start.toDateString() === date.toDateString());
-    return {};
-  };
-
-  // You may want to refetch after save, but keep the save logic as is for now
-  const handleSave = async () => {
-    if (!selectedHall || !selectedDate) return;
-    setSaveLoading(true);
-    setModalError("");
-    const hallId = selectedHall._id;
-    const dateStr = selectedDate.toISOString();
-    const event = (hallCalendarEvents[hallId] || []).find(ev =>
-      ev.start.toDateString() === selectedDate.toDateString()
-    );
-    try {
-      if (!event) {
-        await dispatch(addAvailableDate({ hallId, date: dateStr, isBooked: reservedStatus === 'reserved' })).unwrap();
-      } else {
-        await dispatch(updateAvailableDate({ dateId: event.id, isBooked: reservedStatus === 'reserved' })).unwrap();
-      }
-      dispatch(fetchHallCalendarData(hallId));
-      setModalOpen(false);
-    } catch (err) {
-      setModalError(err.message || 'Error saving date');
-    } finally {
-      setSaveLoading(false);
-    }
-  };
-
   return (
     <OwnerLayout>
-      <div className="ml-[15%] p-6">
-        <h2 className="text-4xl text-marriageHot font-bold text-gray-800 font-mono mb-8">My Bookings</h2>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
+      <div className="p-2 sm:p-4 md:p-6 md:mt-0 sm:mt-[5%] mt-[15%]">
+        <h2 className="text-3xl sm:text-2xl md:text-3xl text-marriageHotPink font-bold text-gray-800 mb-4 sm:mb-6">My Bookings</h2>
         {loading ? (
-          <div className="text-center text-gray-400">Loading...</div>
+          <div className="text-center text-gray-400 py-8">Loading...</div>
         ) : halls.length === 0 ? (
-          <div className="bg-white rounded-xl shadow p-8 text-center text-gray-400">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6 text-center text-gray-400">
             You have no halls. Add a hall to see bookings.
           </div>
         ) : (
-          <div className="flex flex-col gap-12">
+          <div className="flex flex-col gap-4 sm:gap-6">
             {halls.map((hall) => {
-              const events = hallCalendarEvents[hall._id] || [];
-              console.log('Calendar events for hall', hall.name, events);
+              const events = getBookingEventsForHall(hall._id);
               return (
-              <div key={hall._id} className="bg-white rounded-xl shadow p-6">
-                <h3 className="text-2xl font-semibold mb-4 text-marriageHotPink flex items-center gap-4">
-                  {hall.name} - Bookings Calendar
-                </h3>
-            
-                {hallCalendarLoading[hall._id] ? (
-                  <div className="text-center text-gray-400">Loading calendar...</div>
-                ) : (
-                  <Calendar
-                    localizer={localizer}
-                      events={events}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: 400 }}
-                    selectable
-                    onSelectSlot={(slotInfo) => handleDateClick(slotInfo, hall)}
-                    eventPropGetter={eventStyleGetter}
-                    dayPropGetter={(date) => dayPropGetter(date, hall)}
-                    components={{ event: StatusBadge }}
-                  />
-                )}
-              </div>
+                <div key={hall._id} className="bg-white rounded-lg shadow p-3 sm:p-4">
+                  <h3 className="text-xl sm:text-3xl font-semibold mb-2 sm:mb-3 text-marriageHotPink flex items-center gap-2">
+                    {hall.name} - Bookings Calendar
+                  </h3>
+                  <div className="w-full overflow-x-auto">
+                    <div className="min-w-[300px] sm:min-w-0">
+                      <Calendar
+                        localizer={localizer}
+                        events={events}
+                        startAccessor="start"
+                        endAccessor="end"
+                        onSelectEvent={handleEventClick}
+                        selectable
+                        onSelectSlot={(slotInfo) => handleDateClick(slotInfo, hall)}
+                        eventPropGetter={eventStyleGetter}
+                        components={{ event: StatusBadge }}
+                      />
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
-        {/* Modal for date selection */}
-        {modalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="absolute top-4 right-4 text-marriageRed text-2xl font-bold hover:text-marriageHotPink"
-              >
-                &times;
-              </button>
-              <h2 className="text-2xl font-bold mb-6 text-marriageHotPink">{selectedHall?.name} - {selectedDate && selectedDate.toLocaleDateString()}</h2>
-              <div className="mb-6">
-                <Dropdown
-                  label="Reservation Status"
-                  options={[
-                    { value: 'reserved', label: 'Reserved' },
-                    { value: 'not_reserved', label: 'Not Reserved' },
-                  ]}
-                  value={reservedStatus}
-                  onChange={e => setReservedStatus(e.target.value)}
-                  name="reservationStatus"
-                />
-                {modalError && <div className="text-marriageRed mt-2 text-sm">{modalError}</div>}
+
+        {/* Booking Detail Drawer */}
+        {drawerOpen && selectedBookings.length > 0 && (
+  <div className="fixed inset-0 z-50 flex">
+    {/* Background Overlay */}
+    <div
+      className="flex-1 bg-black bg-opacity-40 transition-opacity duration-300 ease-in-out"
+      onClick={() => setDrawerOpen(false)}
+    />
+
+    {/* Slide-in Drawer */}
+    <div
+      className={`w-full max-w-md bg-white h-full shadow-lg flex flex-col transform transition-transform duration-300 ease-in-out ${
+        drawerOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}
+    >
+      {/* Header */}
+      <div className="sticky top-0 bg-white z-10 p-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 className="text-2xl font-bold text-marriageHotPink flex items-center gap-2">
+          <FiCalendar className="text-2xl" />
+          Bookings for {drawerDate ? new Date(drawerDate).toLocaleDateString() : ''}
+        </h3>
+        <button
+          className="text-marriageRed hover:text-marriageHotPink text-2xl font-bold"
+          onClick={() => setDrawerOpen(false)}
+          aria-label="Close details"
+        >
+          <FiX />
+        </button>
+      </div>
+
+      {/* Booking Details */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {selectedBookings.map((selectedBooking, idx) => (
+          <div key={selectedBooking._id} className="mb-4 pb-4 border-b last:border-b-0">
+            <div className="mb-2 flex items-start gap-2">
+              <FiUser className="text-marriageHotPink mt-1 flex-shrink-0" />
+              <div>
+                <span className="font-semibold">Guest: </span>
+                {selectedBooking.guestName || '-'}
               </div>
-              <Button
-                btnText={saveLoading ? "Saving..." : "Save"}
-                btnColor="marriageHotPink"
-                padding="w-full py-3"
-                onClick={handleSave}
-                disabled={saveLoading}
-              />
             </div>
+            <div className="mb-2 flex items-start gap-2">
+              <FiMail className="text-marriageHotPink mt-1 flex-shrink-0" />
+              <div>
+                <span className="font-semibold">Email: </span>
+                {selectedBooking.guestEmail || '-'}
+              </div>
+            </div>
+            <div className="mb-2 flex items-start gap-2">
+              <FiClock className="text-marriageHotPink mt-1 flex-shrink-0" />
+              <div>
+                <span className="font-semibold">Date: </span>
+                {selectedBooking.bookingDate
+                  ? new Date(selectedBooking.bookingDate).toLocaleString()
+                  : '-'}
+              </div>
+            </div>
+            <div className="mb-3 flex items-center gap-2">
+              <span className="font-semibold">Status: </span>
+              <span
+                className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedBooking.status === 'pending'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : selectedBooking.status === 'approved'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}
+              >
+                {selectedBooking.status}
+              </span>
+            </div>
+
+            {/* Approve / Reject Buttons */}
+            {selectedBooking.status === 'pending' && (
+              <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                <button
+                  className="flex-1 px-3 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600 transition flex items-center justify-center gap-2 text-sm sm:text-base"
+                  onClick={() =>
+                    dispatch(updateBookingStatus({ id: selectedBooking._id, status: 'approved' }))
+                  }
+                  disabled={actionStatus[selectedBooking._id] === 'loading'}
+                >
+                  <FiCheckCircle className="text-sm sm:text-base" /> Approve
+                </button>
+                <button
+                  className="flex-1 px-3 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 transition flex items-center justify-center gap-2 text-sm sm:text-base"
+                  onClick={() =>
+                    dispatch(updateBookingStatus({ id: selectedBooking._id, status: 'rejected' }))
+                  }
+                  disabled={actionStatus[selectedBooking._id] === 'loading'}
+                >
+                  <FiXCircle className="text-sm sm:text-base" /> Reject
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </OwnerLayout>
   );

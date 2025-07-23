@@ -47,28 +47,24 @@ exports.getHalls = async (req, res) => {
   }
 };
 
-// Delete a hall by ID (only if owned by the user)
-exports.deleteHall = async (req, res) => {
+// Change status of a hall (and related menus/decorations)
+exports.changeHallStatus = async (req, res) => {
   try {
-    const hall = await Hall.findOne({ _id: req.params.id, owner: req.user._id });
+    const { status } = req.body;
+    const hall = await Hall.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user._id },
+      { status },
+      { new: true }
+    );
     if (!hall) {
       return res.status(404).json({ message: 'Hall not found or not authorized' });
     }
-
-    // Delete all associated data before deleting the hall
+    // Update all related menus and decorations
     await Promise.all([
-      // Delete all available dates for this hall
-      AvailableDate.deleteMany({ hallId: req.params.id }),
-      // Delete all menus for this hall
-      Menu.deleteMany({ hallId: req.params.id }),
-      // Delete all decorations for this hall
-      Decoration.deleteMany({ hallId: req.params.id })
+      require('../models/Menu').updateMany({ hallId: hall._id }, { status }),
+      require('../models/Decoration').updateMany({ hallId: hall._id }, { status }),
     ]);
-
-    // Delete the hall
-    await hall.deleteOne();
-    
-    res.json({ message: 'Hall and all associated data deleted successfully' });
+    res.json({ message: `Hall and all related menus/decorations set to status: ${status}`, hall });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

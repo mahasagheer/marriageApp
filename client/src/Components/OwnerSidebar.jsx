@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FiHome, FiUsers, FiCalendar, FiFileText, FiBarChart2, FiSettings, FiMenu, FiUser, FiX } from "react-icons/fi";
-import { FaBuilding, FaUserPlus } from "react-icons/fa";
+import {  FiUsers, FiCalendar, FiFileText, FiBarChart2, FiSettings, FiMenu, FiUser, FiX } from "react-icons/fi";
+import {FaUserPlus, FaBuilding,  } from "react-icons/fa";
 
 const OwnerSidebar = ({ onClose }) => {
   const { user, logout } = useAuth();
@@ -35,7 +35,7 @@ const OwnerSidebar = ({ onClose }) => {
     navLinks=[
       { label: "Agency Dashboard", icon: <FaBuilding />, to: "/agency" },
       { label: "Agency Profile", icon: <FaBuilding />, to: "/agency/profile" },
-      { label: "Candidates", icon: <FiUser />, to: "/agency/candidates" },
+      { label: "Candidates", icon: <FaUserPlus />, to: "/agency/users" },
     ]
   }
 

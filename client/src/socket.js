@@ -5,7 +5,10 @@ let socket = null;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io(SOCKET_URL);
+    const token = localStorage.getItem('token');
+    socket = io( SOCKET_URL, {
+      auth: { token },
+    });
   }
   return socket;
 };

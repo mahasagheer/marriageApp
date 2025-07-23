@@ -89,7 +89,7 @@ export default function UserProfileDisplay() {
     </div>
   );
   return (
-    <div className="min-h-screen ml-[14rem] bg-gray-50">
+    <div className="min-h-screen bg-white">
       {!profile ? (
         <div className='flex flex-col items-center justify-center min-h-screen'>
           <HeroSection />

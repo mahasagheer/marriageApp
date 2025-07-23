@@ -18,12 +18,21 @@ import AgencyDashboard from "../Pages/Phase_2/AgencyDashboard";
 import { AgencyProfile } from "../Pages/Phase_2/AgencyProfileForm";
 import { AgencyProfileDisplay } from "../Pages/Phase_2/AgencyProfile";
 import AgencyListing from "../Pages/Phase_2/AgenciesListing";
+import MatchmakingHome from "../Pages/Phase_2/Home";
+import AgencyDetail from "../Pages/Phase_2/AgencyDetail";
+import AgencyCandidateList from "../Pages/Phase_2/AgencyCandidateList";
 
 export const router = createBrowserRouter([
-  // {
-  //   path: "/",
-  //   element: <CoverPage />,
-  // },
+  {
+    path: "/home",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <UserLayout>
+        <MatchmakingHome />
+        </UserLayout>
+      </ProtectedRoute>
+    ),
+  },
   {
     path: "/",
     element: <Home />,
@@ -36,86 +45,106 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     )
   },
-{
-  path: "/user/addProfile",
+  {
+    path: "/agency/users",
     element: (
-      <ProtectedRoute allowedRoles={['user']}>
-        <OwnerLayout>
-        <UserProfileForm />
-        </OwnerLayout>
+      <ProtectedRoute allowedRoles={['agency']}>
+        <OwnerLayout >
+          <AgencyCandidateList/>
+          </OwnerLayout>
       </ProtectedRoute>
     )
-},
-{
-  path: "/user/addProfile/:id",
+  },
+  {
+    path: "/user/addProfile",
     element: (
       <ProtectedRoute allowedRoles={['user']}>
-        <OwnerLayout>
-        <UserProfileForm />
-        </OwnerLayout>
+        <UserLayout>
+          <UserProfileForm />
+        </UserLayout>
       </ProtectedRoute>
     )
-},
-{
-  path: "/agency/addProfile",
+  },
+  {
+    path: "/user/addProfile/:id",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <UserLayout>
+          <UserProfileForm />
+        </UserLayout>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/agency/addProfile",
     element: (
       <ProtectedRoute allowedRoles={['agency']}>
         <OwnerLayout>
-        <AgencyProfile />
+          <AgencyProfile />
         </OwnerLayout>
       </ProtectedRoute>
     )
-},
-{
-  path: "/agency",
+  },
+  {
+    path: "/agency",
     element: (
       <ProtectedRoute allowedRoles={['agency']}>
         <OwnerLayout>
-        <AgencyDashboard />
+          <AgencyDashboard />
         </OwnerLayout>
       </ProtectedRoute>
     )
-},
-{
-  path: "/agency/addProfile/:id",
+  },
+  {
+    path: "/agency/addProfile/:id",
     element: (
       <ProtectedRoute allowedRoles={['agency']}>
         <OwnerLayout>
-        <AgencyProfile />
+          <AgencyProfile />
         </OwnerLayout>
       </ProtectedRoute>
     )
-},
-{
-  path: "/user/profile",
+  },
+  {
+    path: "/user/profile",
     element: (
       <ProtectedRoute allowedRoles={['user']}>
-        <OwnerLayout>
-        <UserProfileDisplay />
-        </OwnerLayout>
+        <UserLayout>
+          <UserProfileDisplay />
+        </UserLayout>
       </ProtectedRoute>
     )
-},
-{
-  path: "/agency/profile",
+  },
+  {
+    path: "/agency/profile",
     element: (
       <ProtectedRoute allowedRoles={['agency']}>
         <OwnerLayout>
-        <AgencyProfileDisplay />
+          <AgencyProfileDisplay />
         </OwnerLayout>
       </ProtectedRoute>
     )
-},
-{
-  path: "/user/agencies",
+  },
+  {
+    path: "/user/agencies",
     element: (
       <ProtectedRoute allowedRoles={['user']}>
-        <OwnerLayout>
-        <AgencyListing />
-        </OwnerLayout>
+        <UserLayout>
+          <AgencyListing />
+        </UserLayout>
       </ProtectedRoute>
     )
-},
+  },
+  {
+    path: "/user/agencies/:id",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <UserLayout>
+          <AgencyDetail />
+        </UserLayout>
+      </ProtectedRoute>
+    )
+  },
   {
     path: "/:id",
     element: (

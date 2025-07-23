@@ -11,11 +11,11 @@ export const fetchAgencyById = createAsyncThunk(
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`${API}/${id}`,{
-        method:"GET",
-        headers:{
+      const response = await fetch(`${API}/${id}`, {
+        method: "GET",
+        headers: {
           Authorization: `Bearer ${token}`,
-                }
+        }
       });
       const data = await response.json();
 
@@ -27,18 +27,18 @@ export const fetchAgencyById = createAsyncThunk(
 );
 
 
-// GET /api/agency/:id  – single agency profile
+// GET /api/agency – agencies 
 export const fetchAgencies = createAsyncThunk(
   "agency/all",
-  async ({ rejectWithValue }) => {
+  async (_,{ rejectWithValue }) => {
     const token = localStorage.getItem('token');
-
+console.log("agency")
     try {
-      const response = await fetch(`${API}`,{
-        method:"GET",
-        headers:{
+      const response = await fetch(`${API}`, {
+        method: "GET",
+        headers: {
           Authorization: `Bearer ${token}`,
-                }
+        }
       });
       const data = await response.json();
 
@@ -57,11 +57,11 @@ export const fetchAgencyByuserId = createAsyncThunk(
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`${API}/profile/${id}`,{
-        method:"GET",
-        headers:{
+      const response = await fetch(`${API}/profile/${id}`, {
+        method: "GET",
+        headers: {
           Authorization: `Bearer ${token}`,
-                }
+        }
       });
       const data = await response.json();
 
@@ -84,9 +84,9 @@ export const createAgency = createAsyncThunk(
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        body: profileData 
+        body: profileData
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to create agency profile');
@@ -113,10 +113,10 @@ export const updateAgency = createAsyncThunk(
           Authorization: `Bearer ${token}`,
           // 'Content-Type': 'multi-part/form-data',
         },
-        body: updates 
+        body: updates
       });
-     
-      const data=response.json()
+
+      const data = response.json()
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -129,11 +129,11 @@ export const deleteAgency = createAsyncThunk(
   "agency/delete",
   async (id, { rejectWithValue }) => {
     const token = localStorage.getItem('token');
-   
+
     try {
       await fetch(`${API}/${id}`, {
-        method:"DELETE",
-        headers:{
+        method: "DELETE",
+        headers: {
           Authorization: `Bearer ${token}`,
         }
       });
@@ -187,6 +187,7 @@ const AgencySlice = createSlice({
         s.status = "failed";
         s.error = payload;
       })
+
 
       /* createAgency */
       .addCase(createAgency.pending, (s) => {

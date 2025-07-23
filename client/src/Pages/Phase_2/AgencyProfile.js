@@ -86,7 +86,7 @@ export const AgencyProfileDisplay = () => {
   );
 
   return (
-    <div className='ml-[15rem]'>
+    <div className='ml-[3rem]'>
       {!agency ? (
         <div className='flex flex-col items-center justify-center min-h-screen'>
           <div className="text-white bg-gradient-to-br from-marriagePink via-marriageHotPink to-marriageRed p-10 rounded-2xl shadow-xl text-center border border-white/20">

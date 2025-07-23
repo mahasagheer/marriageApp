@@ -5,8 +5,6 @@ import { getSocket, disconnectSocket } from '../socket';
 import { FiFileText } from 'react-icons/fi';
 
 const OwnerChat = ({ hallId, booking, isAdmin, disableSend }) => {
-  // Remove local sessions state
-  // const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [chatInput, setChatInput] = useState('');
   const [socket, setSocket] = useState(null);

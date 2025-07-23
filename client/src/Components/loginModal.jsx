@@ -49,9 +49,9 @@ export const LoginModal = ({ onClose, onSwitch, label }) => {
           contextLogin(user, token);
           // Redirect based on role
           console.log(user.role, label)
-          if (user.role === "hall-owner") navigate("/owner");
-          else if (user.role === "admin") navigate("/admin");
-          else if (user.role === "manager") navigate("/manager");
+          if (user.role === "hall-owner") navigate(`/${user.id}`);
+          else if (user.role === "admin") navigate(`/${user.id}`);
+          else if (user.role === "manager") navigate(`/${user.id}`);
           else if(user.role ==="agency") navigate("/agency")
           else if(user.role ==='user' && label==='hall') navigate("/hall");
           else if(user.role==='user' && label==='matches') navigate('/user/profile')

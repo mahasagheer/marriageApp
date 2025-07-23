@@ -131,7 +131,7 @@ const PublicHallDetail = () => {
     }
   }, [messages]);
 
-  if (loading) return <div className="text-center text-gray-400 py-10">Loading...</div>;
+  if (loading) return <div className="loader"></div>;
   if (error) return <div className="text-center text-marriageRed py-10">{error}</div>;
   if (!hall) return <div className="text-center text-gray-400 py-10">Hall not found.</div>;
 

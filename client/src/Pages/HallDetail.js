@@ -147,8 +147,8 @@ const HallDetail = () => {
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
       <div className="px-4 sm:px-6 lg:px-8 py-6 md:mt-0 sm:mt-[5%] mt-[15%]">
       {loading ? (
-          <div className="text-center text-gray-400">Loading...</div>
-        ) : error ? (
+              <div className="loader"></div>
+            ) : error ? (
           <div className="text-center text-red-500">{error}</div>
         ) : singleHall ? (
           <div className="space-y-6">
@@ -285,8 +285,8 @@ const HallDetail = () => {
                 />
               </div>
               {menuLoading ? (
-                <div className="text-center text-gray-400">Loading menus...</div>
-              ) : menus.length === 0 ? (
+              <div className="loader"></div>
+            ) : menus.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
                   No menus added yet. Add your first menu package!
                 </div>
@@ -351,8 +351,8 @@ const HallDetail = () => {
                 />
               </div>
               {decorationLoading ? (
-                <div className="text-center text-gray-400">Loading decorations...</div>
-              ) : decorations.length === 0 ? (
+              <div className="loader"></div>
+            ) : decorations.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
                   No decoration packages added yet. Add your first decoration package!
                 </div>

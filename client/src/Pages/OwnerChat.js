@@ -113,8 +113,8 @@ const OwnerChat = ({ hallId, booking, isAdmin, disableSend }) => {
         {/* Sidebar: Remove avatars, just show name and time */}
         <ul className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-marriagePink/10">
           {sessionsLoading ? (
-            <li className="px-6 py-4 text-gray-400">Loading...</li>
-          ) : sessionsError ? (
+              <div className="loader"></div>
+            ) : sessionsError ? (
             <li className="px-6 py-4 text-marriageRed">{sessionsError}</li>
           ) : sessions.length === 0 ? (
             <li className="px-6 py-4 text-gray-400">No chat sessions found.</li>

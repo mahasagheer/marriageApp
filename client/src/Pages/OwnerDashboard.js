@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchBookings, fetchBookingById, updateBookingStatus, clearSelectedBooking, fetchPaymentByBookingId, sharePaymentNumber, verifyPayment } from "../slice/bookingSlice";
 import { fetchUnreadCount } from "../slice/chatSlice";
 import { getSocket } from "../socket";
-import { FiUser, FiMessageSquare, FiList, FiCheckCircle, FiXCircle, FiClock, FiUsers, FiX, FiMail, FiPhone, FiCalendar, FiGift, FiDollarSign } from "react-icons/fi";
+import { FiUser,FiSearch, FiMessageSquare, FiList, FiCheckCircle, FiXCircle, FiClock, FiUsers, FiX, FiMail, FiPhone, FiCalendar, FiGift, FiDollarSign } from "react-icons/fi";
 import OwnerChat from './OwnerChat';
 import CreateCustomDealModal from '../Components/CreateCustomDealModal';
 import OwnerSidebar from '../Components/OwnerSidebar';
@@ -20,7 +20,8 @@ const OwnerDashboard = () => {
   const selectedBookingLoading = useSelector(state => state.bookings.selectedBookingLoading);
   const unreadCount = useSelector(state => state.chat.unreadCount);
   const user = useSelector(state => state.auth.user);
-
+  
+  const [searchTerm, setSearchTerm] = useState('');
   const [showChat, setShowChat] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showCustomDealModal, setShowCustomDealModal] = useState(false);
@@ -224,113 +225,137 @@ const OwnerDashboard = () => {
           </div>
 
           {/* Bookings Table/Card */}
-          <div className="bg-white rounded-xl max-h-[57vh] sm:rounded-2xl shadow p-2 sm:p-3 md:p-4 animate-fadeInUp overflow-x-auto">
-            <h2 className="text-sm sm:text-base md:text-lg font-bold text-marriageHotPink mb-3 flex gap-1 sm:gap-2">
-              <FiUsers className="text-base sm:text-lg" /> Bookings
-            </h2>
-            
-            {loading ? (
-              <div className="text-gray-400 text-center py-4">Loading...</div>
-            ) : error ? (
-              <div className="text-marriageRed text-center py-4">{error}</div>
-            ) : bookings.length === 0 ? (
-              <div className="text-gray-400 text-center py-4">No bookings found.</div>
-            ) : (
-              <div className="overflow-x-auto">
-              <table className="min-w-full bg-white rounded-lg shadow text-xs sm:text-sm table-auto">
-                <thead>
-                  <tr className="bg-marriagePink/20 text-left">
-                    <th className="py-2 px-3 whitespace-nowrap text-left">Hall</th>
-                    <th className="py-2 px-3 whitespace-nowrap text-left">Date</th>
-                    <th className="py-2 px-3 whitespace-nowrap text-left">Time</th>
-                    <th className="py-2 px-3 whitespace-nowrap text-left">Guest</th>
-                    <th className="py-2 px-3 whitespace-nowrap text-left">Status</th>
-                    <th className="py-2 px-3 whitespace-nowrap text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.map((b, idx) => {
-                    const dateObj = new Date(b.bookingDate);
-                    const date = dateObj.toLocaleDateString();
-                    const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    return (
-                      <tr
-                        key={b._id}
-                        className={`border-b transition animate-fadeIn ${
-                          idx % 2 === 0 ? 'bg-marriagePink/5' : 'bg-white'
-                        } hover:bg-marriagePink/20 cursor-pointer`}
-                        onClick={() => handleBookingRowClick(b)}
-                      >
-                        <td className="py-2 px-3 font-medium whitespace-nowrap text-left">
-                          {b.hallId?.name || '-'}
-                        </td>
-                        <td className="py-2 px-3 whitespace-nowrap text-left">{date}</td>
-                        <td className="py-2 px-3 whitespace-nowrap text-left">{time}</td>
-                        <td className="py-2 px-3 whitespace-nowrap text-left">
-                          {b.guestName || '-'}
-                        </td>
-                        <td className="py-2 px-3 whitespace-nowrap text-left">
-                          <span
-                            className={`inline-block px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
-                              b.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : b.status === 'approved'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow p-2 sm:p-3 md:p-4 animate-fadeInUp overflow-x-auto">
+     <div className="flex justify-between items-center mb-3">
+      <h2 className="text-sm sm:text-base flex items-center md:text-lg font-bold text-marriageHotPink mb-3 flex gap-1 sm:gap-2">
+        <FiUsers className="text-base sm:text-lg" /> Bookings
+      </h2>
+
+      {/* Search bar */}
+      <div className="mb-3">
+  <div className="relative w-[300px]">
+    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+      <FiSearch className="text-base" />
+    </span>
+    <input
+      type="text"
+      placeholder="Search by hall or guest name..."
+      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-marriageHotPink text-sm"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+    />
+  </div>
+</div>
+      </div>
+
+      {loading ? (
+        <div className="loader"></div>
+      ) : error ? (
+        <div className="text-marriageRed text-center py-4">{error}</div>
+      ) : bookings.length === 0 ? (
+        <div className="text-gray-400 text-center py-4">No bookings found.</div>
+      ) : (
+        <div className="overflow-x-auto max-h-[46vh]">
+          <table className="min-w-full bg-white rounded-lg shadow text-xs sm:text-sm table-auto">
+            <thead>
+              <tr className="bg-marriagePink/20 text-left">
+                <th className="py-2 px-3 whitespace-nowrap text-left">Hall</th>
+                <th className="py-2 px-3 whitespace-nowrap text-left">Date</th>
+                <th className="py-2 px-3 whitespace-nowrap text-left">Time</th>
+                <th className="py-2 px-3 whitespace-nowrap text-left">Guest</th>
+                <th className="py-2 px-3 whitespace-nowrap text-left">Status</th>
+                <th className="py-2 px-3 whitespace-nowrap text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bookings
+                .filter((b) => {
+                  const hallName = b.hallId?.name?.toLowerCase() || '';
+                  const guestName = b.guestName?.toLowerCase() || '';
+                  return (
+                    hallName.includes(searchTerm.toLowerCase()) ||
+                    guestName.includes(searchTerm.toLowerCase())
+                  );
+                })
+                .map((b, idx) => {
+                  const dateObj = new Date(b.bookingDate);
+                  const date = dateObj.toLocaleDateString();
+                  const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <tr
+                      key={b._id}
+                      className={`border-b transition animate-fadeIn ${
+                        idx % 2 === 0 ? 'bg-marriagePink/5' : 'bg-white'
+                      } hover:bg-marriagePink/20 cursor-pointer`}
+                      onClick={() => handleBookingRowClick(b)}
+                    >
+                      <td className="py-2 px-3 font-medium whitespace-nowrap text-left">
+                        {b.hallId?.name || '-'}
+                      </td>
+                      <td className="py-2 px-3 whitespace-nowrap text-left">{date}</td>
+                      <td className="py-2 px-3 whitespace-nowrap text-left">{time}</td>
+                      <td className="py-2 px-3 whitespace-nowrap text-left">{b.guestName || '-'}</td>
+                      <td className="py-2 px-3 whitespace-nowrap text-left">
+                        <span
+                          className={`inline-block px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
+                            b.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : b.status === 'approved'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 whitespace-nowrap text-left">
+                        <div className="flex gap-1 sm:gap-2 items-center">
+                          {b.status === 'pending' && (
+                            <>
+                              <button
+                                className="p-1 sm:p-1.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition shadow"
+                                title="Approve"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusChange(b._id, 'approved');
+                                }}
+                                disabled={actionStatus[b._id] === 'loading'}
+                              >
+                                <FiCheckCircle className="text-sm sm:text-base" />
+                              </button>
+                              <button
+                                className="p-1 sm:p-1.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition shadow"
+                                title="Reject"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusChange(b._id, 'rejected');
+                                }}
+                                disabled={actionStatus[b._id] === 'loading'}
+                              >
+                                <FiXCircle className="text-sm sm:text-base" />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            className="p-1 sm:p-1.5 rounded-full bg-marriagePink text-marriageHotPink hover:bg-marriageHotPink hover:text-white transition shadow"
+                            title="Chat with Client"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowChat({ booking: b });
+                            }}
                           >
-                            {b.status}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3 whitespace-nowrap text-left">
-                          <div className="flex gap-1 sm:gap-2 items-center">
-                            {b.status === 'pending' && (
-                              <>
-                                <button
-                                  className="p-1 sm:p-1.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition shadow"
-                                  title="Approve"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleStatusChange(b._id, 'approved');
-                                  }}
-                                  disabled={actionStatus[b._id] === 'loading'}
-                                >
-                                  <FiCheckCircle className="text-sm sm:text-base" />
-                                </button>
-                                <button
-                                  className="p-1 sm:p-1.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition shadow"
-                                  title="Reject"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleStatusChange(b._id, 'rejected');
-                                  }}
-                                  disabled={actionStatus[b._id] === 'loading'}
-                                >
-                                  <FiXCircle className="text-sm sm:text-base" />
-                                </button>
-                              </>
-                            )}
-                            <button
-                              className="p-1 sm:p-1.5 rounded-full bg-marriagePink text-marriageHotPink hover:bg-marriageHotPink hover:text-white transition shadow"
-                              title="Chat with Client"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowChat({ booking: b });
-                              }}
-                            >
-                              <FiMessageSquare className="text-sm sm:text-base" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            
-            )}
-          </div>
+                            <FiMessageSquare className="text-sm sm:text-base" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
 
           {/* Owner Chat Modal */}
           {showChat && (
@@ -410,7 +435,7 @@ const OwnerDashboard = () => {
                           <FiDollarSign className="text-base sm:text-lg" /> Payment Details
                         </h3>
                         {paymentLoading ? (
-                          <div className="text-gray-400 text-center py-4">Loading payment info...</div>
+              <div className="loader"></div>
                         ) : user?.role === 'owner' ? (
                           payment ? (
                             <div className="mb-3">
@@ -518,43 +543,57 @@ const OwnerDashboard = () => {
                           <FiList className="text-base sm:text-lg" /> Menu Details
                         </h3>
                         {selectedBooking.menuItems && selectedBooking.menuItems.length > 0 ? (
-                          <div className="space-y-2">
-                            <div className="font-semibold text-marriageHotPink">Custom Menu Items</div>
-                            <ul className="list-disc pl-5 text-gray-700 text-sm sm:text-base space-y-1">
-                              {selectedBooking.menuItems.map((item, idx) => (
-                                <li key={idx}>{item}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : selectedBooking.menuId && typeof selectedBooking.menuId === 'object' ? (
-                          <div className="space-y-2">
-                            <div className="font-semibold text-marriageHotPink">{selectedBooking.menuId.name}</div>
-                            <div className="text-gray-600 text-sm">{selectedBooking.menuId.description}</div>
-                            <div className="text-gray-800 font-semibold">Price: {selectedBooking.menuId.basePrice || selectedBooking.menuId.price} PKR</div>
-                            {selectedBooking.menuId.items && selectedBooking.menuId.items.length > 0 && (
-                              <div className="mt-2">
-                                <div className="font-semibold text-marriageHotPink">Items:</div>
-                                <ul className="list-disc pl-5 text-gray-700 text-sm sm:text-base space-y-1">
-                                  {selectedBooking.menuId.items.map((item, idx) => (
-                                    <li key={idx}>{item}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {selectedBooking.menuId.addOns && selectedBooking.menuId.addOns.length > 0 && (
-                              <div className="mt-2">
-                                <div className="font-semibold text-marriageHotPink">Add-Ons:</div>
-                                <ul className="list-disc pl-5 text-gray-700 text-sm sm:text-base space-y-1">
-                                  {selectedBooking.menuId.addOns.map((addOn, idx) => (
-                                    <li key={idx}>{addOn.name} (+{addOn.price} PKR)</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-gray-400 text-center py-4">No menu details available.</div>
-                        )}
+  <div className="space-y-2">
+    <div className="font-semibold text-marriageHotPink">Custom Menu Items</div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-gray-700 text-sm sm:text-base">
+      {selectedBooking.menuItems.map((item, idx) => (
+        <div key={idx} className="flex items-start gap-1">
+          <span className="mt-1 text-marriageHotPink">•</span>
+          <span>{item}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+) : selectedBooking.menuId && typeof selectedBooking.menuId === 'object' ? (
+  <div className="space-y-2">
+    <div className="font-semibold text-marriageHotPink">{selectedBooking.menuId.name}</div>
+    <div className="text-gray-600 text-sm">{selectedBooking.menuId.description}</div>
+    <div className="text-gray-800 font-semibold">
+      Price: {selectedBooking.menuId.basePrice || selectedBooking.menuId.price} PKR
+    </div>
+
+    {selectedBooking.menuId.items && selectedBooking.menuId.items.length > 0 && (
+      <div className="mt-2">
+        <div className="font-semibold text-marriageHotPink">Items:</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-gray-700 text-sm sm:text-base">
+          {selectedBooking.menuId.items.map((item, idx) => (
+            <div key={idx} className="flex items-start gap-1">
+              <span className="mt-1 text-marriageHotPink">•</span>
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {selectedBooking.menuId.addOns && selectedBooking.menuId.addOns.length > 0 && (
+      <div className="mt-2">
+        <div className="font-semibold text-marriageHotPink">Add-Ons:</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-gray-700 text-sm sm:text-base">
+          {selectedBooking.menuId.addOns.map((addOn, idx) => (
+            <div key={idx} className="flex items-start gap-1">
+              <span className="mt-1 text-marriageHotPink">•</span>
+              <span>{addOn.name} (+{addOn.price} PKR)</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+) : (
+  <div className="text-gray-400 text-center py-4">No menu details available.</div>
+)}
+
                       </div>
                     )}
                     

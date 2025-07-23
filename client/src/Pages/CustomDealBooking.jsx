@@ -114,7 +114,7 @@ const CustomDealBooking = () => {
     setUploading(false);
   };
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  if (loading) return <div className="loader"></div>;
   if (error) return <div className="text-red-500 text-center mt-8">{error}</div>;
   if (!booking) return <div className="text-center mt-8">Booking not found.</div>;
 

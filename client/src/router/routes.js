@@ -20,6 +20,7 @@ import { AgencyProfileDisplay } from "../Pages/Phase_2/AgencyProfile";
 import AgencyListing from "../Pages/Phase_2/AgenciesListing";
 import MatchmakingHome from "../Pages/Phase_2/Home";
 import AgencyDetail from "../Pages/Phase_2/AgencyDetail";
+import AgencyCandidateList from "../Pages/Phase_2/AgencyCandidateList";
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +42,16 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={['user']}>
         <RishtaDhondoHome />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/agency/users",
+    element: (
+      <ProtectedRoute allowedRoles={['agency']}>
+        <OwnerLayout >
+          <AgencyCandidateList/>
+          </OwnerLayout>
       </ProtectedRoute>
     )
   },

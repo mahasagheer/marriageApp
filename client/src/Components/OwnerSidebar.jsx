@@ -31,7 +31,7 @@ const OwnerSidebar = () => {
     navLinks=[
       { label: "Agency Dashboard", icon: FaBuilding, to: "/agency" },
       { label: "Agency Profile", icon: FaBuilding, to: "/agency/profile" },
-      { label: "Candidates", icon: FiUser, to: "/agency/candidates" },
+      { label: "Candidates", icon: FiUser, to: "/agency/users" },
     ]
   }
 

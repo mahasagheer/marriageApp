@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { fetchSingleHall } from "../slice/hallSlice";
-import { fetchMenusByHall, createMenu, updateMenu, deleteMenu, resetSuccess as resetMenuSuccess } from "../slice/menuSlice";
-import { fetchDecorationsByHall, createDecoration, updateDecoration, deleteDecoration, resetSuccess as resetDecorationSuccess } from "../slice/decorationSlice";
+import { fetchMenusByHall, createMenu, updateMenu, deleteMenu, resetSuccess as resetMenuSuccess, changeMenuStatus } from "../slice/menuSlice";
+import { fetchDecorationsByHall, createDecoration, updateDecoration, deleteDecoration, resetSuccess as resetDecorationSuccess, changeDecorationStatus } from "../slice/decorationSlice";
 import AddMenuModal from "../Components/AddMenuModal";
 import EditMenuModal from "../Components/EditMenuModal";
 import AddDecorationModal from "../Components/AddDecorationModal";
 import EditDecorationModal from "../Components/EditDecorationModal";
-import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPlus, FiEdit2, FiTrash2, FiX, FiPhone } from "react-icons/fi";
+import { FiMapPin, FiUsers, FiDollarSign, FiCheckCircle, FiPlus, FiEdit2, FiTrash2, FiX, FiPhone, FiSettings } from "react-icons/fi";
 import OwnerLayout from "../Components/OwnerLayout";
 import { Button } from "../Components/Layout/Button";
 import { ToastContainer, toast } from 'react-toastify';
@@ -30,7 +30,11 @@ const HallDetail = () => {
   const [selectedDecoration, setSelectedDecoration] = useState(null);
 
   const [imagePreview, setImagePreview] = useState({ open: false, src: null });
-
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [statusModalType, setStatusModalType] = useState(null); // 'menu' or 'decoration'
+  const [statusModalItem, setStatusModalItem] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [showFullDescription, setShowFullDescription] = useState(false);
   useEffect(() => {
     if (id) {
       dispatch(fetchSingleHall(id));
@@ -115,11 +119,34 @@ const HallDetail = () => {
     }
   };
 
+  const openStatusModal = (type, item) => {
+    setStatusModalType(type);
+    setStatusModalItem(item);
+    setSelectedStatus(item.status);
+    setStatusModalOpen(true);
+  };
+  const closeStatusModal = () => {
+    setStatusModalOpen(false);
+    setStatusModalType(null);
+    setStatusModalItem(null);
+    setSelectedStatus('');
+  };
+  const handleStatusModalSubmit = (e) => {
+    e.preventDefault();
+    if (!statusModalItem || !selectedStatus || selectedStatus === statusModalItem.status) return;
+    if (statusModalType === 'menu') {
+      dispatch(changeMenuStatus({ menuId: statusModalItem._id, status: selectedStatus }));
+    } else if (statusModalType === 'decoration') {
+      dispatch(changeDecorationStatus({ decorationId: statusModalItem._id, status: selectedStatus }));
+    }
+    closeStatusModal();
+  };
+
   return (
     <OwnerLayout>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
-      <div className="p-6">
-        {loading ? (
+      <div className="px-4 sm:px-6 lg:px-8 py-6 md:mt-0 sm:mt-[5%] mt-[15%]">
+      {loading ? (
           <div className="text-center text-gray-400">Loading...</div>
         ) : error ? (
           <div className="text-center text-red-500">{error}</div>
@@ -129,8 +156,8 @@ const HallDetail = () => {
             <div className="bg-white rounded-xl shadow p-6">
               {/* Image Gallery */}
               {singleHall.images && singleHall.images.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                  {singleHall.images.slice(0, 6).map((img, idx) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                {singleHall.images.slice(0, 6).map((img, idx) => (
                     <img
                       key={idx}
                       src={`http://localhost:5000/${img.replace(/\\/g, '/').replace(/^uploads\//, 'uploads/')}`}
@@ -143,21 +170,22 @@ const HallDetail = () => {
               )}
               {/* Image Preview Modal */}
               {imagePreview.open && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-                  <div className="relative max-w-3xl w-full flex flex-col items-center">
-                    <button
-                      onClick={() => setImagePreview({ open: false, src: null })}
-                      className="absolute top-2 right-2 text-marriageRed text-3xl font-bold hover:text-marriageHotPink z-10"
-                    >
-                      <FiX />
-                    </button>
-                    <img
-                      src={imagePreview.src}
-                      alt="Preview"
-                      className="max-h-[80vh] w-auto rounded-xl shadow-lg border"
-                    />
-                  </div>
-                </div>
+               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 px-4">
+               <div className="relative w-full max-w-3xl flex flex-col items-center">
+                 <button
+                   onClick={() => setImagePreview({ open: false, src: null })}
+                   className="absolute top-2 right-2 text-marriageRed text-3xl font-bold hover:text-marriageHotPink z-10"
+                 >
+                   <FiX />
+                 </button>
+                 <img
+                   src={imagePreview.src}
+                   alt="Preview"
+                   className="max-h-[80vh] w-full object-contain rounded-xl shadow-lg border"
+                 />
+               </div>
+             </div>
+             
               )}
               {/* Hall Title & Location */}
               <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
@@ -190,10 +218,44 @@ const HallDetail = () => {
                   </div>
                 </div>
               </div>
-              {/* Description */}
-              <div className="text-gray-700 mb-6 text-lg">
-                {singleHall.description}
-              </div>
+            {/* Description */}
+<div className="text-gray-700 mb-6 text-sm sm:text-base md:text-base">
+  {singleHall.description ? (
+    <div>
+      {singleHall.description.length > 250 ? (
+        <>
+          <span>
+            {showFullDescription 
+              ? singleHall.description.split('\n').map((line, idx) => (
+                  <span key={idx}>
+                    {line}
+                    <br />
+                  </span>
+                ))
+              : `${singleHall.description.substring(0, 250)}...`}
+          </span>
+          <button 
+            onClick={() => setShowFullDescription(!showFullDescription)}
+            className="text-marriageHotPink text-base hover:text-marriagePink font-semibold ml-1 focus:outline-none"
+          >
+            {showFullDescription ? 'Show Less' : 'Show More'}
+          </button>
+        </>
+      ) : (
+        <span>
+          {singleHall.description.split('\n').map((line, idx) => (
+            <span key={idx}>
+              {line}
+              <br />
+            </span>
+          ))}
+        </span>
+      )}
+    </div>
+  ) : (
+    <span className="italic text-gray-400">No description provided for this hall.</span>
+  )}
+</div>
               {/* Facilities Section */}
               {singleHall.facilities && singleHall.facilities.length > 0 && (
                 <div className="mb-6">
@@ -216,7 +278,7 @@ const HallDetail = () => {
                   <FiUsers className="text-marriageHotPink" /> Menu Packages
                 </h3>
                 <Button
-                  btnText={<span className="flex items-center gap-2"><FiPlus /> Add Menu</span>}
+                  btnText={<span className="flex items-center gap-2"><FiPlus />Menu</span>}
                   btnColor="marriageHotPink"
                   padding="px-6 py-3"
                   onClick={() => setAddMenuModalOpen(true)}
@@ -231,9 +293,12 @@ const HallDetail = () => {
               ) : (
                 <div className="grid md:grid-cols-2 gap-6">
                   {menus.map((menu) => (
-                    <div key={menu._id} className="bg-white rounded-2xl shadow p-6 relative hover:shadow-lg transition">
+                    <div key={menu._id} className="bg-white rounded-2xl shadow p-6 hover:shadow-lg transition">
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-xl font-semibold">{menu.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xl font-semibold">{menu.name}</h4>
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${menu.status === 'active' ? 'bg-green-100 text-green-700' : menu.status === 'closed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{menu.status}</span>
+                        </div>
                         <span className="text-lg font-bold text-marriageHotPink">{menu.basePrice} PKR</span>
                       </div>
                       <div className="mb-2">
@@ -258,7 +323,13 @@ const HallDetail = () => {
                       )}
                       <div className="flex gap-2 mt-4">
                         <Button btnText={<FiEdit2 />}  padding="px-3 py-2" onClick={() => handleEditMenu(menu)} />
-                        <Button btnText={<FiTrash2 />} btnColor="marriageRed" padding="px-3 py-2" onClick={() => handleDeleteMenu(menu._id)} />
+                        <button
+                          className="p-2 rounded-full bg-marriagePink/10 text-marriageHotPink hover:bg-marriagePink transition ml-2"
+                          title="Change Status"
+                          onClick={() => openStatusModal('menu', menu)}
+                        >
+                          <FiSettings className="text-lg" />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -273,7 +344,7 @@ const HallDetail = () => {
                   <FiCheckCircle className="text-marriageHotPink" /> Decoration Packages
                 </h3>
                 <Button
-                  btnText={<span className="flex items-center gap-2"><FiPlus /> Add Decoration</span>}
+                  btnText={<span className="flex items-center gap-2"><FiPlus />Decoration</span>}
                   btnColor="marriageHotPink"
                   padding="px-6 py-3"
                   onClick={() => setAddDecorationModalOpen(true)}
@@ -288,9 +359,12 @@ const HallDetail = () => {
               ) : (
                 <div className="grid md:grid-cols-2 gap-6">
                   {decorations.map((decoration) => (
-                    <div key={decoration._id} className="bg-white rounded-2xl shadow p-6 relative hover:shadow-lg transition">
+                    <div key={decoration._id} className="bg-white rounded-2xl shadow p-6 hover:shadow-lg transition">
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-xl font-semibold">{decoration.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xl font-semibold">{decoration.name}</h4>
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${decoration.status === 'active' ? 'bg-green-100 text-green-700' : decoration.status === 'closed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{decoration.status}</span>
+                        </div>
                         <span className="text-lg font-bold text-marriageHotPink">{decoration.price} PKR</span>
                       </div>
                       {decoration.addOns?.length > 0 && (
@@ -307,7 +381,13 @@ const HallDetail = () => {
                       )}
                       <div className="flex gap-2 mt-4">
                         <Button btnText={<FiEdit2 />}  padding="px-3 py-2" onClick={() => handleEditDecoration(decoration)} />
-                        <Button btnText={<FiTrash2 />} btnColor="marriageRed" padding="px-3 py-2" onClick={() => handleDeleteDecoration(decoration._id)} />
+                        <button
+                          className="p-2 rounded-full bg-marriagePink/10 text-marriageHotPink hover:bg-marriagePink transition ml-2"
+                          title="Change Status"
+                          onClick={() => openStatusModal('decoration', decoration)}
+                        >
+                          <FiSettings className="text-lg" />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -344,6 +424,37 @@ const HallDetail = () => {
           onSubmit={handleUpdateDecoration}
           initialValues={selectedDecoration}
         />
+
+        {statusModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs animate-fadeInUp border-2 border-marriagePink">
+              <h3 className="text-lg font-bold text-marriageHotPink mb-4 text-center">Change Status</h3>
+              <form onSubmit={handleStatusModalSubmit} className="flex flex-col gap-4">
+                <select
+                  className="w-full p-2 rounded-lg border border-marriagePink focus:ring-2 focus:ring-marriageHotPink text-gray-800 bg-marriagePink/10"
+                  value={selectedStatus}
+                  onChange={e => setSelectedStatus(e.target.value)}
+                >
+                  <option value="active">Active</option>
+                  <option value="closed">Closed</option>
+                  <option value="open">Open</option>
+                </select>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    type="button"
+                    className="flex-1 px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition"
+                    onClick={closeStatusModal}
+                  >Cancel</button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 rounded-lg bg-marriageHotPink text-white font-bold hover:bg-marriagePink transition"
+                    disabled={selectedStatus === statusModalItem?.status}
+                  >Update</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </OwnerLayout>
   );

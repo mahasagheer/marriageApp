@@ -14,7 +14,7 @@ router.get('/', auth, hallController.getHalls);
 router.get('/public/:id', hallController.getPublicHallDetail);
 router.get('/:id', auth, hallController.getHallById);
 router.post('/', auth, upload.array('images', 5), hallController.createHall);
-router.delete('/:id', auth, hallController.deleteHall);
+router.patch('/:id/status', auth, hallController.changeHallStatus);
 router.put('/:id', auth, upload.array('images', 5), hallController.updateHall);
 router.post('/:hallId/available-dates', auth, availableDateController.addAvailableDate);
 router.get('/:hallId/available-dates', auth, availableDateController.getAvailableDatesForHall);

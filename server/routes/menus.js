@@ -21,4 +21,6 @@ router.put('/:menuId', auth, menuController.updateMenu);
 // Delete a specific menu
 router.delete('/:menuId', auth, menuController.deleteMenu);
 
+router.patch('/:menuId/status', auth, menuController.changeMenuStatus);
+
 module.exports = router; 

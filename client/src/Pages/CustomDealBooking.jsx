@@ -120,23 +120,23 @@ const CustomDealBooking = () => {
         <div className="bg-marriagePink/10 rounded-xl p-4 flex flex-col gap-1">
           <span className="font-semibold text-marriageHotPink">Date</span>
           <span className="text-gray-800 text-base">{deal.bookingDate ? new Date(deal.bookingDate).toLocaleDateString() : '-'}</span>
-        </div>
+      </div>
         <div className="bg-marriagePink/10 rounded-xl p-4 flex flex-col gap-1">
           <span className="font-semibold text-marriageHotPink">Menu Items</span>
           <span className="text-gray-800 text-base">{deal.menuItems && deal.menuItems.length > 0 ? deal.menuItems.join(', ') : '-'}</span>
-        </div>
+      </div>
         <div className="bg-marriagePink/10 rounded-xl p-4 flex flex-col gap-1">
           <span className="font-semibold text-marriageHotPink">Decoration Items</span>
           <span className="text-gray-800 text-base">{deal.decorationItems && deal.decorationItems.length > 0 ? deal.decorationItems.join(', ') : '-'}</span>
-        </div>
+      </div>
         <div className="bg-marriagePink/10 rounded-xl p-4 flex flex-col gap-1">
           <span className="font-semibold text-marriageHotPink">Price</span>
           <span className="text-gray-800 text-base">{deal.price ? `Rs. ${deal.price}` : '-'}</span>
-        </div>
+      </div>
         <div className="bg-marriagePink/10 rounded-xl p-4 flex flex-col gap-1 sm:col-span-2">
           <span className="font-semibold text-marriageHotPink">Message</span>
           <span className="text-gray-800 text-base">{deal.message || '-'}</span>
-        </div>
+      </div>
       </div>
       {/* Payment Section */}
       <div className="my-2 sm:my-6 p-4 rounded-2xl bg-marriagePink/10 border border-marriagePink/20 flex flex-col gap-2">
@@ -149,7 +149,7 @@ const CustomDealBooking = () => {
               </div>
               <div>
                 <span className="font-semibold">Status:</span> <span className="text-gray-800">{payment.status ? payment.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A'}</span>
-              </div>
+            </div>
             </div>
             {payment.proofImage && (
               <div className="mb-2 flex flex-col items-center">

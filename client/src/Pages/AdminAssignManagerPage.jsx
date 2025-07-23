@@ -4,6 +4,8 @@ import { fetchHalls, associateManager } from '../slice/hallSlice';
 import OwnerSidebar from '../Components/OwnerSidebar';
 import { Button } from '../Components/Layout/Button';
 import { Input } from '../Components/Layout/Input';
+import OwnerLayout from '../Components/OwnerLayout';
+import { FiEdit, FiUserPlus } from 'react-icons/fi';
 
 function getInitials(name) {
   if (!name) return '';
@@ -60,15 +62,13 @@ const AssignedManagerPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50 ml-[15%] px-2">
-      <div className="hidden md:block">
-        <OwnerSidebar />
-      </div>
-      <main className="flex-1 p-8">
+    <>
+     <OwnerLayout>
+      <main className="p-2 sm:p-4 md:p-6 md:mt-0 sm:mt-[5%] mt-[15%]">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Assigned Managers</h1>
-            <p className="text-gray-500 text-sm">Manage manager assignments for all halls.</p>
+            <h1 className="text-3xl font-bold text-marriageHotPink">Assigned Managers</h1>
+          {/**  <p className="text-gray-500 text-sm">Manage manager assignments for all halls.</p> */}
           </div>
         </div>
         <div className="bg-white rounded-2xl shadow-lg p-6 overflow-x-auto">
@@ -115,8 +115,9 @@ const AssignedManagerPage = () => {
                   <td className="py-2 px-4">
                     <Button
                       size="sm"
+                      padding='rounded-full p-2'
                       onClick={() => handleAssignClick(hall)}
-                      btnText={hall.managers && hall.managers.length > 0 ? 'Edit' : 'Assign'}
+                      btnText={hall.managers && hall.managers.length > 0 ? <FiEdit/> : <FiUserPlus/>}
                     >
                     </Button>
                   </td>
@@ -197,7 +198,9 @@ const AssignedManagerPage = () => {
           </div>
         )}
       </main>
-    </div>
+      </OwnerLayout>
+
+      </>
   );
 };
 

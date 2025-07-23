@@ -6,6 +6,7 @@ const menuSchema = new mongoose.Schema({
   items: [{ type: String }],
   basePrice: { type: Number, required: true },
   addOns: [{ name: String, price: Number }],
+  status: { type: String, enum: ['active', 'closed', 'open'], default: 'active' },
 });
 
 module.exports = mongoose.model('Menu', menuSchema); 

@@ -14,16 +14,16 @@ const OwnerSidebar = ({ onClose }) => {
   let navLinks = [];
   if (user?.role === 'hall-owner' || user?.role === 'manager') {
     navLinks = [
-      { to: `/${user?.role}`, label: 'Dashboard', icon: <FiBarChart2 /> },
-      { to: `/${user?.role}/halls`, label: 'Halls', icon: <FiFileText /> },
-      { to: `/${user?.role}/my-bookings`, label: 'My Bookings', icon: <FiCalendar /> },
+      { to: `/${user?.id}`, label: 'Dashboard', icon: <FiBarChart2 /> },
+      { to: `/${user?.id}/halls`, label: 'Halls', icon: <FiFileText /> },
+      { to: `/${user?.id}/my-bookings`, label: 'My Bookings', icon: <FiCalendar /> },
     ];
   } else if (user?.role === 'admin') {
     navLinks = [
-      { to: '/admin', label: 'Admin Dashboard', icon: <FiBarChart2 /> },
-      { to: '/admin/halls', label: 'All Halls', icon: <FiFileText /> },
-      { to: '/admin/my-bookings', label: 'All Bookings', icon: <FiCalendar /> },
-      { to: '/admin/associate-manager', label: 'Associate Manager', icon: <FiUsers /> },
+      { to:  `/${user?.id}`, label: 'Admin Dashboard', icon: <FiBarChart2 /> },
+      { to: `/${user?.id}/halls`, label: 'All Halls', icon: <FiFileText /> },
+      { to: `/${user?.id}/my-bookings`, label: 'All Bookings', icon: <FiCalendar /> },
+      { to: `/${user?.id}/associate-manager`, label: 'Associate Manager', icon: <FiUsers /> },
     ];
   } else if(user?.role ==="user"){
     navLinks =  [
@@ -65,115 +65,101 @@ const OwnerSidebar = ({ onClose }) => {
     >
       {/* Mobile close button */}
       {onClose && (
-        <button
-          className="absolute top-4 right-4 z-50 bg-white p-2 rounded-full shadow border border-gray-200 md:hidden"
+      <button
+          className="absolute top-0 right-0 z-50 bg-transparent p-2 rounded-full md:hidden"
           onClick={onClose}
           aria-label="Close sidebar"
         >
           <FiX className="w-6 h-6 text-gray-700" />
-        </button>
+      </button>
       )}
-      {/* Top section: logo and nav */}
-      <div className="flex-1 flex flex-col">
+        {/* Top section: logo and nav */}
+        <div className="flex-1 flex flex-col">
         <div className="flex items-center px-6 py-6 ">
-          <img
-            src="/logo192.png"
-            alt="Logo"
+            <img
+              src="/logo192.png"
+              alt="Logo"
             className="h-10 w-10 object-contain"
-          />
+            />
           <span className="ml-3 text-3xl font-bold tracking-wide text-marriageHotPink">WedLink</span>
-        </div>
+          </div>
         <nav className="flex flex-col gap-2 mt-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
               className={`flex items-center gap-4 px-6 py-3 rounded-lg font-medium transition hover:bg-marriagePink/10 hover:text-marriageHotPink focus:bg-marriagePink/20 focus:text-marriageHotPink ${location.pathname === link.to ? "bg-marriagePink/10 text-marriageHotPink" : "text-gray-800"}`}
               onClick={onClose}
               tabIndex={0}
-            >
+              >
               <span className="text-xl">{link.icon}</span>
               <span className="flex-1 text-base">{link.label}</span>
-            </Link>
-          ))}
-        </nav>
-      </div>
-      {/* Bottom section: Profile card */}
-      <div className="px-4 pb-4 pt-2 relative">
+              </Link>
+            ))}
+          </nav>
+        </div>
+        {/* Bottom section: Profile card */}
+        <div className="px-4 pb-4 pt-2 relative">
         <div className="flex items-center bg-gray-50 rounded-xl p-3 gap-3 border border-gray-200 shadow-sm">
           <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
-            ) : (
+              {user?.avatar ? (
+                <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
               <span className="text-xl font-bold text-gray-700">{user?.name ? user.name[0].toUpperCase() : "👤"}</span>
-            )}
-          </div>
-          <div className="flex-1">
-            <button
-              id="profile-dropdown-btn"
+              )}
+            </div>
+            <div className="flex-1">
+              <button
+                id="profile-dropdown-btn"
               className="font-semibold text-gray-800 text-base leading-tight text-left hover:underline focus:outline-none"
-              onClick={() => setShowProfileDropdown((v) => !v)}
+                onClick={() => setShowProfileDropdown((v) => !v)}
               aria-label="Open profile dropdown"
-            >
-              {user?.name || "Dianne Robertson"}
-              <div className="text-xs text-marriageHotPink">View Profile</div>
-            </button>
-          </div>
+              >
+                {user?.name || "Dianne Robertson"}
+                <div className="text-xs text-marriageHotPink">View Profile</div>
+              </button>
+            </div>
          {/**  <button className="text-gray-400 hover:text-marriageHotPink p-1 rounded-full focus:outline-none" aria-label="Settings">
             <FiSettings size={20} />
           </button>*/}
-        </div>
-        {/* Profile Dropdown */}
-        {showProfileDropdown && (
-          <div
-            id="profile-dropdown"
-            className="absolute left-0 bottom-20 w-72 bg-white border border-gray-200 shadow-xl rounded-xl p-6 z-50 animate-fadeIn"
-            style={{ minWidth: '18rem' }}
-          >
-            <button
-              onClick={() => setShowProfileDropdown(false)}
-              className="absolute top-2 right-3 text-gray-400 text-xl font-bold hover:text-marriageHotPink"
-              aria-label="Close profile dropdown"
+          </div>
+          {/* Profile Dropdown */}
+          {showProfileDropdown && (
+            <div
+              id="profile-dropdown"
+              className="absolute left-0 bottom-20 w-72 bg-white border border-gray-200 shadow-xl rounded-xl p-6 z-50 animate-fadeIn"
+              style={{ minWidth: '18rem' }}
             >
-              &times;
-            </button>
-            <div className="flex flex-col items-center mb-4">
-              <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-marriageHotPink mb-2 shadow">
-                {user?.avatar ? (
-                  <img src={user.avatar} alt="avatar" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  user?.name ? user.name[0].toUpperCase() : <span>👤</span>
-                )}
+              <button
+                onClick={() => setShowProfileDropdown(false)}
+                className="absolute top-2 right-3 text-gray-400 text-xl font-bold hover:text-marriageHotPink"
+                aria-label="Close profile dropdown"
+              >
+                &times;
+              </button>
+              <div className="flex flex-col items-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-marriageHotPink mb-2 shadow">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="avatar" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    user?.name ? user.name[0].toUpperCase() : <span>👤</span>
+                  )}
+                </div>
+                <h2 className="text-lg font-bold text-gray-800 mb-1">{user?.name || "No Name"}</h2>
+                <div className="text-marriageHotPink text-sm mb-1">{user?.email || "User"}</div>
               </div>
-              <h2 className="text-lg font-bold text-gray-800 mb-1">{user?.name || "No Name"}</h2>
-              <div className="text-marriageHotPink font-semibold mb-1">{user?.role || "User"}</div>
-            </div>
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center justify-between border-b pb-1">
-                <span className="text-gray-500 text-sm">Email:</span>
-                <span
-                  className="font-medium text-gray-800 text-sm max-w-[10rem] truncate block text-right"
-                  title={user?.email || "-"}
-                >
-                  {user?.email || "-"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-b pb-1">
-                <span className="text-gray-500 text-sm">Role:</span>
-                <span className="font-medium text-gray-800 text-sm capitalize">{user?.role || "user"}</span>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
+              
+              <button
+                onClick={handleLogout}
               className="mt-2 w-full bg-marriageHotPink text-white py-2 rounded-lg font-semibold shadow transition"
               aria-label="Logout"
-            >
-              Logout
-            </button>
-          </div>
-        )}
-      </div>
-    </aside>
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
   );
 };
 

@@ -156,3 +156,34 @@ exports.deleteMenu = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 }; 
+
+// Change status of a menu
+exports.changeMenuStatus = async (req, res) => {
+  try {
+    const { menuId } = req.params;
+    const { status } = req.body;
+    const menu = await Menu.findById(menuId).populate('hallId');
+    if (!menu) {
+      return res.status(404).json({ message: 'Menu not found' });
+    }
+    // Check if user owns the hall or is admin or manager
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'manager' &&
+      String(menu.hallId.owner) !== String(req.user._id)
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    if (
+      req.user.role === 'manager' &&
+      !menu.hallId.managers.some(m => String(m.manager) === String(req.user._id))
+    ) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    menu.status = status;
+    await menu.save();
+    res.json({ menu });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}; 

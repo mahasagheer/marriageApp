@@ -117,7 +117,7 @@ export const router = createBrowserRouter([
     )
 },
   {
-    path: "/:role",
+    path: "/:id",
     element: (
       <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>
         <OwnerLayout>
@@ -137,7 +137,7 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/:role/halls",
+    path: "/:id/halls",
     element: (
       <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>
         <OwnerLayout>
@@ -147,7 +147,7 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: '/:role/halls/:id',
+    path: '/:id/halls/:id',
     element: (
       <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>
         <HallDetail />
@@ -155,7 +155,7 @@ export const router = createBrowserRouter([
     ,
   },
   {
-    path: '/:role/my-bookings',
+    path: '/:id/my-bookings',
     element: (
       <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>
         <MyBookings />
@@ -174,7 +174,7 @@ export const router = createBrowserRouter([
     element: <CustomDealBooking />,
   },
   {
-    path: '/admin/associate-manager',
+    path: '/:id/associate-manager',
     element: (
       <ProtectedRoute allowedRoles={["admin"]}>
         <AdminAssignManagerPage />

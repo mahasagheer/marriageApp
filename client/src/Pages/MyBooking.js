@@ -21,28 +21,30 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Custom Event badge component for bookings only
 const StatusBadge = ({ event }) => {
-  // Extract first name only
   const firstName = event.guestName ? event.guestName.split(' ')[0] : '';
-    return (
-  <span
-    className={
-      event.status === 'approved'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border-2 border-green-400 shadow'
-        : event.status === 'pending'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow'
-        : event.status === 'rejected'
-        ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border-2 border-red-400 shadow'
-            : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border-2 border-amber-400 shadow'
-        }
-        style={{ pointerEvents: 'none' }}
-      >
-        {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-      {firstName ? ` - ${firstName}` : ''}
-  </span>
-);
+  const baseClass =
+    'inline-flex items-center px-1 py-0 sm:px-3 sm:py-1 rounded-full text-xs font-semibold shadow border-2';
+
+  const statusStyles =
+    event.status === 'approved'
+      ? 'bg-green-100 text-green-700 border-green-400'
+      : event.status === 'pending'
+      ? 'bg-yellow-100 text-yellow-700 border-yellow-400'
+      : event.status === 'rejected'
+      ? 'bg-red-100 text-red-700 border-red-400'
+      : 'bg-amber-100 text-amber-700 border-amber-400';
+
+  return (
+    <span className={`${baseClass} ${statusStyles}`} style={{ pointerEvents: 'none' }}>
+      {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+      {firstName && (
+        <span className="hidden sm:inline"> - {firstName}</span>
+      )}
+    </span>
+  );
 };
+
 
 export const MyBookings = () => {
   const dispatch = useDispatch();
@@ -56,9 +58,9 @@ export const MyBookings = () => {
 
   useEffect(() => {
     if (user?.role === 'manager') {
-      dispatch(fetchHalls()); // You may want a manager-specific fetch
+      dispatch(fetchHalls());
     } else {
-    dispatch(fetchHalls());
+      dispatch(fetchHalls());
     }
     dispatch(fetchBookings());
   }, [dispatch, user?.role]);
@@ -66,21 +68,17 @@ export const MyBookings = () => {
   useEffect(() => {
     if (Object.values(actionStatus).includes('error')) {
       toast.error('Error updating booking status!');
-    } else if (Object.values(actionStatus).includes('loading')) {
-      // Optionally show a loading toast
     } else if (Object.values(actionStatus).includes('success')) {
       toast.success('Booking status updated successfully!');
     }
   }, [actionStatus]);
 
-  // Handler for clicking a booking event
   const handleEventClick = (event) => {
     setSelectedBookings([event.raw || event]);
     setDrawerDate(event.start);
     setDrawerOpen(true);
   };
 
-  // Handler for clicking a date (show all bookings for that date)
   const handleDateClick = (slotInfo, hall) => {
     const date = slotInfo.start;
     const bookingsForDate = getBookingEventsForHall(hall._id).filter(ev =>
@@ -93,7 +91,6 @@ export const MyBookings = () => {
     }
   };
 
-  // Only show bookings as events
   const getBookingEventsForHall = (hallId) => {
     return bookings
       .filter(b => b.hallId && (b.hallId._id === hallId || b.hallId === hallId))
@@ -101,12 +98,11 @@ export const MyBookings = () => {
         ...b,
         title: b.guestName || 'Booking',
         start: new Date(b.bookingDate),
-        end: new Date(new Date(b.bookingDate).getTime() + 2 * 60 * 60 * 1000), // 2 hour event
+        end: new Date(new Date(b.bookingDate).getTime() + 2 * 60 * 60 * 1000),
         raw: b,
       }));
   };
 
-  // Custom event style getter for coloring badges
   const eventStyleGetter = (event) => {
     return {
       style: {
@@ -124,90 +120,146 @@ export const MyBookings = () => {
   return (
     <OwnerLayout>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
-      <div className="p-2 sm:p-4 md:p-6">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl text-marriageHot font-bold text-gray-800 font-mono mb-6 sm:mb-8">My Bookings</h2>
+      <div className="p-2 sm:p-4 md:p-6 md:mt-0 sm:mt-[5%] mt-[15%]">
+        <h2 className="text-3xl sm:text-2xl md:text-3xl text-marriageHotPink font-bold text-gray-800 mb-4 sm:mb-6">My Bookings</h2>
         {loading ? (
-          <div className="text-center text-gray-400">Loading...</div>
+          <div className="text-center text-gray-400 py-8">Loading...</div>
         ) : halls.length === 0 ? (
-          <div className="bg-white rounded-xl shadow p-6 sm:p-8 text-center text-gray-400">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6 text-center text-gray-400">
             You have no halls. Add a hall to see bookings.
           </div>
         ) : (
-          <div className="flex flex-col gap-8 sm:gap-12">
+          <div className="flex flex-col gap-4 sm:gap-6">
             {halls.map((hall) => {
               const events = getBookingEventsForHall(hall._id);
               return (
-                <div key={hall._id} className="bg-white rounded-xl shadow p-3 sm:p-6">
-                  <h3 className="text-lg sm:text-2xl font-semibold mb-3 sm:mb-4 text-marriageHotPink flex items-center gap-2 sm:gap-4">
-                  {hall.name} - Bookings Calendar
-                </h3>
+                <div key={hall._id} className="bg-white rounded-lg shadow p-3 sm:p-4">
+                  <h3 className="text-xl sm:text-3xl font-semibold mb-2 sm:mb-3 text-marriageHotPink flex items-center gap-2">
+                    {hall.name} - Bookings Calendar
+                  </h3>
                   <div className="w-full overflow-x-auto">
-                    <div className="min-w-[340px] sm:min-w-0">
-                  <Calendar
-                    localizer={localizer}
-                      events={events}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: 400 }}
+                    <div className="min-w-[300px] sm:min-w-0">
+                      <Calendar
+                        localizer={localizer}
+                        events={events}
+                        startAccessor="start"
+                        endAccessor="end"
                         onSelectEvent={handleEventClick}
-                    selectable
-                    onSelectSlot={(slotInfo) => handleDateClick(slotInfo, hall)}
-                    eventPropGetter={eventStyleGetter}
-                    components={{ event: StatusBadge }}
-                  />
+                        selectable
+                        onSelectSlot={(slotInfo) => handleDateClick(slotInfo, hall)}
+                        eventPropGetter={eventStyleGetter}
+                        components={{ event: StatusBadge }}
+                      />
                     </div>
                   </div>
-              </div>
+                </div>
               );
             })}
           </div>
         )}
+
         {/* Booking Detail Drawer */}
         {drawerOpen && selectedBookings.length > 0 && (
-          <div className="fixed inset-0 z-50 flex justify-end">
-            <div className="flex-1 bg-black bg-opacity-40" onClick={() => setDrawerOpen(false)} />
-            <div className="w-full max-w-md bg-white h-full shadow-2xl p-0 relative flex flex-col animate-fadeInRight rounded-l-2xl">
-              <button
-                className="absolute top-4 right-4 text-marriageRed text-3xl font-bold hover:text-marriageHotPink z-50 flex items-center justify-center"
-                onClick={() => setDrawerOpen(false)}
-                aria-label="Close details"
-              >
-                <FiX />
-              </button>
-              <div className="flex-1 flex flex-col gap-0 p-0 overflow-y-auto">
-                <div className="px-4 sm:px-8 pt-8 pb-4">
-                  <h3 className="text-lg sm:text-2xl font-bold text-marriageHotPink mb-4 flex items-center gap-2"><FiCalendar /> Bookings for {drawerDate ? new Date(drawerDate).toLocaleDateString() : ''}</h3>
-                  {selectedBookings.map((selectedBooking, idx) => (
-                    <div key={selectedBooking._id} className="mb-6 border-b pb-4 last:border-b-0 last:pb-0">
-                      <div className="mb-2 flex items-center gap-2"><FiUser className="text-marriageHotPink" /> <span className="font-semibold">Guest:</span> {selectedBooking.guestName || '-'}</div>
-                      <div className="mb-2 flex items-center gap-2"><FiMail className="text-marriageHotPink" /> <span className="font-semibold">Email:</span> {selectedBooking.guestEmail || '-'}</div>
-                      <div className="mb-2 flex items-center gap-2"><FiClock className="text-marriageHotPink" /> <span className="font-semibold">Date:</span> {selectedBooking.bookingDate ? new Date(selectedBooking.bookingDate).toLocaleString() : '-'}</div>
-                      <div className="mb-2 flex items-center gap-2"><span className="font-semibold">Status:</span> <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${selectedBooking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : selectedBooking.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{selectedBooking.status}</span></div>
-                      {selectedBooking.status === 'pending' && (
-                        <div className="flex gap-4 mt-4">
-                          <button
-                            className="px-4 py-2 bg-green-500 text-white rounded font-bold shadow hover:bg-green-700 transition flex items-center gap-2"
-                            onClick={() => dispatch(updateBookingStatus({ id: selectedBooking._id, status: 'approved' }))}
-                            disabled={actionStatus[selectedBooking._id] === 'loading'}
-                          >
-                            <FiCheckCircle /> Approve
-                          </button>
-                          <button
-                            className="px-4 py-2 bg-red-500 text-white rounded font-bold shadow hover:bg-red-700 transition flex items-center gap-2"
-                            onClick={() => dispatch(updateBookingStatus({ id: selectedBooking._id, status: 'rejected' }))}
-                            disabled={actionStatus[selectedBooking._id] === 'loading'}
-                          >
-                            <FiXCircle /> Reject
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+  <div className="fixed inset-0 z-50 flex">
+    {/* Background Overlay */}
+    <div
+      className="flex-1 bg-black bg-opacity-40 transition-opacity duration-300 ease-in-out"
+      onClick={() => setDrawerOpen(false)}
+    />
+
+    {/* Slide-in Drawer */}
+    <div
+      className={`w-full max-w-md bg-white h-full shadow-lg flex flex-col transform transition-transform duration-300 ease-in-out ${
+        drawerOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}
+    >
+      {/* Header */}
+      <div className="sticky top-0 bg-white z-10 p-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 className="text-2xl font-bold text-marriageHotPink flex items-center gap-2">
+          <FiCalendar className="text-2xl" />
+          Bookings for {drawerDate ? new Date(drawerDate).toLocaleDateString() : ''}
+        </h3>
+        <button
+          className="text-marriageRed hover:text-marriageHotPink text-2xl font-bold"
+          onClick={() => setDrawerOpen(false)}
+          aria-label="Close details"
+        >
+          <FiX />
+        </button>
+      </div>
+
+      {/* Booking Details */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {selectedBookings.map((selectedBooking, idx) => (
+          <div key={selectedBooking._id} className="mb-4 pb-4 border-b last:border-b-0">
+            <div className="mb-2 flex items-start gap-2">
+              <FiUser className="text-marriageHotPink mt-1 flex-shrink-0" />
+              <div>
+                <span className="font-semibold">Guest: </span>
+                {selectedBooking.guestName || '-'}
               </div>
             </div>
+            <div className="mb-2 flex items-start gap-2">
+              <FiMail className="text-marriageHotPink mt-1 flex-shrink-0" />
+              <div>
+                <span className="font-semibold">Email: </span>
+                {selectedBooking.guestEmail || '-'}
+              </div>
+            </div>
+            <div className="mb-2 flex items-start gap-2">
+              <FiClock className="text-marriageHotPink mt-1 flex-shrink-0" />
+              <div>
+                <span className="font-semibold">Date: </span>
+                {selectedBooking.bookingDate
+                  ? new Date(selectedBooking.bookingDate).toLocaleString()
+                  : '-'}
+              </div>
+            </div>
+            <div className="mb-3 flex items-center gap-2">
+              <span className="font-semibold">Status: </span>
+              <span
+                className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  selectedBooking.status === 'pending'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : selectedBooking.status === 'approved'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}
+              >
+                {selectedBooking.status}
+              </span>
+            </div>
+
+            {/* Approve / Reject Buttons */}
+            {selectedBooking.status === 'pending' && (
+              <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                <button
+                  className="flex-1 px-3 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600 transition flex items-center justify-center gap-2 text-sm sm:text-base"
+                  onClick={() =>
+                    dispatch(updateBookingStatus({ id: selectedBooking._id, status: 'approved' }))
+                  }
+                  disabled={actionStatus[selectedBooking._id] === 'loading'}
+                >
+                  <FiCheckCircle className="text-sm sm:text-base" /> Approve
+                </button>
+                <button
+                  className="flex-1 px-3 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 transition flex items-center justify-center gap-2 text-sm sm:text-base"
+                  onClick={() =>
+                    dispatch(updateBookingStatus({ id: selectedBooking._id, status: 'rejected' }))
+                  }
+                  disabled={actionStatus[selectedBooking._id] === 'loading'}
+                >
+                  <FiXCircle className="text-sm sm:text-base" /> Reject
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </OwnerLayout>
   );

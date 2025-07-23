@@ -512,9 +512,9 @@ exports.verifyPayment = async (req, res) => {
     const guestEmail = payment.bookingId.guestEmail;
     const guestName = payment.bookingId.guestName || 'Guest';
     if (guestEmail) {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: guestEmail,
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: guestEmail,
         subject: `Payment ${status === 'verified' ? 'Verified' : 'Rejected'} for Your Booking`,
         text: `Dear ${guestName},\n\nYour payment for the booking at ${hall.name} has been ${status === 'verified' ? 'verified' : 'rejected'}.\n\nThank you!`,
       });

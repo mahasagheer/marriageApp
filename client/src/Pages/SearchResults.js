@@ -73,8 +73,8 @@ const SearchResults = () => {
       <div className="max-w-6xl mx-auto w-full flex-1">
         <h2 className="text-4xl font-extrabold text-marriageHotPink mb-10 text-center tracking-tight drop-shadow-lg text-2xl sm:text-3xl md:text-4xl px-2">Search Results</h2>
         {loading ? (
-          <div className="text-center text-gray-400 text-lg font-semibold animate-pulse">Loading...</div>
-        ) : error ? (
+              <div className="loader"></div>
+            ) : error ? (
           <div className="text-center text-marriageRed text-lg font-semibold">{error}</div>
         ) : halls.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12 text-center text-gray-400 text-lg sm:text-xl font-semibold border border-marriagePink/20 mx-2">No halls found matching your criteria.</div>

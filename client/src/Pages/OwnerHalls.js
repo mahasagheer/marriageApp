@@ -137,8 +137,8 @@ const OwnerHalls = () => {
       {/* Halls List */}
       <div className="flex flex-col gap-4 sm:gap-6">
         {loading ? (
-          <div className="text-center text-gray-400">Loading...</div>
-        ) : halls.length === 0 ? (
+              <div className="loader"></div>
+            ) : halls.length === 0 ? (
           <div className="bg-white rounded-xl shadow p-6 sm:p-8 text-center text-gray-400">
             No halls added yet.
           </div>

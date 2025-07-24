@@ -123,8 +123,8 @@ export const MyBookings = () => {
       <div className="p-2 sm:p-4 md:p-6 md:mt-0 sm:mt-[5%] mt-[15%]">
         <h2 className="text-3xl sm:text-2xl md:text-3xl text-marriageHotPink font-bold text-gray-800 mb-4 sm:mb-6">My Bookings</h2>
         {loading ? (
-          <div className="text-center text-gray-400 py-8">Loading...</div>
-        ) : halls.length === 0 ? (
+              <div className="loader"></div>
+            ) : halls.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-4 sm:p-6 text-center text-gray-400">
             You have no halls. Add a hall to see bookings.
           </div>

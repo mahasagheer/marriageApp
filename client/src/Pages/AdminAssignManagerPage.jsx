@@ -150,8 +150,8 @@ const AssignedManagerPage = () => {
                 <div>
                   <label className="block mb-1 font-medium text-gray-700">Select Manager</label>
                   {fetchingManagers ? (
-                    <div className="text-gray-500">Loading managers...</div>
-                  ) : (
+              <div className="loader"></div>
+            ) : (
                     <select
                     value={managerId}
                     onChange={e => setManagerId(e.target.value)}

@@ -91,7 +91,7 @@ export default function UserProfileDisplay() {
   return (
     <div className="min-h-screen bg-white">
       {!profile ? (
-        <div className='flex flex-col items-center justify-center min-h-screen'>
+        <div className='flex flex-col items-center justify-center py-[6rem]'>
           <HeroSection />
           
         </div>

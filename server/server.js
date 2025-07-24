@@ -37,7 +37,7 @@ const bookingRoutes = require('./routes/booking');
 const userProfileRoutes= require('./routes/userProfile')
 const ChatRoute=require('./routes/chat')
 const menuRoutes = require('./routes/menus');
-
+const matchPreferenceRoutes=require('./routes/matchPreference')
 app.use('/api/auth', authRoutes);
 // Register /api/users endpoint directly
 app.use('/api', authRoutes);
@@ -49,6 +49,7 @@ app.use("/api/userProfile", userProfileRoutes)
 app.use('/api/agency', agencyRoutes);
 app.use('/api/chat',ChatRoute)
 app.use('/api/menus', menuRoutes);
+app.use('/api/match-preference', matchPreferenceRoutes)
 // Basic route
 app.get('/', (req, res) => {
   res.send('Server is running');

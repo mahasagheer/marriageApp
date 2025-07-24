@@ -275,7 +275,15 @@ const AgencyListing = () => {
                       <p className="mt-3 text-gray-600 line-clamp-2">{agency.profile}</p>
                       <div className="mt-4 flex justify-center items-center">
                         <Button
-                          onClick={() => navigate(`/user/agencies/${agency._id}`)}
+                          onClick={() => {   // Retrieving the value from localStorage
+                            const user = JSON.parse(localStorage.getItem('id'));
+                            console.log("user", user)
+                            if (user) {
+                              navigate(`/user/agencies/${agency._id}`)
+                            } else {
+                              navigate('/user/addProfile')
+                            }
+                          }}
                           btnText="View Profile"
                         />
                         {/* <a

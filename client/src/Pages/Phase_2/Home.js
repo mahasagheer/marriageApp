@@ -28,7 +28,6 @@ export const HeroSection = () => {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
         if (!user?.id) {
           throw new Error('User ID not found');
         }
@@ -37,10 +36,12 @@ export const HeroSection = () => {
   
         // Check if result exists and has a message property
         if (result?.message?.includes('Profile not found')) {
+          localStorage.setItem('id', JSON.stringify(false));
           setProfile(null);
           setError(null);
-        } else {
-          setProfile(result || null);
+        } else if(result != null) {
+          setProfile(result);
+          localStorage.setItem('id', JSON.stringify(true));
         }
       } catch (err) {
         // Safely check error message
@@ -131,7 +132,7 @@ export const HeroSection = () => {
 }
 
 const FeaturesSection = () => (
-  <div className="my-16 px-4">
+  <div className="py-16 px-4">
     <h2 className="text-3xl font-bold text-marriageRed mb-12 text-center">
       Why Choose WedLink?
     </h2>
@@ -229,7 +230,6 @@ const MatchmakingHome = () => {
     <div className=" bg-white min-h-screen ">
 
         <HeroSection />
-
         <ProfileShowcase />
         <FeaturesSection />
       

@@ -146,6 +146,16 @@ export const router = createBrowserRouter([
     )
   },
   {
+    path: "/match-making-form/:token",
+    element: (
+      <ProtectedRoute allowedRoles={['user']}>
+        <UserLayout>
+          <AgencyDetail />
+        </UserLayout>
+      </ProtectedRoute>
+    )
+  },
+  {
     path: "/:id",
     element: (
       <ProtectedRoute allowedRoles={["hall-owner", "manager", "admin"]}>

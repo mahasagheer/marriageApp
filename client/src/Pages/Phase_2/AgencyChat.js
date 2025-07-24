@@ -4,6 +4,7 @@ import { fetchSessions, fetchMessages, sendMessage, clearMessages, GetSession, R
 import { getSocket, disconnectSocket } from '../../socket';
 import { FiFileText } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import MatchmakingForm from './MatchMakingForm';
 
 const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   const dispatch = useDispatch();
@@ -16,18 +17,15 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   const [socket, setSocket] = useState(null);
   const [requestingDetails, setRequestingDetails] = useState(false);
   const messagesEndRef = useRef(null); // ✅ ref to scroll into view
-
+const[showModal,setShowModal]=useState(false)
   useEffect(() => {
-
     if (agencyId && user?.id && user?.role === 'user') {
-      console.log(user?.id, agencyId)
       dispatch(GetSession({ agencyId, userId: user.id }))
         .unwrap()
         .then((session) => {
           setSelectedSession(session); // ✅ Auto-select
         });
     } else if (agencyId && userId && user?.role === 'agency') {
-      console.log(agencyId, userId)
       dispatch(GetSession({ agencyId, userId }))
         .unwrap()
         .then((session) => {
@@ -36,8 +34,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
     }
   }, [agencyId, user]);
   useEffect(() => {
-    if (agencyId) {
-      dispatch(ReadMessages({ sessionId: selectedSession?._id, reader: 'agency' }))
+      dispatch(ReadMessages({ sessionId: selectedSession?._id, reader: user?.role }))
         .unwrap()
         .then((session) => {
           // setCandidates(session);
@@ -47,8 +44,8 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
           setError("Failed to fetch sessions");
           setLoading(false); // ✅ also update on error
         });
-    }
-  }, [agencyId, dispatch]);
+    
+  }, [ dispatch]);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -57,8 +54,8 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   };
 
   useEffect(() => {
-  scrollToBottom();
-}, [messages]);
+    scrollToBottom();
+  }, [messages]);
 
   // Setup socket
   useEffect(() => {
@@ -82,11 +79,10 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
     };
   }, [selectedSession]);
 
-
-  console.log(chatInput)
-
-  const handleSend = async (e) => {
-    console.log(e)
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+    const handleSend = async (e) => {
     e.preventDefault();
     // if (!chatInput|| !selectedSession) return;
     const payload = {
@@ -95,20 +91,23 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
       type: 'text',
       text: chatInput,
     };
-    console.log(payload)
     await dispatch(sendMessage(payload));
     setChatInput('');
   };
 
-  const handleRequestDetails = () => {
-    setRequestingDetails(true);
-    socket.emit('sendMessage', {
-      sessionId: selectedSession._id,
-      sender: 'agency',
-      type: 'requestForm',
-      text: 'Please fill out the matchmaking form.'
-    });
-    setTimeout(() => setRequestingDetails(false), 1000);
+  const handleRequestDetails = async () => {
+    if (user?.role === 'agency') {
+      setRequestingDetails(true);
+     const payload={
+        sessionId: selectedSession._id,
+        sender: 'agency',
+        type: 'requestForm',
+        formLink:`${process.env.FRONTEND_URL}/match-making-form`,
+        text: 'Please fill out the matchmaking form.'
+      };
+      await dispatch(sendMessage(payload));
+      setTimeout(() => setRequestingDetails(false), 1000);
+    }
   };
 
   return (
@@ -120,18 +119,18 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
             <>
               <div className="min-w-0 flex flex-col">
                 <div className="font-bold text-white truncate text-lg">
-                  {selectedSession.userId?.name || selectedSession.userId?.email || 'Anonymous User'}
+                  {selectedSession.userId?.name || 'Anonymous User'}
                 </div>
-                <div className="text-xs text-white/80 truncate">Session: {selectedSession._id}</div>
+                <div className="text-xs text-white/80 truncate"> {selectedSession.userId?.email}</div>
               </div>
-              <button
+              {user.role === 'agency' && <button
                 className="ml-auto p-2 rounded-full bg-white text-marriageHotPink hover:bg-marriagePink hover:text-white transition shadow"
                 title="Request Form"
                 disabled={requestingDetails}
                 onClick={handleRequestDetails}
               >
                 <FiFileText className="text-xl" />
-              </button>
+              </button>}
             </>
           )}
         </div>
@@ -142,7 +141,8 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
             messages.length === 0 ? (
               <div className="text-gray-400 text-center mt-8">No messages yet.</div>
             ) : (
-              messages.map((msg, idx) => (
+              <>
+             { messages.map((msg, idx) => (
                 <div key={idx} className={`mb-3 flex ${msg.sender === user?.role ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
                   <div
                     className={`relative max-w-[75%] px-4 py-2 rounded-2xl shadow-lg ${msg.sender === user?.role
@@ -151,9 +151,9 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                   >
                     <div className="whitespace-pre-line break-words text-base">
                       {msg.type === 'formResponse' ? (
-                        <pre>{JSON.stringify(msg.formData, null, 2)}</pre>
+                        <pre>{JSON.stringify(JSON.parse(msg.formData), null, 2)}</pre>
                       ) : msg.type === 'requestForm' ? (
-                        <a href={msg.formLink || '#'} target="_blank" rel="noopener noreferrer">Click here to fill the form</a>
+                        <a onClick={()=>setShowModal(true)} className='cursor-pointer text-'>{msg.text}</a>
                       ) : (
                         msg.text
                       )}
@@ -163,7 +163,9 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                     </div>
                   </div>
                 </div>
-              ))
+              ))}
+              <div ref={messagesEndRef} />
+              </>
             )
           ) : (
             <div className="text-gray-400 flex-1 flex items-center justify-center">Select a chat to view messages</div>
@@ -189,6 +191,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
             Send
           </button>
         </form>
+        {showModal && <MatchmakingForm onClose={()=>setShowModal(false)} selectedSession={selectedSession}/>}
       </div>
     </div>
   );

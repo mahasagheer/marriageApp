@@ -52,8 +52,10 @@ exports.getMessages = async (req, res) => {
 // Get sessions with unread count for agency
 exports.getAgencyUnreadMessages = async (req, res) => {
   try {
-    const { agencyId } = req.params;
-    const sessions = await Session.find({ agencyId })
+    const { role, id } = req.params;
+    console.log(req.params)
+    const filter = role === 'user' ? { userId: id } : { agencyId: id };
+    const sessions = await Session.find(filter)
       .populate('userId agencyId')
       .lean();
     // Attach unread count to each session
@@ -61,7 +63,7 @@ exports.getAgencyUnreadMessages = async (req, res) => {
       sessions.map(async (session) => {
         const unreadCount = await Message.countDocuments({
           sessionId: session._id,
-          sender: 'user',        // ✅ only count user's unread messages
+          sender: role === 'user' ? 'agency' : 'user',        // ✅ only count user's unread messages
           isRead: false,
         });
         return { ...session, unreadCount };
@@ -80,7 +82,7 @@ exports.sendMessage = async (req, res) => {
   try {
     const msg = await Message.create(req.body);
     console.log("req.io exists:", !!req.io); // should be true
-console.log(msg)
+    console.log(msg)
     req.io.to(req.body.sessionId.toString()).emit('newMessage', msg);
     res.json(msg);
   } catch (err) {
@@ -101,17 +103,3 @@ exports.markMessagesAsRead = async (req, res) => {
   res.json({ success: true });
 };
 
-// new endpoint
-// router.post('/form-response', async (req,res)=>{
-//   const { sessionId, formData } = req.body;
-//   const msg = await Message.create({ sessionId, sender: 'user', type: 'formResponse', formData });
-//   req.io.to(sessionId.toString()).emit('newMessage', msg);
-//   res.json(msg);
-// });
-
-
-// if (msg.type === 'requestForm') {
-//   return <a href={msg.formLink} target="_blank">Fill Form</a>
-// } else if (msg.type === 'formResponse') {
-//   return <pre>{JSON.stringify(msg.formData, null,2)}</pre>;
-// }

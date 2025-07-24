@@ -59,7 +59,7 @@ export const fetchSessions = createAsyncThunk(
   async ({  role, id }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API}/sessions/unread-agency/${id}`, {
+      const res = await fetch(`${API}/sessions/unread-agency/${role}/${id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -110,6 +110,12 @@ const chatSlice = createSlice({
     },
     setCurrentSession(state, action) {
       state.current = action.payload;
+    },
+    // setMessages(state, action) {
+    //   state.messages = action.payload;
+    // },
+    addMessage(state, action) {
+      state.messages.push(action.payload);
     },
   },
   extraReducers: (builder) => {

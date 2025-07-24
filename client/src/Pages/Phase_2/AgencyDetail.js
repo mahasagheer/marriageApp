@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import AgencyChat from './AgencyChat';
 import { FiX } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import { fetchSessions } from '../../slice/AgencyChatSlice';
 
 const AgencyDetail = () => {
   const { id } = useParams();
@@ -14,6 +15,7 @@ const AgencyDetail = () => {
   const [agency, setAgency] = useState(null);
   const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
+const[unreadCount,setUnreadCount]=useState([])
 
 
   useEffect(() => {
@@ -26,6 +28,19 @@ const AgencyDetail = () => {
           setError('Agency profile not found');
         } else {
           setAgency(result.payload?.data || null);
+          console.log(result.payload?.data?.userId)
+          if (result?.payload?.data.userId) {
+            dispatch(fetchSessions({ role: 'user', id:user?.id }))
+                .unwrap()
+                .then((session) => {
+                    setUnreadCount(session[0].unreadCount);
+                    setLoading(false); // ✅ update loading
+                })
+                .catch((err) => {
+                    setError("Failed to fetch sessions");
+                    setLoading(false); // ✅ also update on error
+                });
+        }
         }
       } catch (err) {
         const errMessage = err?.message || 'Failed to load agency profile';
@@ -39,7 +54,10 @@ const AgencyDetail = () => {
   }, [id, dispatch]);
 
 
-  const toggleChat = async() => {
+  const toggleChat = async () => {
+    if (!showChat && unreadCount > 0) {
+      setUnreadCount(0);
+    }
     setShowChat(!showChat);
   };
 
@@ -88,13 +106,13 @@ const AgencyDetail = () => {
     address = {},
     contactNo = 'Not provided',
     images = [],
-    verification = 'pending'
+    verification = 'pending',
+    isVerified
   } = agency;
-console.log(agency)
   const getVerificationBadge = () => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider";
 
-    if (verification === 'verified') {
+    if (isVerified || verification === 'verified') {
       return (
         <span className={`${baseClasses} bg-green-100 text-green-800 flex items-center`}>
           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -208,7 +226,7 @@ console.log(agency)
                       src={`http://localhost:5000/${img}`}
                       alt={`${name} gallery ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                     
+
                     />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button className="bg-white/90 text-gray-800 p-2 rounded-full">
@@ -225,35 +243,44 @@ console.log(agency)
         </div>
       </div>
       <div className="fixed bottom-8 right-8 flex gap-4 z-40">
-        <button
-          onClick={toggleChat}
-          className="bg-marriageHotPink text-white p-4 rounded-full shadow-lg hover:bg-marriageRed transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        </button>
-      </div>
-
+  <button
+    onClick={toggleChat}
+    className="relative bg-marriageHotPink text-white p-4 rounded-full shadow-lg hover:bg-marriageRed transition-colors"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+    
+    {/* Unread count badge */}
+    {unreadCount > 0 && (
+      <span className="absolute -top-2 -right-2 bg-marriageRed text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+        {unreadCount > 9 ? '9+' : unreadCount}
+      </span>
+    )}
+  </button>
+</div>
       {/* Chat component */}
       {showChat && (
-        <div className="fixed inset-0 min-h-screen z-50 flex items-center justify-center bg-black bg-opacity-40 animate-fadeIn">
+        <div className="fixed inset-0 min-h-screen h-screen overflow-y-auto z-50 flex items-center justify-center bg-black bg-opacity-40 animate-fadeIn">
           <button
             className="absolute top-[3%] right-[18%] rounded-full text-marriageRed text-4xl font-bold hover:text-marriageHotPink z-50 flex items-center justify-center"
             onClick={() => setShowChat(false)}
             aria-label="Close chat"
             style={{ width: 48, height: 48 }}
           >
-            <FiX/>
+            <FiX />
           </button>
-          <div className="bg-white rounded-3xl my-2 shadow-2xl border-2 h-[95vh]  max-w-4xl border-marriagePink p-0  flex flex-col overflow-hidden relative">
-            <div className="flex-1 flex flex-col bg-gradient-to-br  w-full  from-white via-marriagePink/10 to-marriagePink/5">
 
-              <AgencyChat isAgency={user?.role=='agency'}  agencyId={agency?.userId} />
+          {/* Modal Container */}
+          <div className="bg-white rounded-3xl my-2 shadow-2xl border-2 border-marriagePink p-0 flex flex-col relative h-[90vh] w-[80vw] max-w-[700px]">
+            <div className="flex-1 flex flex-col w-full bg-gradient-to-br from-white via-marriagePink/10 to-marriagePink/5">
+              <AgencyChat isAgency={user?.role == 'agency'} agencyId={agency?.userId} />
             </div>
           </div>
         </div>
+
       )}
+
 
     </div>
   );

@@ -71,7 +71,7 @@ const MatchmakingForm = ({ onClose, selectedSession }) => {
 
   // Load existing preferences when component mounts
   useEffect(() => {
-    dispatch(getPreferences()).unwrap().then((res) => {
+    dispatch(getPreferences(user.id)).unwrap().then((res) => {
       const prefs = res.data.preferences;
       if (prefs) {
         setId(res?.data?._id)

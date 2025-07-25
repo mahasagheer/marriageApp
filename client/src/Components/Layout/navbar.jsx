@@ -13,15 +13,13 @@ export const NavBar = () => {
 
   const handleLogout = () => {
     logout();
-    console.log("User logged out");
     setProfileDropdownOpen(false);
     setMenuOpen(false);
     navigate("/login");
   };
 
   const handleViewProfile = () => {
-    navigate("/user/profile");
-    console.log("View profile clicked");
+    navigate(`/user/${user.id}`);
     setProfileDropdownOpen(false);
     setMenuOpen(false);
   };

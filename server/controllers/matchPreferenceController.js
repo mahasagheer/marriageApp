@@ -42,7 +42,7 @@ exports.createOrUpdatePreferences = async (req, res) => {
 // Get User Preferences
 exports.getUserPreferences = async (req, res) => {
   try {
-    const preferences = await MatchmakingPreference.findOne({ user: req.user._id })
+    const preferences = await MatchmakingPreference.findOne({ user: req.params.id })
     // .populate('user', 'name email profilePicture');
     if (!preferences) {
       return res.status(404).json({

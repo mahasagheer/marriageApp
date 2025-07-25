@@ -5,11 +5,11 @@ const API = `${process.env.REACT_APP_API_URL}/match-preference`
 // GET /api/Prefernece/:id  – single Prefernece profile
 export const getPreferences = createAsyncThunk(
   "Prefernece/getPreferences",
-  async (_, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`${API}/`, {
+      const response = await fetch(`${API}/${id}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

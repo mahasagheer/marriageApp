@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { FiUpload, FiX } from 'react-icons/fi';
 
-function ImagePicker({setForm, form}) {
+function ImagePicker({setForm, form, id=''}) {
     const [dragActive, setDragActive] = useState(false);
 
     const handleFileChange = (e) => {
@@ -59,7 +59,7 @@ function ImagePicker({setForm, form}) {
                     {form?.images?.map((file, idx) => (
                       <div key={idx} className="relative group">
                         <img
-                          src={`http://localhost:5000/${file}`||URL.createObjectURL(file)}
+                          src={id?`http://localhost:5000/${file}`:URL.createObjectURL(file)}
                           alt="preview"
                           className="w-full h-[15rem] object-cover rounded-lg border"
                         />

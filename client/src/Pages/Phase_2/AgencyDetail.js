@@ -272,8 +272,8 @@ const[unreadCount,setUnreadCount]=useState([])
           </button>
 
           {/* Modal Container */}
-          <div className="bg-white rounded-3xl my-2 shadow-2xl border-2 border-marriagePink p-0 flex flex-col relative h-[90vh] w-[80vw] max-w-[700px]">
-            <div className="flex-1 flex flex-col w-full bg-gradient-to-br from-white via-marriagePink/10 to-marriagePink/5">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl my-2 shadow-2xl border-2 border-marriagePink p-0 flex flex-col relative h-[90vh] w-[80vw] max-w-[700px]">
+            <div className="flex-1 flex flex-col w-full ">
               <AgencyChat isAgency={user?.role == 'agency'} agencyId={agency?.userId} />
             </div>
           </div>

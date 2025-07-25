@@ -77,7 +77,7 @@ export const createAgency = createAsyncThunk(
   "agency/create",
   async (profileData, { rejectWithValue }) => {
     const token = localStorage.getItem('token');
-
+console.log(profileData)
     try {
       const response = await fetch(`${API}`, {
         method: 'POST',

@@ -53,7 +53,7 @@ const AgencyListing = () => {
     return matchesSearch && matchesVerified && matchesExperience && matchesCity;
   });
 
-  const cities = [...new Set(agencies.map(agency => agency.address.city))];
+  const cities = [...new Set(agencies?.map(agency => agency?.address.city))];
 
   if (loading) {
     return (
@@ -237,8 +237,8 @@ const AgencyListing = () => {
 
             {/* Agencies Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredAgencies.length > 0 ? (
-                filteredAgencies.map(agency => (
+              {filteredAgencies?.length > 0 ? (
+                filteredAgencies?.map(agency => (
                   <div key={agency._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="relative h-48 bg-gray-200">
                       {agency.images?.[0] ? (

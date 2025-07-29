@@ -31,7 +31,6 @@ const createProfile = async (req, res) => {
     if (req.file) {
       profileData.pic = req.file.path; 
     }
-console.log(profileData)
     const profile = await UserProfile.create(profileData);
     res.status(201).json(profile);
   } catch (err) {

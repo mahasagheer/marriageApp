@@ -1,23 +1,44 @@
 const PaymentDetail = require('../models/paymentConfirmation');
 
-// Create a new payment detail
+// POST /api/payment/request
 exports.createPayment = async (req, res) => {
   try {
-    const { userId, proofImage, paymentDetails, status } = req.body;
-    
-    const paymentDetail = new PaymentDetail({
+    const {
+      sessionId,
       userId,
-      proofImage,
-      paymentDetails,
-      status: status || 'pending'
+      amount,
+      currency,
+      description,
+      dueDate,
+      bankName,
+      accountNumber,
+      accountTitle,
+    } = req.body;
+
+    const payment = new PaymentDetail({
+      userId,
+      sessionId,
+      paymentDetails: {
+        amount,
+        currency,
+        description,
+        dueDate,
+        bankName,
+        accountNumber,
+        accountTitle,
+      },
+      status: 'pending',
     });
 
-    const savedPayment = await paymentDetail.save();
-    res.status(201).json(savedPayment);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    await payment.save();
+
+    res.status(201).json({ success: true, message: 'Payment request saved', payment });
+  } catch (err) {
+    console.error('Payment save error:', err);
+    res.status(500).json({ success: false, message: 'Failed to save payment request' });
   }
 };
+
 
 // Get all payment details
 exports.getAllPayments = async (req, res) => {
@@ -55,36 +76,37 @@ exports.getPaymentById = async (req, res) => {
   }
 };
 
+exports.getLatestPayment = async (req, res) => {
+  const { sessionId } = req.params;
+  const latest = await PaymentDetail.findOne({ sessionId }).sort({ createdAt: -1 });
+  res.status(200).json({
+    success: true,
+    data: latest
+  });
+};
+
+
+
 // Update a payment detail
 exports.updatePayment = async (req, res) => {
-  try {
-    const { proofImage, paymentDetails, status } = req.body;
-    const updateFields = {};
-    
-    if (proofImage) updateFields.proofImage = proofImage;
-    if (paymentDetails) updateFields.paymentDetails = paymentDetails;
-    if (status) updateFields.status = status;
+  const payment = await PaymentDetail.findById(req.params.id);
+  if (!payment) return res.status(404).json({ message: 'Not found' });
 
-    const updatedPayment = await PaymentDetail.findByIdAndUpdate(
-      req.params.id,
-      updateFields,
-      { new: true }
-    ).populate('userId');
-
-    if (!updatedPayment) {
-      return res.status(404).json({ message: 'Payment not found' });
-    }
-    res.json(updatedPayment);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  if (req.file) {
+    payment.proofImage = req.file.path; // or Cloudinary URL
+    payment.status = 'proof_uploaded';
+    await payment.save();
+ 
+    res.json({ message: 'Proof uploaded successfully.' ,payment});
   }
+
 };
 
 // Update payment status
 exports.updatePaymentStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    
+
     if (!['pending', 'awaiting_verification', 'verified', 'rejected', 'awaiting_payment'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }

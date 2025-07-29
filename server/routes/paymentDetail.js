@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const paymentController = require('../controllers/paymentConfirmationController');
+const paymentController = require('../controllers/paymentDetailController');
+const upload = require('../middleware/upload');
+const auth = require('../middleware/auth');
 
 // Create a new payment detail
 router.post('/', paymentController.createPayment);
@@ -12,11 +14,10 @@ router.get('/', paymentController.getAllPayments);
 router.get('/user/:userId', paymentController.getPaymentsByUser);
 
 // Get a single payment detail by ID
-router.get('/:id', paymentController.getPaymentById);
+router.get('/:sessionId', paymentController.getLatestPayment);
 
 // Update a payment detail
-router.patch('/:id', paymentController.updatePayment);
-
+router.put('/:id/upload-proof',auth, upload.single('proofImage'),paymentController.updatePayment)
 // Update payment status
 router.patch('/:id/status', paymentController.updatePaymentStatus);
 

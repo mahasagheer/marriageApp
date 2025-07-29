@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {  fetchMessages, sendMessage, clearMessages, GetSession, ReadMessages } from '../../slice/AgencyChatSlice';
+import { fetchMessages, sendMessage, clearMessages, GetSession, ReadMessages, createPayment, updatePayment, fetchLatestPayment } from '../../slice/AgencyChatSlice';
 import { getSocket, disconnectSocket } from '../../socket';
 import { FiDollarSign, FiFileText } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import MatchmakingForm from './MatchMakingForm';
-import  { PaymentRequestModal } from '../../Components/Phase_2/paymentModal';
+import { PaymentRequestModal } from '../../Components/Phase_2/paymentModal';
+import { createAccount } from '../../slice/savedAccountsSlice';
+import { UploadProofModal } from '../../Components/Phase_2/proofModal';
 
 const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   const dispatch = useDispatch();
@@ -20,23 +22,36 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   const messagesEndRef = useRef(null); // ✅ ref to scroll into view
   const [showModal, setShowModal] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
-  const[requestingPayment,setRequestingPayment]=useState(false)
-  const[paymentConfirmation,setPaymentConfirmation]=useState(false)
+  const [requestingPayment, setRequestingPayment] = useState(false)
+  const [paymentConfirmation, setPaymentConfirmation] = useState(false)
+  const [selectedRequest, setSelectedRequest] = useState(null);
   useEffect(() => {
     if (agencyId && user?.id && user?.role === 'user') {
       dispatch(GetSession({ agencyId, userId: user.id }))
         .unwrap()
-        .then((session) => {
-          setSelectedSession(session); // ✅ Auto-select
+        .then(async (session) => {
+
+          setSelectedSession(session);
+
         });
     } else if (agencyId && userId && user?.role === 'agency') {
       dispatch(GetSession({ agencyId, userId }))
         .unwrap()
         .then((session) => {
-          setSelectedSession(session); // ✅ Auto-select
+          setSelectedSession(session);
+
+          // ✅ Auto-select
         });
     }
   }, [agencyId, user]);
+
+  useEffect(() => {
+    setLoading(true);
+
+    if (selectedSession?._id) {
+      fetchPayment();// ✅ Auto-select
+    }
+  }, [selectedSession])
   useEffect(() => {
     dispatch(ReadMessages({ sessionId: selectedSession?._id, reader: user?.role }))
       .unwrap()
@@ -86,7 +101,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  
+
   const handleSend = async (e) => {
     e.preventDefault();
     // if (!chatInput|| !selectedSession) return;
@@ -104,15 +119,15 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
     if (user?.role === 'agency') {
       setRequestingDetails(true);
 
-      
-        const payload = {
-          sessionId: selectedSession._id,
-          sender: 'agency',
-          type: 'requestForm',
-          text: 'Please fill out the matchmaking form.'
-        };
-        await dispatch(sendMessage(payload));
-      
+
+      const payload = {
+        sessionId: selectedSession._id,
+        sender: 'agency',
+        type: 'requestForm',
+        text: 'Please fill out the matchmaking form.'
+      };
+      await dispatch(sendMessage(payload));
+
 
       setTimeout(() => setRequestingDetails(false), 1000);
     }
@@ -122,10 +137,18 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   const handleRequestPayment = async (paymentDetails) => {
     setRequestingPayment(true);
 
-    const paymentMessage = `Payment Request: ${paymentDetails.currency}${paymentDetails.amount} for "${paymentDetails.description}" Matchmaking Process ` +
-      (paymentDetails.dueDate ? ` (Due by ${new Date(paymentDetails.dueDate).toLocaleDateString()})
-      After sending payment You need to share confirmation message
-      ` : '');
+    const paymentMessage =
+      `💳 *Payment Request*\n` +
+      `Amount: ${paymentDetails.currency}${paymentDetails.amount}\n` +
+      `For: "${paymentDetails.description}" Matchmaking Process\n` +
+      `\n🏦 *Bank Details*:\n` +
+      `Account Title: ${paymentDetails.accountTitle}\n` +
+      `Account Number: ${paymentDetails.accountNumber}\n` +
+      `Bank Name: ${paymentDetails.bankName}\n` +
+      (paymentDetails.dueDate
+        ? `\n📅 *Due Date*: ${new Date(paymentDetails.dueDate).toLocaleDateString()}\n`
+        : '') +
+      `\nAfter sending payment, please share a confirmation message. ✅`;
 
     const payload = {
       sessionId: selectedSession._id,
@@ -137,18 +160,53 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
         currency: paymentDetails.currency,
         description: paymentDetails.description,
         dueDate: paymentDetails.dueDate,
-        status: 'pending'
+        bankName: paymentDetails.bankName,
+        accountNumber: paymentDetails.accountNumber,
+        accountTitle: paymentDetails.accountTitle,
+        status: 'pending',
       }
     };
 
     try {
       await dispatch(sendMessage(payload));
+
+      // ✅ Send data to backend for saving in PaymentDetail schema
+      const paymentPayload = {
+        sessionId: selectedSession._id,
+        userId: selectedSession.userId, // or however you get the candidate's userId
+        amount: paymentDetails.amount,
+        currency: paymentDetails.currency,
+        description: paymentDetails.description,
+        dueDate: paymentDetails.dueDate,
+        bankName: paymentDetails.bankName,
+        accountNumber: paymentDetails.accountNumber,
+        accountTitle: paymentDetails.accountTitle,
+      };
+
+      await dispatch(createPayment(paymentPayload))
+      const accountPayload = {
+        agencyId: user.id, // or get agency ID from session/context
+        accountTitle: paymentDetails.accountTitle,
+        accountNumber: paymentDetails.accountNumber,
+        bankName: paymentDetails.bankName
+      }
+      await dispatch(createAccount(accountPayload))
       setShowPayment(false);
     } catch (error) {
       console.error('Failed to send payment request:', error);
     } finally {
       setRequestingPayment(false);
     }
+  };
+
+
+  const fetchPayment = async () => {
+    await dispatch(fetchLatestPayment(selectedSession?._id)).unwrap().then((data) => {
+      setSelectedRequest(data?.data);
+      setLoading(false);
+    });
+
+
   };
 
 
@@ -165,7 +223,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                 </div>
                 <div className="text-xs text-white/80 truncate"> {selectedSession.userId?.email}</div>
               </div>
-              {(user.role === 'user' ) &&
+              {(user.role === 'user') &&
                 (<button
                   className="ml-auto p-2 rounded-full bg-white text-green-600 hover:bg-green-100 transition shadow"
                   title="Payment Confirmation"
@@ -174,7 +232,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                 >
                   <FiDollarSign className="text-xl" />
                 </button>)}
-              {(user.role === 'agency' ) &&
+              {(user.role === 'agency') &&
                 (<button
                   className="ml-auto p-2 rounded-full bg-white text-green-600 hover:bg-green-100 transition shadow"
                   title="Request Payment"
@@ -214,7 +272,18 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                           <pre>{JSON.stringify(JSON.parse(msg.formData), null, 2)}</pre>
                         ) : msg.type === 'requestForm' ? (
                           <a onClick={() => setShowModal(true)} className='cursor-pointer text-'>{msg.text}</a>
-                        ) : (
+                        ) : msg.type === 'paymentConfirmation' ? (
+                          <div>
+                            <p>{msg.text}</p>
+                            {msg.formData.proofImage && (
+                              <img
+                                src={`http://localhost:5000/${msg.formData.proofImage}`}
+                                alt="Payment Proof"
+                                className="mt-2 max-w-xs rounded border"
+                              />
+                            )}
+                          </div>
+                        ) :(
                           msg.text
                         )}
                       </div>
@@ -251,13 +320,23 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
             Send
           </button>
         </form>
-        {showPayment  && <PaymentRequestModal
-         onClose={() => setShowPayment(false)}
-         onRequestPayment={handleRequestPayment}
-         isLoading={requestingPayment}
-         savedAccounts={savedAccounts}
-         />}
-        {(showModal && user.role==='user') && <MatchmakingForm onClose={() => setShowModal(false)} selectedSession={selectedSession} />}
+        {showPayment && <PaymentRequestModal
+          onClose={() => setShowPayment(false)}
+          onRequestPayment={handleRequestPayment}
+          isLoading={requestingPayment}
+        />}
+        {paymentConfirmation && selectedRequest && (
+          <UploadProofModal
+            paymentData={selectedRequest}
+            onClose={() => {
+              setSelectedRequest(null);
+              setPaymentConfirmation(false);
+            }}
+            setPaymentConfirmation={setPaymentConfirmation}
+            selectedSession={selectedSession}
+          />
+        )}
+        {(showModal && user.role === 'user') && <MatchmakingForm onClose={() => setShowModal(false)} selectedSession={selectedSession} />}
       </div>
     </div>
   );
@@ -266,15 +345,4 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
 export default AgencyChat;
 
 
-const savedAccounts = [
-  {
-    accountTitle: 'Khushi Shahbaz',
-    accountNumber: '12345678901234',
-    bankName: 'Meezan Bank',
-  },
-  {
-    accountTitle: 'Ali Raza',
-    accountNumber: '09876543211234',
-    bankName: 'HBL',
-  },
-];
+

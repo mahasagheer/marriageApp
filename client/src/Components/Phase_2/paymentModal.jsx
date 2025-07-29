@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiX } from 'react-icons/fi';
-
+import { useAuth } from '../../context/AuthContext';
+import { useDispatch } from 'react-redux';
+import { fetchAccounts } from '../../slice/savedAccountsSlice';
 export const PaymentRequestModal = ({
   onClose,
   onRequestPayment,
   isLoading,
-  savedAccounts = [],
 }) => {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -16,26 +17,51 @@ export const PaymentRequestModal = ({
   const [bankName, setBankName] = useState('');
   const [useSaved, setUseSaved] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
+  const [savedAccounts, setSavedAccounts] = useState([]);
+
+  const { user } = useAuth();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const loadAccounts = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await dispatch(fetchAccounts(user.id)).unwrap().then((res)=>{
+
+          console.log(res)// Must return array
+          if (Array.isArray(res)) {
+            setSavedAccounts(res);
+          }
+        }); 
+      
+      } catch (error) {
+        console.error('Failed to load saved accounts:', error);
+      }
+    };
+
+    loadAccounts();
+  }, [user, dispatch]);
 
   const handleAccountSelect = (index) => {
     const acc = savedAccounts[index];
+    if (!acc) return;
     setSelectedAccount(acc);
-    setAccountTitle(acc.accountTitle);
-    setAccountNumber(acc.accountNumber);
-    setBankName(acc.bankName);
+    setAccountTitle(acc.accountTitle || '');
+    setAccountNumber(acc.accountNumber || '');
+    setBankName(acc.bankName || '');
     setUseSaved(true);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!accountTitle || !accountNumber || !bankName) {
-      alert('Please provide complete account info');
+    if (!amount || !description || !accountTitle || !accountNumber || !bankName) {
+      alert('Please fill in all required fields.');
       return;
     }
 
     if (!/^\d{10,20}$/.test(accountNumber)) {
-      alert('Account number must be 10–20 digits');
+      alert('Account number must be 10–20 digits.');
       return;
     }
 
@@ -110,6 +136,7 @@ export const PaymentRequestModal = ({
                   onChange={(e) => handleAccountSelect(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
                   defaultValue=""
+                  disabled={isLoading}
                 >
                   <option value="" disabled>
                     Select an account
@@ -130,6 +157,7 @@ export const PaymentRequestModal = ({
                     setSelectedAccount(null);
                   }}
                   className="text-sm text-blue-600 dark:text-blue-400 underline"
+                  disabled={isLoading}
                 >
                   Enter manually
                 </button>
@@ -149,6 +177,7 @@ export const PaymentRequestModal = ({
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-marriageHotPink focus:border-marriageHotPink"
               placeholder="e.g., Khushi Shahbaz"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -164,6 +193,7 @@ export const PaymentRequestModal = ({
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-marriageHotPink focus:border-marriageHotPink"
               placeholder="e.g., 12345678901234"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -179,6 +209,7 @@ export const PaymentRequestModal = ({
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-marriageHotPink focus:border-marriageHotPink"
               placeholder="e.g., HBL, UBL, Meezan"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -194,6 +225,7 @@ export const PaymentRequestModal = ({
               placeholder="Payment for matchmaking services"
               rows={3}
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -208,6 +240,7 @@ export const PaymentRequestModal = ({
               onChange={(e) => setDueDate(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-marriageHotPink focus:border-marriageHotPink"
+              disabled={isLoading}
             />
           </div>
 

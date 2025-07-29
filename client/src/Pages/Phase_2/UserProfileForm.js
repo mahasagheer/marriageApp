@@ -29,12 +29,12 @@ import {
 import { RadioInput } from "../../Components/Layout/radioButton";
 import { genderOptions, maritalStatusOptions } from "../../utils";
 import { Label } from "../../Components/Layout/Label";
-import {  UserCircle2,  } from "lucide-react";
+import { UserCircle2, } from "lucide-react";
 
 export default function CreateProfilePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-const {id}=useParams();
+  const { id } = useParams();
   const [profile, setProfile] = useState({
     name: "",
     age: "",
@@ -45,14 +45,14 @@ const {id}=useParams();
     education: "",
     occupation: "",
     income: "",
-    maritalStatus: "", 
+    maritalStatus: "",
     bio: "",
     pic: null,
     file: null,
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const steps = ["Personal", "Background", "Educational Details","Files"];
+  const steps = ["Personal", "Background", "Educational Details", "Files"];
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -152,7 +152,7 @@ const {id}=useParams();
         await dispatch(updateProfile({ id: id, updates: formData }));
         alert("✅ Profile updated successfully!");
       } else {
-    await dispatch(createProfile(formData));
+        await dispatch(createProfile(formData));
         alert("✅ Profile created successfully!");
 
       }
@@ -171,19 +171,19 @@ const {id}=useParams();
 
   return (
     <main className="max-w-[100%]  bg-white py-10 px-4">
-  <h1 className="text-3xl font-bold text-center mb-6 flex items-center justify-center gap-2">
-  {id ? (
-    <>
-      <FiPenTool className="w-8 h-8 text-red-600" />
-      <span>Edit Profile</span>
-    </>
-  ) : (
-    <>
-      <UserCircle2 className="w-8 h-8 text-red-600" />
-      <span>Create Your Matchmaking Profile</span>
-    </>
-  )}
-</h1>
+      <h1 className="text-3xl font-bold text-center mb-6 flex items-center justify-center gap-2">
+        {id ? (
+          <>
+            <FiPenTool className="w-8 h-8 text-red-600" />
+            <span>Edit Profile</span>
+          </>
+        ) : (
+          <>
+            <UserCircle2 className="w-8 h-8 text-red-600" />
+            <span>Create Your Matchmaking Profile</span>
+          </>
+        )}
+      </h1>
 
       <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
         <div
@@ -196,9 +196,8 @@ const {id}=useParams();
         {steps.map((s, idx) => (
           <div
             key={s}
-            className={`flex-1 text-center text-xs ${
-              idx === step ? "text-marriageHotPink font-semibold" : "text-gray-500"
-            }`}
+            className={`flex-1 text-center text-xs ${idx === step ? "text-marriageHotPink font-semibold" : "text-gray-500"
+              }`}
           >
             {s}
           </div>
@@ -230,24 +229,24 @@ const {id}=useParams();
               />
               <ErrorMsg msg={errors.age} />
             </div>
- {/* Gender Radio Group */}
- <div>
-            <Label icon={FiUsers}>Gender</Label>
-            <div className="space-y-2 mt-2">
-              {genderOptions.map((option) => (
-                <RadioInput
-                  key={option.value}
-                  name="gender"
-                  value={option.value}
-                  checked={profile.gender === option.value}
-                  onChange={handleChange}
-                  label={option.label}
-                />
-              ))}
+            {/* Gender Radio Group */}
+            <div>
+              <Label icon={FiUsers}>Gender</Label>
+              <div className="space-y-2 mt-2">
+                {genderOptions.map((option) => (
+                  <RadioInput
+                    key={option.value}
+                    name="gender"
+                    value={option.value}
+                    checked={profile.gender === option.value}
+                    onChange={handleChange}
+                    label={option.label}
+                  />
+                ))}
+              </div>
+              <ErrorMsg msg={errors.gender} />
             </div>
-            <ErrorMsg msg={errors.gender} />
-          </div>
-         
+
           </div>
           <div>
             <Label icon={FiTrendingUp}>Height</Label>
@@ -352,6 +351,13 @@ const {id}=useParams();
         <div className="space-y-5">
           <div>
             <Label icon={FiUploadCloud}>Profile Picture</Label>
+            {profile.pic && (
+              <img
+                src={`http://localhost:5000/${profile.pic}`}
+                alt="Current Profile"
+                className="mb-2 h-24 w-24 object-cover rounded-full border"
+              />
+            )}
             <Input
               name="pic"
               type="file"
@@ -381,7 +387,7 @@ const {id}=useParams();
             type="button"
           />
         )}
-        {step < steps.length-1 ? (
+        {step < steps.length - 1 ? (
           <Button
             btnText="Next"
             btnColor="marriageHotPink"

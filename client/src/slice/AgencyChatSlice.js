@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_API_URL}/chat`;
-
+const APIPayment = `${process.env.REACT_APP_API_URL}/payments`;
 const getAuthConfig = (token) => ({
   headers: {
     Authorization: `Bearer ${token}`,
@@ -11,7 +11,7 @@ const getAuthConfig = (token) => ({
 
 export const GetSession = createAsyncThunk(
   'chat/getSession',
-  async ({  agencyId, userId }, { rejectWithValue }) => {
+  async ({ agencyId, userId }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API}/session`, {
@@ -33,7 +33,7 @@ export const GetSession = createAsyncThunk(
 
 export const ReadMessages = createAsyncThunk(
   'chat/read-msg',
-  async ({  sessionId, reader }, { rejectWithValue }) => {
+  async ({ sessionId, reader }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API}/mark-read`, {
@@ -42,7 +42,7 @@ export const ReadMessages = createAsyncThunk(
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ sessionId,reader }),
+        body: JSON.stringify({ sessionId, reader }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch session');
@@ -56,7 +56,7 @@ export const ReadMessages = createAsyncThunk(
 
 export const fetchSessions = createAsyncThunk(
   'chat/fetchSession',
-  async ({  role, id }, { rejectWithValue }) => {
+  async ({ role, id }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API}/sessions/unread-agency/${role}/${id}`, {
@@ -85,11 +85,49 @@ export const fetchMessages = createAsyncThunk(
   }
 );
 
+export const fetchLatestPayment = createAsyncThunk(
+  'chat/fetchLatestPayment',
+  async (sessionId, { getState }) => {
+    const token = getState().auth.token;
+    const res = await fetch(`${APIPayment}/${sessionId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    return data;
+  }
+);
+
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
   async (payload, { getState }) => {
     const token = getState().auth.token;
     const { data } = await axios.post(`${API}/messages`, payload, getAuthConfig(token));
+    return data;
+  }
+);
+
+export const createPayment = createAsyncThunk(
+  'chat/createPayment',
+  async (payload, { getState }) => {
+    const token = getState().auth.token;
+    const { data } = await axios.post(`${APIPayment}/`, payload, getAuthConfig(token));
+    return data;
+  }
+);
+
+export const updatePayment = createAsyncThunk(
+  'chat/updatePayment',
+  async ({ paymentId,formData }, { getState }) => {
+    console.log(paymentId,)
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+    const token = getState().auth.token;
+    const { data } = await axios.put(`${APIPayment}/${paymentId}/upload-proof`, formData, getAuthConfig(token));
     return data;
   }
 );
@@ -120,10 +158,10 @@ const chatSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-    
-    .addCase(GetSession.fulfilled, (state, action) => {
-          state.sessions.push(action.payload); // or filter + push if you want to avoid duplicates
-    })
+
+      .addCase(GetSession.fulfilled, (state, action) => {
+        state.sessions.push(action.payload); // or filter + push if you want to avoid duplicates
+      })
       // Fetch Sessions
       .addCase(fetchSessions.pending, (s) => {
         s.status = 'loading';

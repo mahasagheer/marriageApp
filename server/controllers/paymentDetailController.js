@@ -1,5 +1,5 @@
 const PaymentDetail = require('../models/paymentConfirmation');
-
+const AgencyProfile = require('../models/agencyProfile');
 // POST /api/payment/request
 exports.createPayment = async (req, res) => {
   try {
@@ -8,6 +8,7 @@ exports.createPayment = async (req, res) => {
       userId,
       amount,
       currency,
+      agencyId,
       description,
       dueDate,
       bankName,
@@ -18,6 +19,7 @@ exports.createPayment = async (req, res) => {
     const payment = new PaymentDetail({
       userId,
       sessionId,
+      agencyId,
       paymentDetails: {
         amount,
         currency,
@@ -50,23 +52,37 @@ exports.getAllPayments = async (req, res) => {
   }
 };
 
-// Get payment details by user ID
+
+
+
 exports.getPaymentsByUser = async (req, res) => {
   try {
-    const payments = await PaymentDetail.find({ userId: req.params.userId }).populate('userId');
-    if (!payments || payments.length === 0) {
-      return res.status(404).json({ message: 'No payments found for this user' });
-    }
-    res.json(payments);
+    // Get all payments of this user
+    const payments = await PaymentDetail.find({ userId: req.params.userId });
+
+    // Fetch agency profile for each agencyId using agencyId = userId of agency
+    const paymentsWithAgency = await Promise.all(
+      payments.map(async (payment) => {
+        const agencyProfile = await AgencyProfile.findOne({ userId: payment.agencyId });
+        return {
+          ...payment._doc,
+          agencyProfile, // attach full agency profile
+        };
+      })
+    );
+
+    res.status(200).json(paymentsWithAgency);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Failed to fetch payments:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 // Get a single payment detail by ID
 exports.getPaymentById = async (req, res) => {
   try {
-    const payment = await PaymentDetail.findById(req.params.id).populate('userId');
+    console.log(req.params.id)
+    const payment = await PaymentDetail.findById(req.params.id);
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });
     }
@@ -105,14 +121,14 @@ exports.updatePayment = async (req, res) => {
 // Update payment status
 exports.updatePaymentStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const {id, status } = req.params;
 
-    if (!['pending', 'awaiting_verification', 'verified', 'rejected', 'awaiting_payment'].includes(status)) {
+    if (!['pending', 'proof_uploaded', 'verified', 'rejected',].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
     const updatedPayment = await PaymentDetail.findByIdAndUpdate(
-      req.params.id,
+      id,
       { status },
       { new: true }
     ).populate('userId');
@@ -123,18 +139,5 @@ exports.updatePaymentStatus = async (req, res) => {
     res.json(updatedPayment);
   } catch (error) {
     res.status(400).json({ message: error.message });
-  }
-};
-
-// Delete a payment detail
-exports.deletePayment = async (req, res) => {
-  try {
-    const deletedPayment = await PaymentDetail.findByIdAndDelete(req.params.id);
-    if (!deletedPayment) {
-      return res.status(404).json({ message: 'Payment not found' });
-    }
-    res.json({ message: 'Payment deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
 };

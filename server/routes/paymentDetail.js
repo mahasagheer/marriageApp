@@ -13,15 +13,15 @@ router.get('/', paymentController.getAllPayments);
 // Get payment details by user ID
 router.get('/user/:userId', paymentController.getPaymentsByUser);
 
+router.get('/payment/:id', paymentController.getPaymentById);
+
 // Get a single payment detail by ID
 router.get('/:sessionId', paymentController.getLatestPayment);
 
 // Update a payment detail
 router.put('/:id/upload-proof',auth, upload.single('proofImage'),paymentController.updatePayment)
 // Update payment status
-router.patch('/:id/status', paymentController.updatePaymentStatus);
+router.put('/:id/:status', paymentController.updatePaymentStatus);
 
-// Delete a payment detail
-router.delete('/:id', paymentController.deletePayment);
 
 module.exports = router;

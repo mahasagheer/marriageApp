@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import logo from "../../assets/logo.png";
+import LogoTwo from "../../assets/logoTwo.png";
 import { Button } from "./Button";
 import { useNavigate } from "react-router-dom";
 import { FiUser } from "react-icons/fi";
@@ -35,12 +35,12 @@ export const NavBar = () => {
   };
 
   return (
-    <nav className="bg-white/90 py-3 px-3 md:px-8 lg:px-[10%] flex justify-between items-center font-serif relative z-20">
+    <nav className="bg-white/90 dark:bg-gray-900 py-3 px-3 md:px-8 lg:px-[10%] flex justify-between items-center font-serif relative z-20">
       <div className="flex items-center flex-shrink-0">
         <img
-          src={logo}
+          src={LogoTwo}
           alt="WedLink"
-          className="h-12 md:h-20 bg-white mx-auto"
+          className="h-12 md:h-20 bg-white mx-auto rounded-full"
         />
       </div>
 

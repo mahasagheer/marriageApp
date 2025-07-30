@@ -17,7 +17,6 @@ export const UploadProofModal = ({ paymentData, onClose, setPaymentConfirmation,
        
                   setLoading(true);
         await dispatch(updatePayment({ paymentId: paymentData._id, formData })).unwrap().then((res) => {
-           console.log(res)
             const payload = {
                 sessionId: selectedSession._id,
                 sender: 'user',
@@ -25,6 +24,7 @@ export const UploadProofModal = ({ paymentData, onClose, setPaymentConfirmation,
                 text: 'Payment Proof',
                 formData: {
                   proofImage:res?.payment?.proofImage,
+                  paymentId:paymentData._id,
                   status:"proof_uploaded"
                 }
               };

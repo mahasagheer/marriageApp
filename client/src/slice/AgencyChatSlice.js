@@ -132,6 +132,48 @@ export const updatePayment = createAsyncThunk(
   }
 );
 
+export const updatePaymentStatus = createAsyncThunk(
+  'chat/updatePayment',
+  async ({ paymentId,status }, { getState }) => {
+    console.log(paymentId,)
+   
+    const token = getState().auth.token;
+    const { data } = await axios.put(`${APIPayment}/${paymentId}/${status}`,  getAuthConfig(token));
+    return data;
+  }
+);
+
+export const fetchPaymentByUserId = createAsyncThunk(
+  'chat/fetchPaymentByUserId',
+  async (userId, { getState }) => {
+    const token = getState().auth.token;
+    const res = await fetch(`${APIPayment}/user/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    return data;
+  }
+);
+
+export const fetchPaymentById = createAsyncThunk(
+  'chat/fetchPaymentById',
+  async (id, { getState }) => {
+    const token = getState().auth.token;
+    const res = await fetch(`${APIPayment}/payment/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    return data;
+  }
+);
 
 const chatSlice = createSlice({
   name: 'chat',

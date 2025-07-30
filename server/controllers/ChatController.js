@@ -95,11 +95,12 @@ exports.markMessagesAsRead = async (req, res) => {
   const { sessionId, reader } = req.body;
   const opposite = reader === 'agency' ? 'user' : 'agency';
 
-  await Message.updateMany(
+ const data= await Message.updateMany(
     { sessionId, sender: opposite, isRead: false },
     { $set: { isRead: true } }
   );
+  console.log(data)
 
-  res.json({ success: true });
+  res.json({ success: true, data });
 };
 

@@ -28,7 +28,6 @@ export const PaymentRequestModal = ({
       try {
         const data = await dispatch(fetchAccounts(user.id)).unwrap().then((res)=>{
 
-          console.log(res)// Must return array
           if (Array.isArray(res)) {
             setSavedAccounts(res);
           }

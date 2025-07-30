@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   sessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
   proofImage: { type: String },
-
+agencyId:{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   paymentDetails: {
     amount: { type: Number, required: true },
     currency: { type: String, required: true },
@@ -16,7 +17,7 @@ const paymentSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['pending', 'proof_uploaded', 'verified', 'rejected', 'awaiting_payment'],
+    enum: ['pending', 'proof_uploaded', 'verified', 'rejected'],
     default: 'pending',
   },
 }, {

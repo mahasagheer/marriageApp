@@ -277,7 +277,6 @@ const AgencyListing = () => {
                         <Button
                           onClick={() => {   // Retrieving the value from localStorage
                             const user = JSON.parse(localStorage.getItem('id'));
-                            console.log("user", user)
                             if (user) {
                               navigate(`/user/agencies/${agency._id}`)
                             } else {

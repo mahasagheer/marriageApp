@@ -28,7 +28,6 @@ const[unreadCount,setUnreadCount]=useState([])
           setError('Agency profile not found');
         } else {
           setAgency(result.payload?.data || null);
-          console.log(result.payload?.data?.userId)
           if (result?.payload?.data.userId) {
             dispatch(fetchSessions({ role: 'user', id:user?.id }))
                 .unwrap()

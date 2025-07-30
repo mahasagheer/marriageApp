@@ -148,7 +148,6 @@ const dispatch=useDispatch()
         setError(null);
 
         try {
-            console.log(formData)
             // If you want to send as FormData (for file uploads)
             const data = new FormData();
             Object.entries(formData).forEach(([key, value]) => {

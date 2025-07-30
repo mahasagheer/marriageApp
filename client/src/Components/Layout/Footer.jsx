@@ -1,4 +1,3 @@
-import logo from "../../assets/logo.png";
 import LogoTwo from "../../assets/logoTwo.png";
 
 export const Footer = () => (

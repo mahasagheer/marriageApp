@@ -8,6 +8,7 @@ import MatchmakingForm from './MatchMakingForm';
 import { PaymentRequestModal } from '../../Components/Phase_2/paymentModal';
 import { createAccount } from '../../slice/savedAccountsSlice';
 import { UploadProofModal } from '../../Components/Phase_2/proofModal';
+import { PaymentVerificationModal } from '../../Components/Phase_2/paymentVerificationModal';
 
 const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   const dispatch = useDispatch();
@@ -25,6 +26,8 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
   const [requestingPayment, setRequestingPayment] = useState(false)
   const [paymentConfirmation, setPaymentConfirmation] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState({})
+  const [VerificationModal, setVerificationModal] = useState(false)
   useEffect(() => {
     if (agencyId && user?.id && user?.role === 'user') {
       dispatch(GetSession({ agencyId, userId: user.id }))
@@ -56,7 +59,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
     dispatch(ReadMessages({ sessionId: selectedSession?._id, reader: user?.role }))
       .unwrap()
       .then((session) => {
-        // setCandidates(session);
+        console.log(session)
         setLoading(false); // ✅ update loading
       })
       .catch((err) => {
@@ -168,12 +171,11 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
     };
 
     try {
-      await dispatch(sendMessage(payload));
-
       // ✅ Send data to backend for saving in PaymentDetail schema
       const paymentPayload = {
         sessionId: selectedSession._id,
-        userId: selectedSession.userId, // or however you get the candidate's userId
+        userId: selectedSession.userId,
+        agencyId: user?.id, // or however you get the candidate's userId
         amount: paymentDetails.amount,
         currency: paymentDetails.currency,
         description: paymentDetails.description,
@@ -183,15 +185,24 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
         accountTitle: paymentDetails.accountTitle,
       };
 
-      await dispatch(createPayment(paymentPayload))
-      const accountPayload = {
-        agencyId: user.id, // or get agency ID from session/context
-        accountTitle: paymentDetails.accountTitle,
-        accountNumber: paymentDetails.accountNumber,
-        bankName: paymentDetails.bankName
-      }
-      await dispatch(createAccount(accountPayload))
-      setShowPayment(false);
+      await dispatch(createPayment(paymentPayload)).then(async (res) => {
+        if (res) {
+          setShowPayment(false);
+
+          await dispatch(sendMessage(payload));
+          const accountPayload = {
+            agencyId: user.id, // or get agency ID from session/context
+            accountTitle: paymentDetails.accountTitle,
+            accountNumber: paymentDetails.accountNumber,
+            bankName: paymentDetails.bankName
+          }
+          await dispatch(createAccount(accountPayload))
+        }
+      })
+
+
+
+
     } catch (error) {
       console.error('Failed to send payment request:', error);
     } finally {
@@ -227,7 +238,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                 (<button
                   className="ml-auto p-2 rounded-full bg-white text-green-600 hover:bg-green-100 transition shadow"
                   title="Payment Confirmation"
-                  disabled={paymentConfirmation}
+
                   onClick={() => setPaymentConfirmation(true)}
                 >
                   <FiDollarSign className="text-xl" />
@@ -271,10 +282,13 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                         {msg.type === 'formResponse' ? (
                           <pre>{JSON.stringify(JSON.parse(msg.formData), null, 2)}</pre>
                         ) : msg.type === 'requestForm' ? (
-                          <a onClick={() => setShowModal(true)} className='cursor-pointer text-'>{msg.text}</a>
+                          <a onClick={() => setShowModal(true)} className='cursor-pointer underline'>{msg.text}</a>
                         ) : msg.type === 'paymentConfirmation' ? (
                           <div>
-                            <p>{msg.text}</p>
+                            <a onClick={() => {
+                              setSelectedPayment(msg)
+                              setVerificationModal(true)
+                            }} className='cursor-pointer underline'>{msg.text}</a>
                             {msg.formData.proofImage && (
                               <img
                                 src={`http://localhost:5000/${msg.formData.proofImage}`}
@@ -283,7 +297,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                               />
                             )}
                           </div>
-                        ) :(
+                        ) : (
                           msg.text
                         )}
                       </div>
@@ -336,6 +350,15 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
             selectedSession={selectedSession}
           />
         )}
+        {(VerificationModal && selectedPayment && user.role === 'agency')
+          &&
+          <PaymentVerificationModal
+            payment={selectedPayment}
+            onClose={() => setVerificationModal(false)}
+            selectedSession={selectedSession}
+
+          />}
+
         {(showModal && user.role === 'user') && <MatchmakingForm onClose={() => setShowModal(false)} selectedSession={selectedSession} />}
       </div>
     </div>

@@ -8,6 +8,7 @@ import { Button } from '../../Components/Layout/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import PaidUsersVisibilityModal from '../../Components/Phase_2/VisibilityModal';
 import { toast } from 'react-toastify';
+import { privateProfileVisibilty, publicProfileVisibilty } from '../../slice/profileVisibilitySlice';
 
 function AgencyCandidateList() {
     const [candidates, setCandidates] = useState([]);
@@ -42,22 +43,9 @@ function AgencyCandidateList() {
 
     if (loading) return <div className="p-4 text-gray-700">Loading...</div>;
     if (error) return <div className="p-4 text-red-500">{error}</div>;
-    //   if (candidates?.length>0) return <div className="ml-[3rem] p-4 text-gray-600">No users have messaged you yet.</div>;
 
-    const handlePublicToggle = async (userId, makePublic) => {
-        try {
-            await fetch(`/api/visibility-matrix/${agencyId}/public`, {
-                userId,
-                makePublic,
-            });
-            toast.success(`Public visibility ${makePublic ? "enabled" : "disabled"}`);
-            // Optionally refresh session data or matrix
-        } catch (err) {
-            toast.error("Failed to update public status.");
-            console.error(err);
-        }
-    };
-
+   
+    
     return (
         <div className="p-6 ml-[3rem] max-w-[90vw] mx-auto">
             <h2 className="text-2xl font-semibold mb-4 dark:text-white">Matchmaking Requests</h2>
@@ -112,19 +100,6 @@ function AgencyCandidateList() {
                                         />
                                     </div>
 
-                                    {/* 🔹 Public Visibility Indicator */}
-                                    <div className="text-xs mt-1 text-gray-600 dark:text-gray-300 flex items-center gap-2">
-                                        <label htmlFor={`public-${session?.userId?._id}`} className="flex items-center gap-1 cursor-pointer">
-                                            <input
-                                                id={`public-${session?.userId?._id}`}
-                                                type="checkbox"
-                                                checked={session?.isPublic || false}
-                                                onChange={(e) => handlePublicToggle(session?.userId?._id, e.target.checked)}
-                                                className="form-checkbox h-4 w-4 text-green-600"
-                                            />
-                                            Public
-                                        </label>
-                                    </div>
 
                                 </td>
 

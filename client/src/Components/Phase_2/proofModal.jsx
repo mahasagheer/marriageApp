@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { sendMessage, updatePayment } from "../../slice/AgencyChatSlice";
 import { useDispatch } from "react-redux";
+import { Button } from "../Layout/Button";
+import { toast } from "react-toastify";
 
 export const UploadProofModal = ({ paymentData, onClose, setPaymentConfirmation,selectedSession }) => {
     const [file, setFile] = useState({
@@ -10,7 +12,7 @@ export const UploadProofModal = ({ paymentData, onClose, setPaymentConfirmation,
     const dispatch = useDispatch()
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!file.proofImage) return alert('Select a file');
+        if (!file.proofImage) return toast.error('Select a file');
         const formData = new FormData();
         formData.append('proofImage', file.proofImage);
         // upload proof
@@ -29,7 +31,8 @@ export const UploadProofModal = ({ paymentData, onClose, setPaymentConfirmation,
                 }
               };
             dispatch(sendMessage(payload))
-            alert(res.payment ? 'Proof uploaded' : 'Upload failed');
+            toast.success(res.payment && 'Proof uploaded') 
+            toast.error(res.payment && 'Upload failed');
         })
         
         setPaymentConfirmation(false);
@@ -52,10 +55,10 @@ export const UploadProofModal = ({ paymentData, onClose, setPaymentConfirmation,
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-[90%] md:w-full md:max-w-md ">
                 <h2 className="text-xl font-semibold mb-4">Upload Payment Proof</h2>
-                <p className="mb-2 text-sm text-gray-600">Amount: Rs {paymentData.paymentDetails.amount}</p>
-                <p className="mb-2 text-sm text-gray-600">Bank: {paymentData.paymentDetails.bankName}</p>
+                <p className="mb-2 text-sm text-gray-600 dark:text-gray-200">Amount: Rs {paymentData.paymentDetails.amount}</p>
+                <p className="mb-2 text-sm text-gray-600 dark:text-gray-200">Bank: {paymentData.paymentDetails.bankName}</p>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
                         name='proofImage'
@@ -65,20 +68,24 @@ export const UploadProofModal = ({ paymentData, onClose, setPaymentConfirmation,
                         className="w-full border rounded p-2"
                     />
                     <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
+                        <Button
                             onClick={onClose}
-                            className="px-4 py-2 rounded bg-gray-200 text-gray-700"
-                        >
-                            Cancel
-                        </button>
-                        <button
+                            btnText={"Cancel"}
+                            hoverColor="bg-gray-800"
+                            btnColor='dark:bg-gray-700 bg-gray-200'
+                textColor='text-gray-800 dark:text-white'
+                            // className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                        />
+                           
+                        <Button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 rounded bg-blue-600 text-white"
-                        >
-                            {loading ? 'Uploading...' : 'Submit'}
-                        </button>
+                            onClick={handleSubmit}
+                            btnText={loading ? 'Uploading...' : 'Submit'}
+                            // className="px-4 py-2 rounded bg-blue-600 text-white"
+                        />
+                            
+                    
                     </div>
                 </form>
             </div>

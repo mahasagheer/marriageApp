@@ -51,6 +51,87 @@ export const createVisibilty = createAsyncThunk(
 );
 
 
+export const publicProfileVisibilty = createAsyncThunk(
+  "visibility/publicProfileVisibilty",
+  async ({agencyId, profileId}, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    console.log(agencyId,profileId)
+    try {
+      const response = await fetch(`${API}/make-profile-public/${agencyId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ profileId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create agency profile');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const privateProfileVisibilty = createAsyncThunk(
+  "visibility/privateProfileVisibilty",
+  async ({agencyId, profileId}, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${API}/make-profile-private/${agencyId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ profileId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create agency profile');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const fetchProfileVisibility = createAsyncThunk(
+  "visibility/fetchProfileVisibility",
+  async ({userId,agencyId}, { rejectWithValue }) => {
+    const token = localStorage.getItem("token");
+console.log(userId,agencyId)
+    try {
+      const response = await fetch(`${API}/is-public/${userId}/${agencyId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch visibility");
+      }
+
+      return data.isPublic;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+
 const visbilitySlice = createSlice({
   name: 'visibility',
   initialState: {

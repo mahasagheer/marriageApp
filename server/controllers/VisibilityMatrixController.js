@@ -55,10 +55,8 @@ exports.updateMatrix = async (req, res) => {
   }
 };
 
-
-// === Fetch Complete Matrix ===
 exports.getMatrix = async (req, res) => {
-  const { agencyId, userId } = req.params; // userId = fromUserId
+  const { agencyId, userId } = req.params;
 
   try {
     const matrixDoc = await VisibilityMatrix.findOne({ agencyId });
@@ -67,25 +65,36 @@ exports.getMatrix = async (req, res) => {
       return res.status(404).json({ message: "Matrix not found" });
     }
 
-    const fromMap = matrixDoc.matrix.get(userId); // get map for this userId
+    const fromMap = matrixDoc.matrix.get(userId);
 
     if (!fromMap) {
       return res.status(404).json({ message: `No visibility data for user ${userId}` });
     }
 
-    // Convert Map to plain object
-    const visibilityMap = Object.fromEntries(fromMap); // { toUserId1: true, toUserId2: false }
+    // Convert Map to object
+    const visibilityMap = Object.fromEntries(fromMap);
+
+    // Filter only those userIds whose value is `true`
+    const visibleUserIds = Object.entries(visibilityMap)
+      .filter(([_, isVisible]) => isVisible === true)
+      .map(([toUserId]) => toUserId);
+
+    // Fetch user profiles of visible users
+    const visibleUserProfiles = await UserProfile.find({
+      _id: { $in: visibleUserIds },
+    });
 
     res.json({
       userId,
       visibility: visibilityMap,
+      visibleProfiles: visibleUserProfiles,
     });
+
   } catch (err) {
     console.error("Fetch matrix error:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
-
 
 // === Check Individual Visibility Entry ===
 exports.checkVisibility = async (req, res) => {
@@ -111,5 +120,97 @@ exports.checkVisibility = async (req, res) => {
   } catch (err) {
     console.error("Check visibility error:", err);
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+exports.makeProfilePublic = async (req, res) => {
+  try {
+    const { profileId } = req.body;
+    const{ agencyId }= req.params; // authenticated agency ID
+    // Validate profile
+    const profile = await UserProfile.findById(profileId);
+    if (!profile) {
+      return res.status(404).json({ message: "User profile not found" });
+    }
+
+    const userId = profile.userId;
+
+    // Find or create visibility matrix
+    let matrix = await VisibilityMatrix.findOne({ agencyId });
+
+    if (!matrix) {
+      matrix = new VisibilityMatrix({ agencyId });
+    }
+
+    // Avoid duplicates
+    const alreadyPublic = matrix.publiclyVisibleUsers.some(id => id.equals(profileId));
+    if (alreadyPublic) {
+      return res.status(200).json({ message: "Profile already public" });
+    }
+
+    matrix.publiclyVisibleUsers.push(profileId);
+    matrix.updatedAt = Date.now();
+
+    await matrix.save();
+
+    return res.status(200).json({ message: "Profile made public successfully" });
+  } catch (error) {
+    console.error("Error making profile public:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+exports.makeProfilePrivate = async (req, res) => {
+  try {
+    const { profileId } = req.body;
+    const {agencyId} = req.params;
+
+    const profile = await UserProfile.findById(profileId);
+    if (!profile) {
+      return res.status(404).json({ message: "User profile not found" });
+    }
+
+    const userId = profile.userId;
+
+    const matrix = await VisibilityMatrix.findOne({ agencyId });
+    if (!matrix) {
+      return res.status(404).json({ message: "Visibility matrix not found" });
+    }
+
+    // Remove userId from publiclyVisibleUsers array
+    matrix.publiclyVisibleUsers = matrix.publiclyVisibleUsers.filter(
+      (id) => !id.equals(profileId)
+    );
+    matrix.updatedAt = Date.now();
+
+    await matrix.save();
+
+    return res.status(200).json({ message: "Profile made private successfully" });
+  } catch (error) {
+    console.error("Error making profile private:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+/**
+ * Check if a user's profile is publicly visible by the agency
+ */
+exports.isProfilePublic = async (req, res) => {
+  try {
+    const { userId,agencyId } = req.params;
+
+    const matrix = await VisibilityMatrix.findOne({ agencyId });
+
+    if (!matrix) {
+      return res.status(200).json({ isPublic: false });
+    }
+
+    const isPublic = matrix.publiclyVisibleUsers.some(id => id.equals(userId));
+    return res.status(200).json({ isPublic });
+  } catch (error) {
+    console.error("Error checking public visibility:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };

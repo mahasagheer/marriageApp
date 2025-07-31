@@ -107,7 +107,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    // if (!chatInput|| !selectedSession) return;
+    if (!chatInput|| !selectedSession) return;
     const payload = {
       sessionId: selectedSession?._id || '',
       sender: user?.role,
@@ -229,14 +229,14 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
           {selectedSession && (
             <>
               <div className="min-w-0 flex flex-col">
-                <div className="font-bold text-white truncate text-lg">
+                <div className="font-bold dark:text-white truncate capitalize text-lg">
                   {selectedSession.userId?.name || 'Anonymous User'}
                 </div>
-                <div className="text-xs text-white/80 truncate"> {selectedSession.userId?.email}</div>
+                <div className="text-xs dark:text-white/80 truncate"> {selectedSession.userId?.email}</div>
               </div>
               {(user.role === 'user') &&
                 (<button
-                  className="ml-auto p-2 rounded-full bg-white text-green-600 hover:bg-green-100 transition shadow"
+                  className="ml-auto p-2 rounded-full bg-green-200 text-green-600 hover:bg-green-100 transition shadow"
                   title="Payment Confirmation"
 
                   onClick={() => setPaymentConfirmation(true)}
@@ -265,7 +265,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
         </div>
 
 
-        <div className="h-[70vh] lg:h-[60vh] overflow-y-auto px-4 py-4 custom-scrollbar">
+        <div className="h-[66vh] lg:h-[60vh] overflow-y-auto px-4 py-4 custom-scrollbar">
           {selectedSession ? (
             messages.length === 0 ? (
               <div className="text-gray-400 text-center mt-8">No messages yet.</div>
@@ -280,7 +280,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                     >
                       <div className="whitespace-pre-line break-words text-base">
                         {msg.type === 'formResponse' ? (
-                          <pre>{JSON.stringify(JSON.parse(msg.formData), null, 2)}</pre>
+                        JSON.stringify(JSON.parse(msg.formData), null, 2)
                         ) : msg.type === 'requestForm' ? (
                           <a onClick={() => setShowModal(true)} className='cursor-pointer underline'>{msg.text}</a>
                         ) : msg.type === 'paymentConfirmation' ? (
@@ -293,7 +293,7 @@ const AgencyChat = ({ isAdmin, agencyId, userId, disableSend }) => {
                               <img
                                 src={`http://localhost:5000/${msg.formData.proofImage}`}
                                 alt="Payment Proof"
-                                className="mt-2 max-w-xs rounded border"
+                                className="mt-2 md:max-w-xs w-70 rounded border"
                               />
                             )}
                           </div>

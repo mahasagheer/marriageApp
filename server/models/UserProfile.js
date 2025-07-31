@@ -44,8 +44,8 @@ const userProfileSchema = new mongoose.Schema({
   interest:{
     type: String,
   },
-  martialStatus:{
-type:String
+  maritalStatus: {
+    type: String
   },
   occupation: {
     type: String,

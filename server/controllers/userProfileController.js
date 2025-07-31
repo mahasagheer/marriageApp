@@ -10,7 +10,7 @@ const createProfile = async (req, res) => {
     if (existingProfile) {
       return res.status(400).json({ message: "Profile already exists" });
     }
-
+console.log(req.body)
     // Create profile object from form data
     const profileData = {
       userId,
@@ -25,8 +25,7 @@ const createProfile = async (req, res) => {
       income: req.body.income,
       bio: req.body.bio,
       isActive: true,
-      phone: req.body.phone,
-      email: req.body.email
+      maritalStatus:req.body.maritalStatus
     };
 
     if (req.file) {
@@ -79,7 +78,6 @@ const updateProfile = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     const file = req.file; // This comes from multer middleware
-
     // Find the existing profile
     const existingProfile = await UserProfile.findById(id);
     if (!existingProfile) {
@@ -88,7 +86,6 @@ const updateProfile = async (req, res) => {
 
     // Prepare update data
     const updateData = { ...updates };
-    
     // Handle file upload if present
     if (file) {
       updateData.pic = req.file.path; // Adjust path as needed

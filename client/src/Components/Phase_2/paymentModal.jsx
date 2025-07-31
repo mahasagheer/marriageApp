@@ -3,6 +3,7 @@ import { FiX } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useDispatch } from 'react-redux';
 import { fetchAccounts } from '../../slice/savedAccountsSlice';
+import { toast } from 'react-toastify';
 export const PaymentRequestModal = ({
   onClose,
   onRequestPayment,
@@ -55,12 +56,12 @@ export const PaymentRequestModal = ({
     e.preventDefault();
 
     if (!amount || !description || !accountTitle || !accountNumber || !bankName) {
-      alert('Please fill in all required fields.');
+      toast.error('Please fill in all required fields.');
       return;
     }
 
     if (!/^\d{10,20}$/.test(accountNumber)) {
-      alert('Account number must be 10–20 digits.');
+      toast.error('Account number must be 10–20 digits.');
       return;
     }
 

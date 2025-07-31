@@ -16,18 +16,26 @@ import { HeroSection } from './Home';
 import { Button } from '../../Components/Layout/Button';
 import PreferenceCard from '../../Components/Phase_2/preferenceCard';
 import { PaymentCard } from '../../Components/Phase_2/paymentDetail';
-import AllowedProfiles from '../../Components/Phase_2/AllowedProfilesCard';
+import ConfirmationModal from '../../Components/Phase_2/ConfirmationModal';
+import LoadingSpinner from '../../Components/Layout/Loading';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
+import { fetchProfileVisibility, privateProfileVisibilty, publicProfileVisibilty } from '../../slice/profileVisibilitySlice';
 
 export default function UserProfileDisplay() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const { user } = useAuth()
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [preferences, setPreferences] = useState(null);
   const [paymentDetail, setPaymentDetail] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [profileDisplay, setProfileDisplay] = useState(false)
+  const [isPublic, setIsPublic] = useState(false)
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -39,9 +47,13 @@ export default function UserProfileDisplay() {
           setProfile(null);
         } else {
           setProfile(profileData);
+          const userId = JSON.parse(localStorage?.getItem('userId'))
+          if (userId != null && userId != profileData?._id) {
+            setProfileDisplay(true)
+          }
         }
 
-        
+
         const pref = await dispatch(getPreferences(id)).unwrap();
         setPreferences(pref?.data?.preferences || null);
 
@@ -57,29 +69,60 @@ export default function UserProfileDisplay() {
     loadData();
   }, [dispatch, id]);
 
+  const handlePublicToggle = async (profileId, makePublic) => {
+    try {
+      // Call redux thunk or API directly
+      if (makePublic) {
+        await dispatch(publicProfileVisibilty({ agencyId: user?.id, profileId })).unwrap();
+        toast.success("Profile made public successfully");
+      } else {
+        // Optional: if you plan to implement "make private"
+        await dispatch(privateProfileVisibilty({ agencyId: user?.id, profileId })).unwrap();
+        toast.success("Profile visibility removed");
+      }
+      fetchVisibility()
+    } catch (err) {
+      toast.error("Failed to update visibility status.");
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchVisibility()
+  }, [user,profile])
+const fetchVisibility=()=>{
+  if (user?.role === 'agency' && profile) {
+    dispatch(fetchProfileVisibility({ userId: profile?._id, agencyId: user?.id })).unwrap().then((res) => {
+      setIsPublic(res)
+    })
+  }
+}
   const handleEditProfile = () => {
     if (profile?._id) {
       navigate(`/user/addProfile/${profile._id}`);
     }
   };
 
-  const handleDeleteProfile = async () => {
-    if (window.confirm('Are you sure you want to delete your profile?')) {
-      try {
-        await dispatch(deleteProfile(profile._id)).unwrap();
-        navigate('/');
-      } catch (err) {
-        setError(err.message || 'Failed to delete profile');
-      }
+  const handleDeleteProfile = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProfile = async () => {
+    try {
+      await dispatch(deleteProfile(profile._id)).unwrap();
+      toast.success('Profile Deleted successfully')
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Failed to delete profile');
+    } finally {
+      setShowDeleteModal(false);
     }
   };
 
+
   if (loading) {
     return (
-      <div className="text-center py-20">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-        <p className="mt-2">Loading profile...</p>
-      </div>
+      <LoadingSpinner />
     );
   }
 
@@ -105,15 +148,48 @@ export default function UserProfileDisplay() {
     );
   }
 
+
+
   return (
     <div className="min-h-screen w-full max-w-6xl mx-auto py-10 px-4">
       {/* Profile Card */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg relative mb-10 border border-gray-200 dark:border-gray-700">
-        <div className="absolute top-4 right-4 flex gap-2 z-10">
-          <Button onClick={handleEditProfile} btnText="Edit" btnIcon={FiEdit2} btnColor="marriageHotPink" padding="px-4 py-2" />
-          <Button onClick={handleDeleteProfile} btnText="Delete" btnIcon={FiTrash2} btnColor="marriageRed" padding="px-4 py-2" />
-        </div>
+        {(!profileDisplay && user?.role == 'user') &&
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
+            <Button
+              onClick={handleEditProfile}
+              btnText={<span className="hidden sm:inline">Edit</span>}
+              BtnIcon={FiEdit2}
+              btnColor="marriageHotPink"
+              padding="md:px-4 md:py-2 p-2"
+            />
 
+            <Button
+              onClick={handleDeleteProfile}
+              btnText={<span className="hidden sm:inline">Delete</span>}
+              BtnIcon={FiTrash2}
+              btnColor="marriageHotPink"
+              padding="md:px-4 md:py-2 p-2"
+            />
+          </div>}
+        {
+          user.role === 'agency' &&
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
+
+            <div className="text-lg m-1 text-gray-600 dark:text-gray-300 flex items-center gap-2">
+              <label htmlFor={`public-${profile?._id}`} className="flex items-center gap-1 cursor-pointer">
+                <input
+                  id={`public-${profile?._id}`}
+                  type="checkbox"
+                  checked={isPublic || false}
+                  onChange={(e) => handlePublicToggle(profile?._id, e.target.checked)}
+                  className="form-checkbox h-4 w-4 text-green-600"
+                />
+                Make Profile Public
+              </label>
+            </div>
+          </div>
+        }
         <div className="md:flex items-center">
           <div className="md:w-1/3 p-8 flex justify-center">
             <img
@@ -201,14 +277,20 @@ export default function UserProfileDisplay() {
       )}
 
       {/* Payment Details */}
-      {paymentDetail.length > 0 && (
+      {(paymentDetail.length > 0 && !profileDisplay) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {paymentDetail.map((payment) => (
             <PaymentCard key={payment._id} payment={payment} />
           ))}
         </div>
       )}
-     
+      {showDeleteModal && (
+        <ConfirmationModal
+          onClickCancel={() => setShowDeleteModal(false)}
+          onClickSubmit={confirmDeleteProfile}
+          cnfrmText={'Are you sure you want to delete your profile? This action cannot be undone.'} />
+      )}
+
     </div>
   );
 }

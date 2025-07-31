@@ -7,6 +7,7 @@ import { Label } from '../../Components/Layout/Label';
 import ImagePicker from '../../Components/Layout/ImagePicker';
 import { createAgency, fetchAgencyById, updateAgency } from '../../slice/agencySlice';
 import { useDispatch } from 'react-redux';
+import { toast } from 'react-toastify';
 
 export const AgencyProfile = () => {
     const navigate = useNavigate();
@@ -167,11 +168,11 @@ const dispatch=useDispatch()
             });
             if (id && edit) {
                 await dispatch(updateAgency({ id: id, updates: data })).finally((res)=>{
-                    alert("✅ Profile updated successfully!");
+                    toast.success("Profile updated successfully!");
                 });
               } else {
              const response =  await dispatch(createAgency(data)).finally((res)=>{
-                alert("✅ Profile created successfully!");
+                toast.success("Profile created successfully!");
              });
         
               }
@@ -391,7 +392,7 @@ const dispatch=useDispatch()
                                 rows={4}
                                 value={formData.description}
                                 onChange={handleChange}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-200"
                                 maxLength={500}
                             />
                             {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}

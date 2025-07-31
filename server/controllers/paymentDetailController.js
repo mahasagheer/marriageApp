@@ -81,7 +81,6 @@ exports.getPaymentsByUser = async (req, res) => {
 // Get a single payment detail by ID
 exports.getPaymentById = async (req, res) => {
   try {
-    console.log(req.params.id)
     const payment = await PaymentDetail.findById(req.params.id);
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });

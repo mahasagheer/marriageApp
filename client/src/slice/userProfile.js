@@ -127,8 +127,8 @@ export const updateProfile = createAsyncThunk(
   "profiles/update",
   async ({ id, updates }, { rejectWithValue }) => {
     const token = localStorage.getItem('token');
-
-    try {
+   
+        try {
       const response = await fetch(`${API}/${id}`, {
         method: 'PUT',
         headers: {

@@ -1,86 +1,82 @@
+// MatchmakingHome.jsx
 import React, { useEffect, useState } from "react";
-import { Headset, BadgeCheck, EyeOff, Filter, Heart, Sparkles } from "lucide-react";
-import { Button } from "../../Components/Layout/Button";
-import UserProfileModal from "./UserProfileForm";
-import { Footer } from "../../Components/Layout/Footer";
-import logo from "../../assets/logo.png";
-import match from "../../assets/match.png";
-import { motion } from "framer-motion";
-import { NavBar } from "../../Components/Layout/navbar";
+import {
+  Headset,
+  BadgeCheck,
+  EyeOff,
+  Filter,
+  Heart,
+  Sparkles,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { motion } from "framer-motion";
 import { useDispatch } from "react-redux";
+import { useAuth } from "../../context/AuthContext";
 import { fetchProfileByuserId } from "../../slice/userProfile";
+
+import match from "../../assets/match.png";
 
 export const HeroSection = () => {
   const { user } = useAuth();
-
-  const navigate = useNavigate()
-  const handleProfileModal = () => {
-    if (user.role === "user") navigate("/user/addProfile")
-    else if (user.role === "agency") navigate("/agency/addProfile")
-  };
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState(null);
-  const dispatch = useDispatch();
+
+  const handleCreateProfile = () => {
+    if (user?.role === "user") navigate("/user/addProfile");
+    else if (user?.role === "agency") navigate("/agency/addProfile");
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        if (!user?.id) {
-          throw new Error('User ID not found');
-        }
-  
+        if (!user?.id) throw new Error("User ID not found");
+
         const result = await dispatch(fetchProfileByuserId(user.id)).unwrap();
-  
-        // Check if result exists and has a message property
-        if (result?.message?.includes('Profile not found')) {
-          localStorage.setItem('id', JSON.stringify(false));
+
+        if (result?.message?.includes("Profile not found")) {
+          localStorage.setItem("id", JSON.stringify(false));
           setProfile(null);
-          setError(null);
-        } else if(result != null) {
+        } else if (result) {
+          localStorage.setItem("userId", JSON.stringify(result._id));
+          localStorage.setItem("id", JSON.stringify(true));
           setProfile(result);
-          localStorage.setItem('id', JSON.stringify(true));
         }
       } catch (err) {
-        // Safely check error message
-        const errMessage = err?.message || '';
-        if (errMessage.includes('404') || errMessage.includes('Profile not found')) {
+        if (err?.message?.includes("404") || err?.message?.includes("not found")) {
           setProfile(null);
-          setError(null);
         } else {
-          setError(errMessage || 'Failed to load profile');
+          setError(err.message || "Failed to load profile");
         }
-      } 
+      }
     };
-  
-    loadProfile();
-  }, [dispatch]);
 
-  
+    loadProfile();
+  }, [dispatch, user?.id]);
+
   return (
-    <div className={`h-[100%] relative bg-gradient-to-br from-marriagePink via-marriageHotPink to-marriageRed text-white py-10 md:py-18 px-4 overflow-hidden`}>
-      {/* Floating Hearts Animation */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(8)].map((_, i) => (
+    <div className="relative py-10 md:py-20 px-4 overflow-hidden bg-gradient-to-br from-marriagePink via-marriageHotPink to-marriageRed text-white dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-2xl">
+      {/* Floating hearts */}
+      <div className="absolute inset-0 overflow-hidden z-0">
+        {Array.from({ length: 8 }).map((_, i) => (
           <motion.div
             key={i}
-            className="absolute text-pink-200 opacity-40"
-            initial={{ y: -50, x: Math.random() * 1000 }}
+            className="absolute text-pink-200 dark:text-pink-500 opacity-30"
+            initial={{ y: -50 }}
             animate={{
               y: [0, 1000],
-              x: [0, Math.random() * 200 - 100],
-              rotate: Math.random() * 360
+              rotate: Math.random() * 360,
             }}
             transition={{
               duration: 15 + Math.random() * 10,
               repeat: Infinity,
-              ease: "linear"
+              ease: "linear",
             }}
             style={{
               left: `${Math.random() * 100}%`,
-              fontSize: `${20 + Math.random() * 30}px`
+              fontSize: `${20 + Math.random() * 20}px`,
             }}
           >
             <Heart />
@@ -88,136 +84,115 @@ export const HeroSection = () => {
         ))}
       </div>
 
+      {/* Content */}
       <div className="container mx-auto text-center relative z-10">
-        {/* Main Heading with Sparkles */}
-        <motion.div
+        <motion.h1
+          className="text-4xl md:text-6xl font-bold mb-4 font-serif"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h1 className="text-5xl md:text-6xl font-bold mb-4 font-serif">
-            Find your
-            <span className="relative inline-block">
-              <span className="relative z-10 text-yellow-300">Perfect Life Partner</span>
-              <Sparkles className="absolute -top-4 -right-6 text-yellow-400 animate-spin-slow" size={32} />
+          Find your{" "}
+          <span className="relative inline-block">
+            <span className="relative z-10 dark:text-marriageRed  text-yellow-400">
+              Perfect Life Partner
             </span>
-          </h1>
-        </motion.div>
+            <Sparkles className="absolute md:top-[-4] bottom-10 md:right-[-6] -right-1 dark:text-marriageRed animate-spin-slow  text-yellow-400" size={32} />
+          </span>
+        </motion.h1>
 
-        {/* Call to Action */}
-        <motion.div
+        <motion.h2
+          className="text-2xl md:text-3xl font-medium mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.8 }}
         >
-          <h2 className="text-2xl md:text-3xl font-medium mb-8">
-            Your <span className="text-yellow-300 font-bold">Perfect Partner </span> a few
-            clicks away !
-          </h2>
-         { !profile &&  <motion.div
+          Your <span className="dark:text-marriageHotPink font-bold  text-yellow-400">Perfect Partner</span> a few clicks away!
+        </motion.h2>
+
+        {!profile && (
+          <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-block"
           >
-            <button className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold px-10 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center mx-auto"
-              onClick={() => handleProfileModal()}>
+            <button
+              onClick={handleCreateProfile}
+              className="bg-gradient-to-r from-marriageRed to-marriageHotPink hover:marriageRed hover:to-marriagePink text-white font-bold px-10 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center mx-auto"
+            >
               <Heart className="mr-2" fill="currentColor" />
               Create Profile
             </button>
-          </motion.div>}
-        </motion.div>
+          </motion.div>
+        )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-const FeaturesSection = () => (
-  <div className="py-16 px-4">
-    <h2 className="text-3xl font-bold text-marriageRed mb-12 text-center">
-      Why Choose WedLink?
-    </h2>
+const FeaturesSection = () => {
+  const features = [
+    {
+      title: "Verified Profiles",
+      icon: <BadgeCheck size={28} />,
+      description: "All profiles are manually verified for authenticity",
+    },
+    {
+      title: "Privacy Control",
+      icon: <EyeOff size={28} />,
+      description: "Complete control over your profile visibility",
+    },
+    {
+      title: "Advanced Search",
+      icon: <Filter size={28} />,
+      description: "Filter matches by education, profession & more",
+    },
+    {
+      title: "24/7 Support",
+      icon: <Headset size={28} />,
+      description: "Dedicated relationship managers available anytime",
+    },
+  ];
 
-    <div className="flex flex-col items-center space-y-8">
-      {/* First Row */}
-      <div className="flex flex-wrap justify-center md:gap-[5rem] w-full">
-        {[
-          {
-            title: "Verified Profiles",
-            icon: <BadgeCheck className="text-marriageRed" size={28} />,
-            description:
-              "All profiles are manually verified for authenticity",
-          },
-          {
-            title: "Privacy Control",
-            icon: <EyeOff className="text-marriageRed" size={28} />,
-            description: "Complete control over your profile visibility",
-          },
-        ].map((feature, index) => (
+  return (
+    <div className="py-16 px-4 dark:bg-gray-900">
+      <h2 className="text-3xl font-bold text-marriageRed  mb-12 text-center">
+        Why Choose WedLink?
+      </h2>
+
+      <div className="flex flex-wrap justify-center flex-0 gap-10">
+        {features.map(({ title, icon, description }, index) => (
           <div
             key={index}
-            className="bg-white p-8 rounded-xl shadow-md border border-pink-100 text-center w-full md:w-[350px] hover:shadow-lg transition-all duration-300 hover:border-red-200"
+            className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md border border-pink-100 dark:border-gray-700 text-center w-full max-w-[350px] hover:shadow-lg transition-all duration-300"
           >
             <div className="flex justify-center mb-6">
-              <div className="bg-red-50 p-4 rounded-full">{feature.icon}</div>
+              <div className="bg-red-50 dark:bg-gray-700 p-4 rounded-full text-marriageRed ">
+                {icon}
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-3">
-              {feature.title}
-            </h3>
-            <p className="text-gray-600">{feature.description}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Second Row */}
-      <div className="flex flex-wrap justify-center md:gap-[5rem] w-full">
-        {[
-          {
-            title: "Advanced Search",
-            icon: <Filter className="text-marriageRed" size={28} />,
-            description: "Filter matches by education, profession & more",
-          },
-          {
-            title: "24/7 Support",
-            icon: <Headset className="text-marriageRed" size={28} />,
-            description: "Dedicated relationship managers available anytime",
-          },
-        ].map((feature, index) => (
-          <div
-            key={index}
-            className="bg-white p-8 rounded-xl shadow-md border border-pink-100 text-center w-full md:w-[350px] hover:shadow-lg transition-all duration-300 hover:border-red-200"
-          >
-            <div className="flex justify-center mb-6">
-              <div className="bg-red-50 p-4 rounded-full">{feature.icon}</div>
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-3">
-              {feature.title}
-            </h3>
-            <p className="text-gray-600">{feature.description}</p>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">{title}</h3>
+            <p className="text-gray-600 dark:text-gray-300">{description}</p>
           </div>
         ))}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ProfileShowcase = () => (
-  <div className="m-12 bg-white p-6 rounded-lg shadow-md border border-pink-100">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center justify-center">
-      {/* Profile Card 1 */}
-      <div className=" p-6 rounded-lg border border-pink-200 h-[60vh] ">
-        <img
-          src={match}
-          alt="Match"
-          className="h-full w-full bg-white object-cover"
-        />
+  <div className="m-12 bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md border border-pink-100 dark:border-gray-700">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+      <div className="p-6 rounded-lg border border-pink-200 dark:border-gray-600 h-[60vh]">
+        <img src={match} alt="Match" className="h-full w-full object-cover rounded-lg" />
       </div>
-      <div className="p-[2rem] ">
-        <h2 className="md:text-4xl font-bold text-marriageRed mb-6 text-center">
+      <div className="p-6">
+        <h2 className="text-3xl md:text-4xl font-bold text-marriageRed  mb-6 text-center">
           Finding your perfect match just got easy!
         </h2>
-        <p className="text-center  text-md text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p className="text-center text-md text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
           RishtaDhondo helps you find the partner of your choice through its
-          detailed AI based matching filters.
+          detailed AI-based matching filters.
         </p>
       </div>
     </div>
@@ -225,14 +200,11 @@ const ProfileShowcase = () => (
 );
 
 const MatchmakingHome = () => {
-
   return (
-    <div className=" bg-white min-h-screen ">
-
-        <HeroSection />
-        <ProfileShowcase />
-        <FeaturesSection />
-      
+    <div className="bg-white dark:bg-gray-950 min-h-screen transition-colors duration-500">
+      <HeroSection />
+      <ProfileShowcase />
+      <FeaturesSection />
     </div>
   );
 };

@@ -8,14 +8,12 @@ exports.createOrUpdatePreferences = async (req, res) => {
     const existingPreference = await MatchmakingPreference.findOne({ user: userId });
 
     if (existingPreference) {
-      console.log(existingPreference)
       // Update existing preferences
       const updatedPreference = await MatchmakingPreference.findOneAndUpdate(
         { user: userId },
         { preferences, lastUpdated: Date.now() },
         { new: true, runValidators: true }
       );
-      console.log(updatedPreference)
       res.status(200).json({
         success: true,
         data: updatedPreference
@@ -42,7 +40,7 @@ exports.createOrUpdatePreferences = async (req, res) => {
 // Get User Preferences
 exports.getUserPreferences = async (req, res) => {
   try {
-    const preferences = await MatchmakingPreference.findOne({ user: req.user._id })
+    const preferences = await MatchmakingPreference.findOne({ user: req.params.id })
     // .populate('user', 'name email profilePicture');
     if (!preferences) {
       return res.status(404).json({

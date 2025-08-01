@@ -4,25 +4,26 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 const API = `${process.env.REACT_APP_API_URL}/userProfile`;
 
 // GET /api/profiles  – all profiles
-// export const fetchProfiles = createAsyncThunk(
-//   "profiles/fetchAll",
-//   async (_, { rejectWithValue }) => {
-//     const token = localStorage.getItem('token');
-//     try {
-//       const response = await fetch(API,{
-//         method:"GET",
-//         headers:{
-//           Authorization: `Bearer ${token}`,
-//                 }
-//       });
-//       const data = await response.json();
+export const fetchProfiles = createAsyncThunk(
+  "profiles/fetchAll",
+  async (_, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${API}/allProfiles`,{
+        method:"GET",
+        headers:{
+          Authorization: `Bearer ${token}`,
+                }
+      });
+      const data = await response.json();
 
-//       return data;
-//     } catch (err) {
-//       return rejectWithValue(err.response?.data?.message || err.message);
-//     }
-//   }
-// );
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
 
 // GET /api/profiles/:id  – single profile
 export const fetchProfileById = createAsyncThunk(
@@ -98,13 +99,36 @@ export const createProfile = createAsyncThunk(
   }
 );
 
+
+// POST /api/profiles – create profile
+export const getSuccessfullyPaidUsers = createAsyncThunk(
+  "profiles/getSuccessfullyPaidUsers",
+  async (agencyId, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await fetch(`${API}/verified/${agencyId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      const data = await response.json();
+
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 // PUT /api/profiles/:id  – update profile
 export const updateProfile = createAsyncThunk(
   "profiles/update",
   async ({ id, updates }, { rejectWithValue }) => {
     const token = localStorage.getItem('token');
-
-    try {
+   
+        try {
       const response = await fetch(`${API}/${id}`, {
         method: 'PUT',
         headers: {

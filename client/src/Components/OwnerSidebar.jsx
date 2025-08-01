@@ -60,7 +60,7 @@ const OwnerSidebar = ({ onClose }) => {
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-[98vh] w-[10vw] max-w-full bg-white text-gray-800 rounded-xl m-2 shadow-2xl border border-gray-200 z-40 flex flex-col transition-transform duration-300 md:translate-x-0 ${onClose ? 'translate-x-0' : ''}`}
+      className={`fixed top-0 left-0 h-[98vh] w-[10vw] max-w-full bg-white dark:bg-gray-900 dark:border-gray-600 text-gray-800 rounded-xl m-2 shadow-2xl border border-gray-200 z-40 flex flex-col transition-transform duration-300 md:translate-x-0 ${onClose ? 'translate-x-0' : ''}`}
       style={{ minWidth: '16rem' }}
     >
       {/* Mobile close button */}
@@ -88,11 +88,11 @@ const OwnerSidebar = ({ onClose }) => {
               <Link
                 key={link.to}
                 to={link.to}
-              className={`flex items-center gap-4 px-6 py-3 rounded-lg font-medium transition hover:bg-marriagePink/10 hover:text-marriageHotPink focus:bg-marriagePink/20 focus:text-marriageHotPink ${location.pathname === link.to ? "bg-marriagePink/10 text-marriageHotPink" : "text-gray-800"}`}
+              className={`flex items-center gap-4 px-6 py-3 rounded-lg dark:text-gray-200  font-medium transition hover:bg-marriagePink/10 hover:text-marriageHotPink focus:bg-marriagePink/20 focus:text-marriageHotPink ${location.pathname === link.to ? "bg-marriagePink/10 text-marriageHotPink dark:text-marriageHotPink" : "text-gray-800"}`}
               onClick={onClose}
               tabIndex={0}
               >
-              <span className="text-xl">{link.icon}</span>
+              <span className="text-xl ">{link.icon}</span>
               <span className="flex-1 text-base">{link.label}</span>
               </Link>
             ))}
@@ -100,23 +100,23 @@ const OwnerSidebar = ({ onClose }) => {
         </div>
         {/* Bottom section: Profile card */}
         <div className="px-4 pb-4 pt-2 relative">
-        <div className="flex items-center bg-gray-50 rounded-xl p-3 gap-3 border border-gray-200 shadow-sm">
+        <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-3 border border-gray-200 shadow-sm">
           <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
               {user?.avatar ? (
                 <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
               ) : (
-              <span className="text-xl font-bold text-gray-700">{user?.name ? user.name[0].toUpperCase() : "👤"}</span>
+              <span className="text-xl font-bold text-gray-700 ">{user?.name ? user.name[0].toUpperCase() : "👤"}</span>
               )}
             </div>
             <div className="flex-1">
               <button
                 id="profile-dropdown-btn"
-              className="font-semibold text-gray-800 text-base leading-tight text-left hover:underline focus:outline-none"
+              className="font-semibold text-gray-800 dark:text-gray-200 text-base leading-tight text-left hover:underline focus:outline-none"
                 onClick={() => setShowProfileDropdown((v) => !v)}
               aria-label="Open profile dropdown"
               >
                 {user?.name || "Dianne Robertson"}
-                <div className="text-xs text-marriageHotPink">View Profile</div>
+               {!user.role ==='agency' && <div className="text-xs text-marriageHotPink">View Profile</div>}
               </button>
             </div>
          {/**  <button className="text-gray-400 hover:text-marriageHotPink p-1 rounded-full focus:outline-none" aria-label="Settings">
@@ -127,7 +127,7 @@ const OwnerSidebar = ({ onClose }) => {
           {showProfileDropdown && (
             <div
               id="profile-dropdown"
-              className="absolute left-0 bottom-20 w-72 bg-white border border-gray-200 shadow-xl rounded-xl p-6 z-50 animate-fadeIn"
+              className="absolute left-0 dark:bg-gray-800 bottom-20 w-72 bg-white border border-gray-200 shadow-xl rounded-xl p-6 z-50 animate-fadeIn"
               style={{ minWidth: '18rem' }}
             >
               <button
@@ -145,7 +145,7 @@ const OwnerSidebar = ({ onClose }) => {
                     user?.name ? user.name[0].toUpperCase() : <span>👤</span>
                   )}
                 </div>
-                <h2 className="text-lg font-bold text-gray-800 mb-1">{user?.name || "No Name"}</h2>
+                <h2 className="text-lg font-bold text-gray-800 mb-1 dark:text-gray-200">{user?.name || "No Name"}</h2>
                 <div className="text-marriageHotPink text-sm mb-1">{user?.email || "User"}</div>
               </div>
               

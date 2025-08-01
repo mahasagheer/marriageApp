@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { signup, login } from "../slice/authSlice";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export const LoginModal = ({ onClose, onSwitch, label }) => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -29,7 +30,7 @@ export const LoginModal = ({ onClose, onSwitch, label }) => {
     e.preventDefault();
     if (isSignUp) {
       if (form.password !== form.confirmPassword) {
-        alert("Passwords do not match");
+        toast.error("Passwords do not match");
         return;
       }
       dispatch(signup({

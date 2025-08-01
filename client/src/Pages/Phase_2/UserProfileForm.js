@@ -29,12 +29,13 @@ import {
 import { RadioInput } from "../../Components/Layout/radioButton";
 import { genderOptions, maritalStatusOptions } from "../../utils";
 import { Label } from "../../Components/Layout/Label";
-import {  UserCircle2,  } from "lucide-react";
+import { UserCircle2, } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function CreateProfilePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-const {id}=useParams();
+  const { id } = useParams();
   const [profile, setProfile] = useState({
     name: "",
     age: "",
@@ -45,14 +46,14 @@ const {id}=useParams();
     education: "",
     occupation: "",
     income: "",
-    maritalStatus: "", 
+    maritalStatus: "",
     bio: "",
     pic: null,
     file: null,
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const steps = ["Personal", "Background", "Educational Details","Files"];
+  const steps = ["Personal", "Background", "Educational Details", "Files"];
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -149,56 +150,63 @@ const {id}=useParams();
     try {
 
       if (id) {
+
         await dispatch(updateProfile({ id: id, updates: formData }));
-        alert("✅ Profile updated successfully!");
+        toast.success("Profile updated successfully!");
+        navigate(`/user/${profile?.userId}`);
+
       } else {
-    await dispatch(createProfile(formData));
-        alert("✅ Profile created successfully!");
+        await dispatch(createProfile(formData)).unwrap().then((res) => {
+          if (res) {
+            navigate(`/user/${res?.userId}`);
+
+          }
+        });
+        toast.success("Profile created successfully!");
 
       }
-      navigate("/user/profile");
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      toast.error(`Error: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
 
-
   const ErrorMsg = ({ msg }) =>
-    msg ? <p className="text-xs text-red-600 mt-1">{msg}</p> : null;
+    msg ? <p className="text-xs text-red-600 dark:text-red-400  mt-1">{msg}</p> : null;
 
   return (
-    <main className="max-w-[100%]  bg-white py-10 px-4">
-  <h1 className="text-3xl font-bold text-center mb-6 flex items-center justify-center gap-2">
-  {id ? (
-    <>
-      <FiPenTool className="w-8 h-8 text-red-600" />
-      <span>Edit Profile</span>
-    </>
-  ) : (
-    <>
-      <UserCircle2 className="w-8 h-8 text-red-600" />
-      <span>Create Your Matchmaking Profile</span>
-    </>
-  )}
-</h1>
+    <main className="max-w-[100%] bg-white dark:bg-gray-900 py-10 px-4 text-gray-800 dark:text-gray-100">
+      <h1 className="text-3xl font-bold text-center mb-6 flex items-center justify-center gap-2">
+        {id ? (
+          <>
+            <FiPenTool className="w-8 h-8 text-red-600" />
+            <span>Edit Profile</span>
+          </>
+        ) : (
+          <>
+            <UserCircle2 className="w-8 h-8 text-red-600" />
+            <span>Create Your Matchmaking Profile</span>
+          </>
+        )}
+      </h1>
 
-      <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
+
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-8">
         <div
           className="bg-marriageHotPink h-2 rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
 
+
       <div className="flex justify-between mb-8">
         {steps.map((s, idx) => (
           <div
             key={s}
-            className={`flex-1 text-center text-xs ${
-              idx === step ? "text-marriageHotPink font-semibold" : "text-gray-500"
-            }`}
+            className={`flex-1 text-center text-xs ${idx === step ? "text-marriageHotPink font-semibold" : "text-gray-500 dark:text-gray-400"
+              }`}
           >
             {s}
           </div>
@@ -230,24 +238,24 @@ const {id}=useParams();
               />
               <ErrorMsg msg={errors.age} />
             </div>
- {/* Gender Radio Group */}
- <div>
-            <Label icon={FiUsers}>Gender</Label>
-            <div className="space-y-2 mt-2">
-              {genderOptions.map((option) => (
-                <RadioInput
-                  key={option.value}
-                  name="gender"
-                  value={option.value}
-                  checked={profile.gender === option.value}
-                  onChange={handleChange}
-                  label={option.label}
-                />
-              ))}
+            {/* Gender Radio Group */}
+            <div>
+              <Label icon={FiUsers}>Gender</Label>
+              <div className="space-y-2 mt-2">
+                {genderOptions.map((option) => (
+                  <RadioInput
+                    key={option.value}
+                    name="gender"
+                    value={option.value}
+                    checked={profile.gender === option.value}
+                    onChange={handleChange}
+                    label={option.label}
+                  />
+                ))}
+              </div>
+              <ErrorMsg msg={errors.gender} />
             </div>
-            <ErrorMsg msg={errors.gender} />
-          </div>
-         
+
           </div>
           <div>
             <Label icon={FiTrendingUp}>Height</Label>
@@ -274,10 +282,11 @@ const {id}=useParams();
                   key={option.value}
                   name="maritalStatus"
                   value={option.value}
-                  checked={profile.maritalStatus === option.value}
+                  checked={profile?.maritalStatus === option.value}
                   onChange={handleChange}
                   label={option.label}
                 />
+
               ))}
             </div>
             <ErrorMsg msg={errors.maritalStatus} />
@@ -340,7 +349,7 @@ const {id}=useParams();
               value={profile.bio}
               onChange={handleChange}
               rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg"
+              className="w-full p-3 border-gray-300 dark:bg-gray-700 dark:text-white border border-marriagePink focus:outline-none focus:ring-2 focus:ring-marriageHotPink rounded-lg"
             />
             <ErrorMsg msg={errors.bio} />
           </div>
@@ -352,6 +361,13 @@ const {id}=useParams();
         <div className="space-y-5">
           <div>
             <Label icon={FiUploadCloud}>Profile Picture</Label>
+            {profile.pic && (
+              <img
+                src={`http://localhost:5000/${profile.pic}` || URL.createObjectURL(profile.pic)}
+                alt="Current Profile"
+                className="mb-2 h-24 w-24 object-cover rounded-full border"
+              />
+            )}
             <Input
               name="pic"
               type="file"
@@ -381,7 +397,7 @@ const {id}=useParams();
             type="button"
           />
         )}
-        {step < steps.length-1 ? (
+        {step < steps.length - 1 ? (
           <Button
             btnText="Next"
             btnColor="marriageHotPink"

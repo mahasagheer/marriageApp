@@ -1,4 +1,4 @@
-// models/Agency.js
+ // models/Agency.js
 const mongoose = require('mongoose');
 
 const agencySchema = new mongoose.Schema({

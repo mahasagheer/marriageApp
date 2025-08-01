@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const messageSchema = new mongoose.Schema({
   sessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
   sender: { type: String, enum: ['user','agency'], required: true },
-  type: { type: String, enum: ['text','requestForm','formResponse','paymentRequest'], default: 'text' },
+  type: { type: String, enum: ['text','requestForm','formResponse','paymentRequest','paymentConfirmation'], default: 'text' },
   text: { type: String },
   formLink: { type: String },
   formData: { type: mongoose.Schema.Types.Mixed },

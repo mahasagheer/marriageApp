@@ -2,26 +2,26 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
-const { createProfile, getProfileById, getAllProfiles, deleteProfile, updateProfile, getProfileByuserId } = require('../controllers/userProfileController');
+const {
+  createProfile,
+  getProfileById,
+  getAllProfiles,
+  deleteProfile,
+  updateProfile,
+  getProfileByuserId,getSuccessfullyPaidUsers
+} = require('../controllers/userProfileController');
 
-// create user Profile
+// Create user Profile
 router.post('/', auth, upload.single('pic'), createProfile);
+router.get('/verified/:agencyId', auth, getSuccessfullyPaidUsers)
+// ✅ Static or specific routes come BEFORE dynamic ones
+router.get('/allProfiles', auth, getAllProfiles);
+router.get('/user/:id', auth, getProfileByuserId);
 
 
-// get user profile by id
-router.get("/:id",auth, getProfileById)
+// 🚨 Dynamic routes last
+router.get('/:id', auth, getProfileById);
+router.delete('/:id', auth, deleteProfile);
+router.put('/:id', auth, upload.single('pic'), updateProfile);
 
-//  get profile by userId
-router.get("/user/:id",auth, getProfileByuserId)
-
-
-// get All regitered user Profile
-router.get("/allProfiles", auth, getAllProfiles)
-
-// delete user Profile
-router.delete("/:id", auth, deleteProfile)
-
-// update user profile 
-router.put("/:id", auth,upload.single('pic'), updateProfile);
-
-module.exports = router; 
+module.exports = router;

@@ -5,7 +5,7 @@ const auth = require('../middleware/auth');
 
 router.route('/')
   .post(auth, matchmakingController.createOrUpdatePreferences)
-  .get(auth, matchmakingController.getUserPreferences)
   .delete(auth, matchmakingController.deletePreferences);
+router.route("/:id")  .get(auth, matchmakingController.getUserPreferences)
 
 module.exports = router;

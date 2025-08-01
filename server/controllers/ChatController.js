@@ -4,7 +4,6 @@ const Message = require('../models/ChatSession');
 // Create or get existing session
 exports.createOrGetSession = async (req, res) => {
   try {
-    console.log(req.body)
     const { userId, agencyId } = req.body;
 
     if (!userId || !agencyId) {
@@ -53,7 +52,6 @@ exports.getMessages = async (req, res) => {
 exports.getAgencyUnreadMessages = async (req, res) => {
   try {
     const { role, id } = req.params;
-    console.log(req.params)
     const filter = role === 'user' ? { userId: id } : { agencyId: id };
     const sessions = await Session.find(filter)
       .populate('userId agencyId')
@@ -81,8 +79,6 @@ exports.getAgencyUnreadMessages = async (req, res) => {
 exports.sendMessage = async (req, res) => {
   try {
     const msg = await Message.create(req.body);
-    console.log("req.io exists:", !!req.io); // should be true
-    console.log(msg)
     req.io.to(req.body.sessionId.toString()).emit('newMessage', msg);
     res.json(msg);
   } catch (err) {
@@ -95,11 +91,11 @@ exports.markMessagesAsRead = async (req, res) => {
   const { sessionId, reader } = req.body;
   const opposite = reader === 'agency' ? 'user' : 'agency';
 
-  await Message.updateMany(
+ const data= await Message.updateMany(
     { sessionId, sender: opposite, isRead: false },
     { $set: { isRead: true } }
   );
 
-  res.json({ success: true });
+  res.json({ success: true, data });
 };
 

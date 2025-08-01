@@ -38,6 +38,11 @@ const userProfileRoutes= require('./routes/userProfile')
 const ChatRoute=require('./routes/chat')
 const menuRoutes = require('./routes/menus');
 const matchPreferenceRoutes=require('./routes/matchPreference')
+const paymentRoutes=require("./routes/paymentDetail")
+const savedAccountRoutes = require('./routes/savedAccounts');
+const visibilityRoutes = require("./routes/visibilityMatrix");
+app.use("/api/visibility", visibilityRoutes);
+app.use('/api/saved-accounts', savedAccountRoutes);
 app.use('/api/auth', authRoutes);
 // Register /api/users endpoint directly
 app.use('/api', authRoutes);
@@ -50,6 +55,7 @@ app.use('/api/agency', agencyRoutes);
 app.use('/api/chat',ChatRoute)
 app.use('/api/menus', menuRoutes);
 app.use('/api/match-preference', matchPreferenceRoutes)
+app.use('/api/payments',paymentRoutes)
 // Basic route
 app.get('/', (req, res) => {
   res.send('Server is running');

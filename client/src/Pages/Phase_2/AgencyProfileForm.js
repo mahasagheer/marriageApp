@@ -7,8 +7,9 @@ import { Label } from '../../Components/Layout/Label';
 import ImagePicker from '../../Components/Layout/ImagePicker';
 import { createAgency, fetchAgencyById, updateAgency } from '../../slice/agencySlice';
 import { useDispatch } from 'react-redux';
+import { toast } from 'react-toastify';
 
-export const AgencyProfile = ({ fetchAgencies }) => {
+export const AgencyProfile = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',
@@ -33,6 +34,7 @@ export const AgencyProfile = ({ fetchAgencies }) => {
     const [error, setError] = useState(null);
     const [errors, setErrors] = useState({});
     const { id } = useParams();
+    const[edit,setEdit]=useState(false)
 const dispatch=useDispatch()
     // Validation rules
     const validate = () => {
@@ -99,16 +101,17 @@ const dispatch=useDispatch()
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
-
     useEffect(() => {
         if (id) {
           dispatch(fetchAgencyById(id))
             .unwrap()
-            .then((res) => setFormData(res?.data))
+            .then((res) => {
+                setEdit(true)
+                setFormData(res?.data)
+            })
             .catch((error) => console.error("Error fetching profile:", error));
         }
       }, [id, dispatch]);
-console.log(formData)
     useEffect(() => {
         if (Object.keys(errors).length > 0) {
             validate();
@@ -163,13 +166,14 @@ console.log(formData)
                     data.append(key, value);
                 }
             });
-            if (id) {
-                await dispatch(updateAgency({ id: id, updates: data }));
-                alert("✅ Profile updated successfully!");
+            if (id && edit) {
+                await dispatch(updateAgency({ id: id, updates: data })).finally((res)=>{
+                    toast.success("Profile updated successfully!");
+                });
               } else {
-             const response =  await dispatch(createAgency(data));
-                alert("✅ Profile created successfully!");
-                console.log(response)
+             const response =  await dispatch(createAgency(data)).finally((res)=>{
+                toast.success("Profile created successfully!");
+             });
         
               }
               navigate("/agency/profile");
@@ -215,8 +219,8 @@ console.log(formData)
     };
 
     return (
-        <div className='ml-[15rem] min-h-screen bg-gray-50'>
-            <h1 className="text-3xl font-bold text-center mb-6">
+        <div className='ml-[3rem] min-h-screen bg-gray-50 dark:bg-gray-900'>
+            <h1 className="text-3xl font-bold text-center mb-6 dark:text-white">
                 {id ? "✏️ Edit Agency Profile" : " Create Your Agency Profile"}
             </h1>
 
@@ -226,11 +230,11 @@ console.log(formData)
                 </div>
             )}
 
-            <form  className="bg-white shadow rounded-lg p-6" >
+            <form  className="bg-white dark:bg-gray-800 shadow rounded-lg p-6" >
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     {/* Basic Information */}
                     <div className="md:col-span-2">
-                        <h2 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
+                        <h2 className="text-lg font-medium dark:text-gray-200 text-gray-900 mb-4">Basic Information</h2>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
                                 <Label>
@@ -316,19 +320,19 @@ console.log(formData)
 
                     {/* Address Information */}
                     <div className="md:col-span-2">
-                        <h2 className="text-lg font-medium text-gray-900 mb-4">Address Information</h2>
+                        <h2 className="text-lg font-medium text-gray-900 mb-4 dark:text-gray-200">Address Information</h2>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
                                 <Label>Street *</Label>
                                 <Input
                                     type="text"
-                                    id="address?.street"
-                                    name="address?.street"
+                                    id="address.street"
+                                    name="address.street"
                                     value={formData?.address?.street}
                                     onChange={handleChange}
                                     required
                                 />
-                                {errors['address?.street'] && <p className="mt-1 text-sm text-red-600">{errors['address.street']}</p>}
+                                {errors['address.street'] && <p className="mt-1 text-sm text-red-600">{errors['address.street']}</p>}
                             </div>
                             <div>
                                 <Label>City *</Label>
@@ -379,7 +383,7 @@ console.log(formData)
 
                     {/* Additional Information */}
                     <div className="md:col-span-2">
-                        <h2 className="text-lg font-medium text-gray-900 mb-4">Additional Information</h2>
+                        <h2 className="text-lg font-medium text-gray-900 mb-4 dark:text-gray-200">Additional Information</h2>
                         <div>
                             <Label>Profile Description</Label>
                             <textarea
@@ -388,7 +392,7 @@ console.log(formData)
                                 rows={4}
                                 value={formData.description}
                                 onChange={handleChange}
-                                className="w-full p-3 border border-gray-300 rounded-lg"
+                                className="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-200"
                                 maxLength={500}
                             />
                             {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
@@ -398,7 +402,7 @@ console.log(formData)
                         </div>
                         <div className='mt-4'>
                             <Label>Upload Documents</Label> 
-                            <ImagePicker form={formData} setForm={setFormData} />
+                            <ImagePicker form={formData} setForm={setFormData} id={id} />
                             {errors?.images && <p className="mt-1 text-sm text-red-600">{errors.images}</p>}
                         </div>
                     </div>

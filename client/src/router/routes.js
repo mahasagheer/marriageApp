@@ -106,12 +106,22 @@ export const router = createBrowserRouter([
     )
   },
   {
-    path: "/user/profile",
+    path: "/user/:id",
     element: (
       <ProtectedRoute allowedRoles={['user']}>
         <UserLayout>
           <UserProfileDisplay />
         </UserLayout>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/userDetail/:id",
+    element: (
+      <ProtectedRoute allowedRoles={['agency']}>
+        <OwnerLayout>
+          <UserProfileDisplay />
+        </OwnerLayout>
       </ProtectedRoute>
     )
   },

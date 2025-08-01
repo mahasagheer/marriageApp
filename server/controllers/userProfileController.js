@@ -1,4 +1,5 @@
 const UserProfile = require("../models/UserProfile");
+const Payment = require("../models/paymentConfirmation");
 
 const createProfile = async (req, res) => {
   try {
@@ -9,7 +10,7 @@ const createProfile = async (req, res) => {
     if (existingProfile) {
       return res.status(400).json({ message: "Profile already exists" });
     }
-
+console.log(req.body)
     // Create profile object from form data
     const profileData = {
       userId,
@@ -24,14 +25,12 @@ const createProfile = async (req, res) => {
       income: req.body.income,
       bio: req.body.bio,
       isActive: true,
-      phone: req.body.phone,
-      email: req.body.email
+      maritalStatus:req.body.maritalStatus
     };
 
     if (req.file) {
       profileData.pic = req.file.path; 
     }
-console.log(profileData)
     const profile = await UserProfile.create(profileData);
     res.status(201).json(profile);
   } catch (err) {
@@ -41,17 +40,18 @@ console.log(profileData)
 
 getAllProfiles = async (req, res) => {
   try {
-    const profiles = await UserProfile.find().sort({ createdAt: -1 });
+    const profiles = await UserProfile.find()
     res.json(profiles);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+
 getProfileById = async (req, res) => {
   try {
-    const profile = await UserProfile.findById(req.params.id);
-    if (!profile) return res.status(404).json({ message: "Profile not found" });
+    const profile = await UserProfile.findById(req.params.id)
+        if (!profile) return res.status(404).json({ message: "Profile not found" });
     res.json(profile);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -78,7 +78,6 @@ const updateProfile = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     const file = req.file; // This comes from multer middleware
-
     // Find the existing profile
     const existingProfile = await UserProfile.findById(id);
     if (!existingProfile) {
@@ -87,7 +86,6 @@ const updateProfile = async (req, res) => {
 
     // Prepare update data
     const updateData = { ...updates };
-    
     // Handle file upload if present
     if (file) {
       updateData.pic = req.file.path; // Adjust path as needed
@@ -142,9 +140,32 @@ deleteProfile = async (req, res) => {
 };
 
 
+// GET: /api/payments/verified/:agencyId
+
+getSuccessfullyPaidUsers=async (req, res) => {
+  try {
+    const payments = await Payment.find({
+      agencyId: req.params.agencyId,
+      status: "verified",
+    }).populate("userId");
+
+    const userIds = payments.map((p) => p.userId._id);
+
+    const profiles = await UserProfile.find({
+      userId: { $in: userIds },
+      isActive: true,
+    });
+
+    res.json({ success: true, profiles });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 module.exports={
 deleteProfile,
 createProfile,
 getAllProfiles,
-getProfileById, updateProfile, getProfileByuserId
+getProfileById, updateProfile, getProfileByuserId,getSuccessfullyPaidUsers
 }

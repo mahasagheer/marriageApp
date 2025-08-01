@@ -12,47 +12,49 @@ export default function PaidUsersVisibilityModal({ agencyId, targetUserId, onClo
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch()
     const [targetUser, setTargetUser] = useState({})
+    const [initialSelectedUsers, setInitialSelectedUsers] = useState([]); // 👈
 
     useEffect(() => {
         async function fetchPaidProfiles() {
             try {
                 const res = await dispatch(getSuccessfullyPaidUsers(agencyId)).unwrap();
-
+    
                 const filteredProfiles = res.profiles.filter(
                     (profile) => profile.userId !== targetUserId
                 );
                 const targetedProfile = res.profiles.find(
                     (profile) => profile.userId === targetUserId
                 );
-
+    
                 if (!targetedProfile) {
                     toast.error("User's payment is pending");
                     onClose();
                     return;
                 }
-
+    
                 setTargetUser(targetedProfile);
                 setProfiles(filteredProfiles);
-
+    
                 const visibilityRes = await dispatch(getVisibility({
                     agencyId,
-                    userId: targetedProfile._id, // 👈 MongoDB _id
+                    userId: targetedProfile._id,
                 })).unwrap();
-
+    
                 const trueSelected = Object.entries(visibilityRes.visibility || {})
                     .filter(([_, canSee]) => canSee === true)
                     .map(([toUserId]) => toUserId);
-
-                setSelectedUsers(trueSelected); // 👈 Pre-select checkboxes
+    
+                setSelectedUsers(trueSelected);
+                setInitialSelectedUsers(trueSelected); // 👈 Save initial state
             } catch (err) {
                 console.error(err);
                 toast.error("Failed to load paid user profiles.");
             }
         }
-
+    
         fetchPaidProfiles();
     }, [agencyId]);
-
+    
 
     const toggleSelect = (userId) => {
         setSelectedUsers((prev) =>
@@ -63,18 +65,23 @@ export default function PaidUsersVisibilityModal({ agencyId, targetUserId, onClo
     const handleSave = async () => {
         setLoading(true);
         try {
-            for (let toUserId of selectedUsers) {
-                const visibilityData = {
-                    fromUserId: targetUser?._id,
-                    toUserId,
-                    canSee: true,
-                }
-                await dispatch(createVisibilty({ agencyId, visibilityData })).then((res) => {
-                    console.log(res)
-                })
-                // await axios.post(`/api/visibility/update/${agencyId}`, );
+            const additions = selectedUsers.filter((id) => !initialSelectedUsers.includes(id));
+            const removals = initialSelectedUsers.filter((id) => !selectedUsers.includes(id));
+    
+            const updates = [...additions.map((toUserId) => ({
+                fromUserId: targetUser?._id,
+                toUserId,
+                canSee: true,
+            })), ...removals.map((toUserId) => ({
+                fromUserId: targetUser?._id,
+                toUserId,
+                canSee: false,
+            }))];
+    
+            for (const visibilityData of updates) {
+                await dispatch(createVisibilty({ agencyId, visibilityData }));
             }
-
+    
             toast.success("Visibility updated successfully.");
             onClose();
         } catch (err) {
@@ -83,10 +90,11 @@ export default function PaidUsersVisibilityModal({ agencyId, targetUserId, onClo
             setLoading(false);
         }
     };
+    
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-2xl shadow-lg">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-2xl shadow-lg">
                 <h3 className="text-xl font-semibold mb-4 dark:text-white">
                     Select Profiles Visible to User
                 </h3>

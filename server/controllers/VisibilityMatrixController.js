@@ -1,6 +1,16 @@
 const VisibilityMatrix = require("../models/visibilityMatrix");
 const Payment = require("../models/paymentConfirmation");
 const UserProfile = require("../models/UserProfile"); // for future use if needed
+const jwt = require("jsonwebtoken"); // Make sure to install and import
+const JWT_SECRET = process.env.JWT_SECRET; // Set in your .env
+
+const transporter = require('nodemailer').createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 // === Create or Update Matrix Entry ===
 exports.updateMatrix = async (req, res) => {
@@ -12,28 +22,16 @@ exports.updateMatrix = async (req, res) => {
 
   try {
     let matrixDoc = await VisibilityMatrix.findOne({ agencyId });
-
     if (!matrixDoc) {
       matrixDoc = new VisibilityMatrix({ agencyId, matrix: new Map() });
     }
 
-    const isPublic = matrixDoc.publiclyVisibleUsers.includes(toUserId);
+    const profile = await UserProfile.findById(fromUserId).populate("userId");
+    if (!profile) {
+      return res.status(404).json({ message: "User profile not found" });
+    }
 
-    // if (canSee && !isPublic) {
-    //   const payment = await Payment.findOne({
-    //     agencyId,
-    //     userId: toUserId,
-    //     status: "verified",
-    //   });
-
-    //   if (!payment) {
-    //     return res.status(400).json({
-    //       message: `Payment required to view user ${toUserId}`,
-    //     });
-    //   }
-    // }
-
-    // Ensure keys are strings
+    const targetUser = profile.userId;
     const fromKey = String(fromUserId);
     const toKey = String(toUserId);
 
@@ -45,8 +43,38 @@ exports.updateMatrix = async (req, res) => {
     innerMap.set(toKey, canSee);
     matrixDoc.matrix.set(fromKey, innerMap);
     matrixDoc.updatedAt = new Date();
-
     await matrixDoc.save();
+
+    if (targetUser && targetUser.email && canSee === true) {
+      // Generate JWT token for secure access
+      const token = jwt.sign(
+        { userId: targetUser._id ,accessId:toUserId},
+        JWT_SECRET,
+        { expiresIn: "1d" }
+      );
+
+      const profileURL = `${process.env.FRONTEND_URL}/public/user/${token}`;
+
+      const subject = "Profile Visibility Granted";
+      const message = `Hi ${targetUser.name},
+
+An agency has granted access to see profile of a user.
+
+You can now see profile of that user on the platform.
+
+🔗 Access that user's profile: ${profileURL}
+
+This link is valid for 24 hours.
+
+Thank you!`;
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: targetUser.email,
+        subject,
+        text: message,
+      });
+    }
 
     res.json({ success: true, message: "Matrix updated", matrix: matrixDoc });
   } catch (err) {
@@ -54,6 +82,7 @@ exports.updateMatrix = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 exports.getMatrix = async (req, res) => {
   const { agencyId, userId } = req.params;
@@ -134,26 +163,61 @@ exports.makeProfilePublic = async (req, res) => {
       return res.status(404).json({ message: "User profile not found" });
     }
 
-    const userId = profile.userId;
-
+    const currentGender = profile.gender;
+    const oppositeGender = currentGender === 'Male' ? 'Female' : 'Male';
+    // 2. Find all other profiles with opposite gender, excluding the current one
+    const otherProfiles = await UserProfile.find({
+      _id: { $ne: profileId },
+      gender: oppositeGender
+    }).populate('userId'); // populate userId to get email etc.
+    
     // Find or create visibility matrix
     let matrix = await VisibilityMatrix.findOne({ agencyId });
 
     if (!matrix) {
       matrix = new VisibilityMatrix({ agencyId });
     }
-
     // Avoid duplicates
     const alreadyPublic = matrix.publiclyVisibleUsers.some(id => id.equals(profileId));
     if (alreadyPublic) {
       return res.status(200).json({ message: "Profile already public" });
     }
 
+
+
     matrix.publiclyVisibleUsers.push(profileId);
     matrix.updatedAt = Date.now();
-
     await matrix.save();
-
+    
+    for (let otherProfile of otherProfiles) {
+      if (otherProfile && otherProfile.userId && otherProfile.userId.email) {
+        const token = jwt.sign(
+          { userId: otherProfile.userId._id, accessId: profile._id },
+          JWT_SECRET,
+          { expiresIn: "1d" }
+        );
+    
+        const profileURL = `${process.env.FRONTEND_URL}/public/user/${token}?id=${profile._id}`;
+    
+        const subject = "A New Public Profile Matches Your Preferences";
+        const message = `Hi ${otherProfile.userId.name},
+    
+    A new profile matching your preferences has just been made public.
+    
+    🔗 View Profile: ${profileURL}
+    
+    This link will expire in 24 hours.
+    
+    Thank you!`;
+    
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: otherProfile.userId.email,
+          subject,
+          text: message,
+        });
+      }
+    }
     return res.status(200).json({ message: "Profile made public successfully" });
   } catch (error) {
     console.error("Error making profile public:", error);
@@ -211,6 +275,33 @@ exports.isProfilePublic = async (req, res) => {
     return res.status(200).json({ isPublic });
   } catch (error) {
     console.error("Error checking public visibility:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+/**
+ * Get all public user profiles for a specific agency
+ */
+exports.getPublicProfilesByAgency = async (req, res) => {
+  try {
+    const { agencyId } = req.params;
+
+    const matrix = await VisibilityMatrix.findOne({ agencyId });
+
+    if (!matrix || matrix.publiclyVisibleUsers.length === 0) {
+      return res.status(200).json({ profiles: [] });
+    }
+
+    // Find UserProfiles where userId in publiclyVisibleUsers
+    const profiles = await UserProfile.find({
+      _id: { $in: matrix.publiclyVisibleUsers },
+      isActive: true, // optional filter
+    });
+
+    return res.status(200).json({ profiles });
+  } catch (error) {
+    console.error("Error fetching public profiles:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };

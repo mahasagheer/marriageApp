@@ -1,5 +1,6 @@
 const UserProfile = require("../models/UserProfile");
 const Payment = require("../models/paymentConfirmation");
+const jwt = require('jsonwebtoken');
 
 const createProfile = async (req, res) => {
   try {
@@ -10,7 +11,6 @@ const createProfile = async (req, res) => {
     if (existingProfile) {
       return res.status(400).json({ message: "Profile already exists" });
     }
-console.log(req.body)
     // Create profile object from form data
     const profileData = {
       userId,
@@ -163,9 +163,38 @@ getSuccessfullyPaidUsers=async (req, res) => {
   }
 };
 
+// controllers/userController.js
+
+const getTokenVerification = async (req, res) => {
+  try {
+    const {token} = req.params;
+
+    if (!token) {
+      return res.status(401).json({ message: "Token missing" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.userId) {
+      return res.status(403).json({ message: "Token user mismatch" });
+    }
+    const profile = await UserProfile.findOne({_id:decoded.accessId})
+    if(!profile){
+      return res.status(404).json({ message: "Profile not found" });
+    } 
+    res.json(profile);
+
+  } catch (err) {
+    res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
+
 module.exports={
 deleteProfile,
 createProfile,
 getAllProfiles,
-getProfileById, updateProfile, getProfileByuserId,getSuccessfullyPaidUsers
+getProfileById, updateProfile, getProfileByuserId,
+getSuccessfullyPaidUsers,getTokenVerification
 }
+
+

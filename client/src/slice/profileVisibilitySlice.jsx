@@ -110,7 +110,6 @@ export const fetchProfileVisibility = createAsyncThunk(
   "visibility/fetchProfileVisibility",
   async ({userId,agencyId}, { rejectWithValue }) => {
     const token = localStorage.getItem("token");
-console.log(userId,agencyId)
     try {
       const response = await fetch(`${API}/is-public/${userId}/${agencyId}`, {
         headers: {
@@ -125,6 +124,31 @@ console.log(userId,agencyId)
       }
 
       return data.isPublic;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+
+export const fetchPublicProfiles = createAsyncThunk(
+  "visibility/fetchPublicProfiles",
+  async ({agencyId}, { rejectWithValue }) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API}/public-profiles/${agencyId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch public profiles");
+      }
+
+      return data.profiles;
     } catch (err) {
       return rejectWithValue(err.message);
     }

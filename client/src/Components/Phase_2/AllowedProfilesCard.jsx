@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { getVisibility } from '../../slice/profileVisibilitySlice';
+import { fetchPublicProfiles, getVisibility } from '../../slice/profileVisibilitySlice';
 import { useNavigate } from 'react-router-dom';
 
 const AllowedProfiles = ({ agencyId, }) => {
@@ -11,6 +11,10 @@ const AllowedProfiles = ({ agencyId, }) => {
     const userId = JSON.parse(localStorage.getItem('userId'))
     dispatch(getVisibility({ agencyId, userId })).unwrap().then((res) => {
       setAllowedProfiles(res?.visibleProfiles)
+    })
+    dispatch(fetchPublicProfiles({ agencyId })).unwrap().then((res) => {
+      console.log(res)
+      setAllowedProfiles(res)
     })
   }, [])
 

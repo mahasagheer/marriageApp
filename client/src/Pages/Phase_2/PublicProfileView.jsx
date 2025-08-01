@@ -1,124 +1,44 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
-  fetchProfileByuserId,
-  deleteProfile,
+  getTokenVerification,
 } from '../../slice/userProfile';
 import { getPreferences } from '../../slice/matchMakingSlice';
-import { fetchPaymentByUserId } from '../../slice/AgencyChatSlice';
 import {
   FiUser, FiMail, FiPhone, FiCalendar, FiBook, FiEdit2,
   FiTrash2, FiTrendingUp, FiHeart,
+  FiArrowLeft,
 } from 'react-icons/fi';
 import defaultProfilePic from '../../assets/profile.jfif';
-import { HeroSection } from './Home';
-import { Button } from '../../Components/Layout/Button';
 import PreferenceCard from '../../Components/Phase_2/preferenceCard';
-import { PaymentCard } from '../../Components/Phase_2/paymentDetail';
-import ConfirmationModal from '../../Components/Phase_2/ConfirmationModal';
 import LoadingSpinner from '../../Components/Layout/Loading';
-import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext';
-import { fetchProfileVisibility, privateProfileVisibilty, publicProfileVisibilty } from '../../slice/profileVisibilitySlice';
 
-export default function UserProfileDisplay() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+export default function PublicProfileView() {
+  const { token } = useParams();
   const dispatch = useDispatch();
-  const { user } = useAuth()
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [preferences, setPreferences] = useState(null);
-  const [paymentDetail, setPaymentDetail] = useState([]);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [profileDisplay, setProfileDisplay] = useState(false)
-  const [isPublic, setIsPublic] = useState(false)
-
+  
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        if (!id) throw new Error('User ID missing');
 
-        const profileData = await dispatch(fetchProfileByuserId(id)).unwrap();
-        if (!profileData || profileData?.message?.includes('Profile not found')) {
-          setProfile(null);
-        } else {
-          setProfile(profileData);
-          const userId = JSON.parse(localStorage?.getItem('userId'))
-          if (userId != null && userId != profileData?._id) {
-            setProfileDisplay(true)
-          }
-        }
-
-
-        const pref = await dispatch(getPreferences(id)).unwrap();
-        setPreferences(pref?.data?.preferences || null);
-
-        const payment = await dispatch(fetchPaymentByUserId(id)).unwrap();
-        setPaymentDetail(payment || []);
-      } catch (err) {
-        setError(err?.message || 'Something went wrong');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [dispatch, id]);
-
-  const handlePublicToggle = async (profileId, makePublic) => {
-    try {
-      // Call redux thunk or API directly
-      if (makePublic) {
-        await dispatch(publicProfileVisibilty({ agencyId: user?.id, profileId })).unwrap();
-        toast.success("Profile made public successfully");
-      } else {
-        // Optional: if you plan to implement "make private"
-        await dispatch(privateProfileVisibilty({ agencyId: user?.id, profileId })).unwrap();
-        toast.success("Profile visibility removed");
-      }
-      fetchVisibility()
-    } catch (err) {
-      toast.error("Failed to update visibility status.");
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchVisibility()
-  }, [user, profile])
-  const fetchVisibility = () => {
-    if (user?.role === 'agency' && profile) {
-      dispatch(fetchProfileVisibility({ userId: profile?._id, agencyId: user?.id })).unwrap().then((res) => {
-        setIsPublic(res)
+   
+    if(token)
+    {
+        setLoading(true)
+      dispatch(getTokenVerification(token)).unwrap().then((res) => {
+        setProfile(res)
+        setLoading(false)
+        dispatch(getPreferences(res?.userId)).unwrap().then((res)=>{
+          setPreferences(res?.data?.preferences || null);
+        });
       })
     }
-  }
-  const handleEditProfile = () => {
-    if (profile?._id) {
-      navigate(`/user/addProfile/${profile._id}`);
-    }
-  };
+    
 
-  const handleDeleteProfile = () => {
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteProfile = async () => {
-    try {
-      await dispatch(deleteProfile(profile._id)).unwrap();
-      toast.success('Profile Deleted successfully')
-      navigate('/');
-    } catch (err) {
-      setError(err.message || 'Failed to delete profile');
-    } finally {
-      setShowDeleteModal(false);
-    }
-  };
-
+  }, [dispatch, token]);
 
   if (loading) {
     return (
@@ -140,56 +60,18 @@ export default function UserProfileDisplay() {
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <HeroSection />
-      </div>
-    );
-  }
 
 
 
   return (
-    <div className="min-h-screen w-full max-w-6xl mx-auto py-10 px-4">
+    <div className="min-h-screen w-full  py-10 px-4 dark:bg-gray-900">
+      <div className='flex flex-col gap-4 max-w-5xl mx-auto'>
+      <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-4 text-center text-md border border-yellow-300">
+          You are viewing this profile via a secure access link.
+        </div>
       {/* Profile Card */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg relative mb-10 border border-gray-200 dark:border-gray-700">
-        {(!profileDisplay && user?.role == 'user') &&
-          <div className="absolute top-4 right-4 flex gap-2 z-10">
-            <Button
-              onClick={handleEditProfile}
-              btnText={<span className="hidden sm:inline">Edit</span>}
-              BtnIcon={FiEdit2}
-              btnColor="marriageHotPink"
-              padding="md:px-4 md:py-2 p-2"
-            />
-
-            <Button
-              onClick={handleDeleteProfile}
-              btnText={<span className="hidden sm:inline">Delete</span>}
-              BtnIcon={FiTrash2}
-              btnColor="marriageHotPink"
-              padding="md:px-4 md:py-2 p-2"
-            />
-          </div>}
-        {
-          user.role === 'agency' &&
-          <div className="absolute top-4 right-4 flex gap-2 z-10">
-
-            <div className="text-lg m-1 text-gray-600 dark:text-gray-300 flex items-center gap-2">
-              <label htmlFor={`public-${profile?._id}`} className="flex items-center gap-1 cursor-pointer">
-                <input
-                  id={`public-${profile?._id}`}
-                  type="checkbox"
-                  checked={isPublic || false}
-                  onChange={(e) => handlePublicToggle(profile?._id, e.target.checked)}
-                  className="form-checkbox h-4 w-4 text-green-600"
-                />
-                Make Profile Public
-              </label>
-            </div>
-          </div>
-        }
+       
         <div className="md:flex items-center">
           <div className="md:w-1/3 p-8 flex justify-center">
             <img
@@ -276,21 +158,7 @@ export default function UserProfileDisplay() {
         </div>
       )}
 
-      {/* Payment Details */}
-      {(paymentDetail.length > 0 && !profileDisplay) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {paymentDetail.map((payment) => (
-            <PaymentCard key={payment._id} payment={payment} />
-          ))}
-        </div>
-      )}
-      {showDeleteModal && (
-        <ConfirmationModal
-          onClickCancel={() => setShowDeleteModal(false)}
-          onClickSubmit={confirmDeleteProfile}
-          cnfrmText={'Are you sure you want to delete your profile? This action cannot be undone.'} />
-      )}
-
+</div>
     </div>
   );
 }

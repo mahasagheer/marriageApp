@@ -21,8 +21,13 @@ import AgencyListing from "../Pages/Phase_2/AgenciesListing";
 import MatchmakingHome from "../Pages/Phase_2/Home";
 import AgencyDetail from "../Pages/Phase_2/AgencyDetail";
 import AgencyCandidateList from "../Pages/Phase_2/AgencyCandidateList";
+import PublicProfileView from "../Pages/Phase_2/PublicProfileView";
 
 export const router = createBrowserRouter([
+  {
+    path: "/public/user/:token",
+    element: <PublicProfileView />,
+  },
   {
     path: "/home",
     element: (

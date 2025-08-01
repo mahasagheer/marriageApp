@@ -8,7 +8,8 @@ const {
   getAllProfiles,
   deleteProfile,
   updateProfile,
-  getProfileByuserId,getSuccessfullyPaidUsers
+  getProfileByuserId,getSuccessfullyPaidUsers,
+  getTokenVerification
 } = require('../controllers/userProfileController');
 
 // Create user Profile
@@ -17,7 +18,7 @@ router.get('/verified/:agencyId', auth, getSuccessfullyPaidUsers)
 // ✅ Static or specific routes come BEFORE dynamic ones
 router.get('/allProfiles', auth, getAllProfiles);
 router.get('/user/:id', auth, getProfileByuserId);
-
+router.get('/public/:token', getTokenVerification);
 
 // 🚨 Dynamic routes last
 router.get('/:id', auth, getProfileById);

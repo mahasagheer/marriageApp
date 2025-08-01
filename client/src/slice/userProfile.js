@@ -69,6 +69,23 @@ export const fetchProfileByuserId = createAsyncThunk(
     }
   }
 );
+
+
+export const getTokenVerification = createAsyncThunk(
+  "profiles/getTokenVerification",
+  async (token, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API}/public/${token}`,{
+        method:"GET",
+      });
+      const data = await response.json();
+
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
 // POST /api/profiles – create profile
 export const createProfile = createAsyncThunk(
   "profiles/create",

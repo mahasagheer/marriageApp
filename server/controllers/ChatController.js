@@ -1,6 +1,6 @@
 const Session = require('../models/Session');
 const Message = require('../models/ChatSession');
-
+const VisibilityMatrix=require('../models/visibilityMatrix')
 // Create or get existing session
 exports.createOrGetSession = async (req, res) => {
   try {
@@ -12,8 +12,34 @@ exports.createOrGetSession = async (req, res) => {
 
     let session = await Session.findOne({ userId, agencyId });
 
-    if (!session) {
+    const isNewSession = !session;
+
+    if (isNewSession) {
       session = await Session.create({ userId, agencyId });
+
+      // ✅ Step 1: Get or create matrix
+      let matrix = await VisibilityMatrix.findOne({ agencyId });
+      if (!matrix) {
+        matrix = new VisibilityMatrix({ agencyId, matrix: new Map(), publiclyVisibleUsers: [] });
+      }
+
+      const fromKey = String(userId);
+
+      if (!matrix.matrix.has(fromKey)) {
+        matrix.matrix.set(fromKey, new Map());
+      }
+
+      const innerMap = matrix.matrix.get(fromKey);
+
+      // ✅ Step 2: Loop through public profiles and allow access
+      for (const profileId of matrix.publiclyVisibleUsers) {
+        const toKey = String(profileId);
+        innerMap.set(toKey, true);
+      }
+
+      matrix.matrix.set(fromKey, innerMap);
+      matrix.updatedAt = new Date();
+      await matrix.save();
     }
 
     // Optional: populate if frontend needs user/agency names/images
@@ -25,6 +51,7 @@ exports.createOrGetSession = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error while creating/fetching session' });
   }
 };
+
 
 // Get sessions for user or agency
 exports.getSessionsByRole = async (req, res) => {

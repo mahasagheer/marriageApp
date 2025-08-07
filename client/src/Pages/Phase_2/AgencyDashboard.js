@@ -1,13 +1,25 @@
-import React from 'react';
-import { 
-  FaUsers, 
-  FaMoneyBillWave, 
-  FaComments, 
-  FaClipboardList, 
-  FaHeart, 
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector, useStore } from 'react-redux';
+import { fetchAgencyDashboardData, fetchMiniCards, fetchSummary, fetchTargets } from '../../slice/agencyDashboardSlice';
+
+import {
+  FaUsers,
+  FaMoneyBillWave,
+  FaComments,
+  FaClipboardList,
+  FaHeart,
   FaChartLine,
   FaCheckCircle
 } from 'react-icons/fa';
+
+
+const iconMap = {
+  FaUsers,
+  FaClipboardList,
+  FaCheckCircle,
+  FaMoneyBillWave,
+};
+
 
 // Progress Card Component
 const ProgressCard = ({ title, value, target, color }) => {
@@ -31,7 +43,7 @@ const ProgressCard = ({ title, value, target, color }) => {
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div 
               className={`h-full ${colorClasses[color]}`}
-              style={{ width: `${percentage}%` }}
+              style={{ width: `${percentage}% `}}
             ></div>
           </div>
         </div>
@@ -101,118 +113,71 @@ const MiniStatsCard = ({ title, value, icon: Icon, color }) => {
   );
 };
 
-// Main Dashboard Component
 const AgencyDashboard = () => {
-  // Sample data
-  const statsData = {
-    totalClients: 124,
-    activeConversations: 28,
-    pendingForms: 12,
-    successfulMatches: 56,
-    monthlyRevenue: 125000,
-    conversionRate: 68
-  };
+  const dispatch = useDispatch();
+const[summary,setSummary]=useState({})
+const[miniCards,setMiniCards]=useState([])
+const[monthlyTarget,setMonthlyTarget]=useState({value:0,target:0})
 
-  const trends = {
-    clients: { value: 12, label: 'vs last month' },
-    revenue: { value: 8, label: 'vs last month' },
-    matches: { value: 5, label: 'vs last month' }
-  };
+  useEffect(() => {
+    dispatch(fetchSummary()).unwrap().then((data) => {
+      setSummary(data);
+    });
+    
+    dispatch(fetchMiniCards()).unwrap().then((data) => {
+      setMiniCards(data);
+    });
+  }, [dispatch]);
+
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Agency Dashboard</h1>
-      
-      {/* First Row - Mini Cards */}
+      <h1 className="text-3xl font-bold mb-6 dark:text-white">Agency Dashboard</h1>
+
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="col-span-1">
-          <ProgressCard
-            title="Monthly Target"
-            value={85}
-            target={120}
-            color="primary"
-          />
-        </div>
-        <div className="col-span-1">
-          <MiniStatsCard
-            title="New Today"
-            value={7}
-            icon={FaUsers}
-            color="info"
-          />
-        </div>
-        <div className="col-span-1">
-          <MiniStatsCard
-            title="Pending"
-            value={14}
-            icon={FaClipboardList}
-            color="warning"
-          />
-        </div>
-        <div className="col-span-1">
-          <MiniStatsCard
-            title="Completed"
-            value={23}
-            icon={FaCheckCircle}
-            color="success"
-          />
-        </div>
-        <div className="col-span-1">
-          <MiniStatsCard
-            title="Revenue Today"
-            value="₹8,500"
-            icon={FaMoneyBillWave}
-            color="secondary"
-          />
-        </div>
+        
+
+        {miniCards.map((card, idx) => {
+          const IconComponent = iconMap[card.icon] || FaUsers;
+          return (
+            <div className="col-span-1" key={idx}>
+              <MiniStatsCard
+                title={card.title}
+                value={card.value}
+                icon={IconComponent}
+                color={card.color}
+              />
+            </div>
+          );
+        })}
       </div>
-      
-      {/* Second Row - Main Stats Cards */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatsCard
-          title="Total Clients"
-          value={statsData.totalClients}
-          icon={FaUsers}
-          color="primary"
-          trend={trends.clients}
-        />
         
         <StatsCard
           title="Active Conversations"
-          value={statsData.activeConversations}
+          value={summary.activeConversations}
           icon={FaComments}
           color="info"
         />
-        
-        <StatsCard
-          title="Pending Forms"
-          value={statsData.pendingForms}
-          icon={FaClipboardList}
-          color="warning"
-        />
-        
+
         <StatsCard
           title="Successful Matches"
-          value={statsData.successfulMatches}
+          value={summary.successfulMatches}
           icon={FaHeart}
           color="success"
-          trend={trends.matches}
+          trend={summary.trends?.matches}
         />
-        
+
         <StatsCard
           title="Monthly Revenue"
-          value={`₹${statsData.monthlyRevenue.toLocaleString()}`}
+          value={`Rs. ${typeof summary?.monthlyRevenue === 'number' ? summary.monthlyRevenue.toLocaleString() : '0'}`}
           icon={FaMoneyBillWave}
           color="secondary"
-          trend={trends.revenue}
+          trend={summary.trends?.revenue}
         />
-        
-        <StatsCard
-          title="Conversion Rate"
-          value={`${statsData.conversionRate}%`}
-          icon={FaChartLine}
-          color="success"
-        />
+
+
       </div>
     </div>
   );

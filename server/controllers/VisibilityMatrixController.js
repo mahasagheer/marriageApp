@@ -1,5 +1,6 @@
 const VisibilityMatrix = require("../models/visibilityMatrix");
 const Payment = require("../models/paymentConfirmation");
+const ChatSession = require("../models/ChatSession");
 const UserProfile = require("../models/UserProfile"); // for future use if needed
 const jwt = require("jsonwebtoken"); // Make sure to install and import
 const JWT_SECRET = process.env.JWT_SECRET; // Set in your .env
@@ -156,7 +157,8 @@ exports.checkVisibility = async (req, res) => {
 exports.makeProfilePublic = async (req, res) => {
   try {
     const { profileId } = req.body;
-    const{ agencyId }= req.params; // authenticated agency ID
+    const { agencyId } = req.params; // authenticated agency ID
+
     // Validate profile
     const profile = await UserProfile.findById(profileId);
     if (!profile) {
@@ -165,51 +167,69 @@ exports.makeProfilePublic = async (req, res) => {
 
     const currentGender = profile.gender;
     const oppositeGender = currentGender === 'Male' ? 'Female' : 'Male';
-    // 2. Find all other profiles with opposite gender, excluding the current one
+
     const otherProfiles = await UserProfile.find({
       _id: { $ne: profileId },
       gender: oppositeGender
-    }).populate('userId'); // populate userId to get email etc.
-    
+    }).populate('userId');
+
     // Find or create visibility matrix
     let matrix = await VisibilityMatrix.findOne({ agencyId });
-
     if (!matrix) {
-      matrix = new VisibilityMatrix({ agencyId });
+      matrix = new VisibilityMatrix({ agencyId, matrix: new Map(), publiclyVisibleUsers: [] });
     }
-    // Avoid duplicates
+
     const alreadyPublic = matrix.publiclyVisibleUsers.some(id => id.equals(profileId));
     if (alreadyPublic) {
       return res.status(200).json({ message: "Profile already public" });
     }
 
-
-
     matrix.publiclyVisibleUsers.push(profileId);
     matrix.updatedAt = Date.now();
+
+    // ✅ Step 1: Find users who have chat sessions with the agency
+    const sessions = await ChatSession.find({ agencyId }); // Assuming ChatSession has agencyId field
+    const userIdsInChat = sessions.map(s => String(s.userId)); // Adjust field names if needed
+
+    // ✅ Step 2: Update private matrix for each user to see this profile
+    const profileKey = String(profileId);
+    for (const userId of userIdsInChat) {
+      const fromKey = userId;
+      const toKey = profileKey;
+
+      if (!matrix.matrix.has(fromKey)) {
+        matrix.matrix.set(fromKey, new Map());
+      }
+
+      const innerMap = matrix.matrix.get(fromKey);
+      innerMap.set(toKey, true);
+      matrix.matrix.set(fromKey, innerMap);
+    }
+
     await matrix.save();
-    
+
+    // Send emails
     for (let otherProfile of otherProfiles) {
-      if (otherProfile && otherProfile.userId && otherProfile.userId.email) {
+      if (otherProfile?.userId?.email) {
         const token = jwt.sign(
           { userId: otherProfile.userId._id, accessId: profile._id },
           JWT_SECRET,
           { expiresIn: "1d" }
         );
-    
+
         const profileURL = `${process.env.FRONTEND_URL}/public/user/${token}?id=${profile._id}`;
-    
+
         const subject = "A New Public Profile Matches Your Preferences";
         const message = `Hi ${otherProfile.userId.name},
-    
-    A new profile matching your preferences has just been made public.
-    
-    🔗 View Profile: ${profileURL}
-    
-    This link will expire in 24 hours.
-    
-    Thank you!`;
-    
+
+A new profile matching your preferences has just been made public.
+
+🔗 View Profile: ${profileURL}
+
+This link will expire in 24 hours.
+
+Thank you!`;
+
         await transporter.sendMail({
           from: process.env.EMAIL_USER,
           to: otherProfile.userId.email,
@@ -218,12 +238,14 @@ exports.makeProfilePublic = async (req, res) => {
         });
       }
     }
+
     return res.status(200).json({ message: "Profile made public successfully" });
   } catch (error) {
     console.error("Error making profile public:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 exports.makeProfilePrivate = async (req, res) => {

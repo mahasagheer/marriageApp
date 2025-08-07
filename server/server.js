@@ -41,6 +41,9 @@ const matchPreferenceRoutes=require('./routes/matchPreference')
 const paymentRoutes=require("./routes/paymentDetail")
 const savedAccountRoutes = require('./routes/savedAccounts');
 const visibilityRoutes = require("./routes/visibilityMatrix");
+const agencyDashboardRoutes = require('./routes/AgencyDashboard');
+
+app.use('/api/dashboard', agencyDashboardRoutes);
 app.use("/api/visibility", visibilityRoutes);
 app.use('/api/saved-accounts', savedAccountRoutes);
 app.use('/api/auth', authRoutes);

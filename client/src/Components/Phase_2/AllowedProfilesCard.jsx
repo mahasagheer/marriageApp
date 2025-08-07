@@ -12,10 +12,14 @@ const AllowedProfiles = ({ agencyId, }) => {
     dispatch(getVisibility({ agencyId, userId })).unwrap().then((res) => {
       setAllowedProfiles(res?.visibleProfiles)
     })
-    dispatch(fetchPublicProfiles({ agencyId })).unwrap().then((res) => {
-      console.log(res)
-      setAllowedProfiles(res)
-    })
+    dispatch(fetchPublicProfiles({ agencyId }))
+  .unwrap()
+  .then((res) => {
+    // Filter out the current user
+    const filteredProfiles = res.filter(profile => profile.userId !== userId);
+    setAllowedProfiles(filteredProfiles);
+  })
+
   }, [])
 
   const handleProfileNavigate = (id) => {

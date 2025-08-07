@@ -123,9 +123,7 @@ const[monthlyTarget,setMonthlyTarget]=useState({value:0,target:0})
     dispatch(fetchSummary()).unwrap().then((data) => {
       setSummary(data);
     });
-    dispatch(fetchTargets()).unwrap().then((data) => {
-      setMonthlyTarget(data);
-    });
+    
     dispatch(fetchMiniCards()).unwrap().then((data) => {
       setMiniCards(data);
     });
@@ -137,14 +135,7 @@ const[monthlyTarget,setMonthlyTarget]=useState({value:0,target:0})
       <h1 className="text-3xl font-bold mb-6 dark:text-white">Agency Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="col-span-1">
-          <ProgressCard
-            title="Monthly Target"
-            value={monthlyTarget.value}
-            target={monthlyTarget.target}
-            color="primary"
-          />
-        </div>
+        
 
         {miniCards.map((card, idx) => {
           const IconComponent = iconMap[card.icon] || FaUsers;
@@ -162,26 +153,12 @@ const[monthlyTarget,setMonthlyTarget]=useState({value:0,target:0})
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatsCard
-          title="Total Clients"
-          value={summary.totalClients}
-          icon={FaUsers}
-          color="primary"
-          trend={summary.trends?.clients}
-        />
-
+        
         <StatsCard
           title="Active Conversations"
           value={summary.activeConversations}
           icon={FaComments}
           color="info"
-        />
-
-        <StatsCard
-          title="Pending Forms"
-          value={summary.pendingForms}
-          icon={FaClipboardList}
-          color="warning"
         />
 
         <StatsCard
@@ -200,12 +177,7 @@ const[monthlyTarget,setMonthlyTarget]=useState({value:0,target:0})
           trend={summary.trends?.revenue}
         />
 
-        <StatsCard
-          title="Conversion Rate"
-          value={`${summary.conversionRate}%`}
-          icon={FaChartLine}
-          color="success"
-        />
+
       </div>
     </div>
   );

@@ -24,26 +24,7 @@ export const fetchSummary = createAsyncThunk(
   );
 
 
-  export const fetchTargets = createAsyncThunk(
-    'agencyDashboard/fetchTargets',
-    async (_, { rejectWithValue }) => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API}/monthly-target`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to fetch summary');
-        return data;
-      } catch (err) {
-        return rejectWithValue(err.message);
-      }
-    }
-  );
+
 
   export const fetchMiniCards = createAsyncThunk(
     'agencyDashboard/fetchMiniCards',
@@ -91,18 +72,7 @@ const agencyDashboardSlice = createSlice({
         state.error = action.payload;
       })
 
-      .addCase(fetchTargets.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(fetchTargets.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.monthlyTarget = action.payload.monthlyTarget;
-      })
-      .addCase(fetchTargets.rejected, (state, action) => {
-        state.status = "failed";    
-        state.error = action.payload;
-      });
+     
   },
 });
 

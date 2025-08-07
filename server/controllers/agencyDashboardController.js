@@ -6,11 +6,9 @@ const UserProfile = require('../models/UserProfile');
 
 exports.getDashboardSummary = async (req, res) => {
   try {
-    const totalClients = await User.countDocuments({ role: 'user' });
     const activeConversations = await Chat.distinct('sessionId', { sender: 'user' }).then(s => s.length);
-    const pendingForms = await Chat.countDocuments({ type: 'requestForm', isRead: false });
 
-    const successfulMatches = 56; // Placeholder (replace with match model later)
+    const successfulMatches = 3; // Placeholder (replace with match model later)
 
     const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const monthlyPayments = await PaymentDetail.aggregate([
@@ -29,22 +27,12 @@ exports.getDashboardSummary = async (req, res) => {
     ]);
     const monthlyRevenue = monthlyPayments.length > 0 ? monthlyPayments[0].total : 0;
 
-    const conversionRate = 68; // Placeholder logic
-
-    const trends = {
-      clients: { value: 12, label: 'vs last month' },
-      revenue: { value: 8, label: 'vs last month' },
-      matches: { value: 5, label: 'vs last month' }
-    };
+ 
 
     res.json({
-      totalClients,
       activeConversations,
-      pendingForms,
       successfulMatches,
       monthlyRevenue,
-      conversionRate,
-      trends
     });
   } catch (err) {
     console.error(err);
@@ -52,13 +40,7 @@ exports.getDashboardSummary = async (req, res) => {
   }
 };
 
-exports.getMonthlyTarget = async (req, res) => {
-  // You can store monthly targets in DB per agency in future
-  res.json({
-    value: 85,
-    target: 120
-  });
-};
+
 
 exports.getMiniCards = async (req, res) => {
   try {
@@ -94,7 +76,7 @@ exports.getMiniCards = async (req, res) => {
       { title: "New Today", value: newUsersToday, icon: "FaUsers", color: "info" },
       { title: "Pending", value: pendingForms, icon: "FaClipboardList", color: "warning" },
       { title: "Completed", value: completedForms, icon: "FaCheckCircle", color: "success" },
-      { title: "Revenue Today", value: `₹${todayRevenue.toLocaleString()}`, icon: "FaMoneyBillWave", color: "secondary" }
+      { title: "Revenue Today", value: `Rs. ${todayRevenue.toLocaleString()}`, icon: "FaMoneyBillWave", color: "secondary" }
     ]);
   } catch (err) {
     console.error(err);

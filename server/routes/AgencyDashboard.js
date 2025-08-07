@@ -6,8 +6,6 @@ const auth = require('../middleware/auth');
 // Dashboard Summary
 router.get('/summary',auth, dashboardController.getDashboardSummary);
 
-// Progress Card
-router.get('/monthly-target',auth, dashboardController.getMonthlyTarget);
 
 // Mini Cards
 router.get('/mini-cards',auth, dashboardController.getMiniCards);

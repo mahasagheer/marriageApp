@@ -1,6 +1,6 @@
 const Session = require('../models/Session');
 const Message = require('../models/ChatSession');
-
+const VisibilityMatrix=require('../models/visibilityMatrix')
 // Create or get existing session
 exports.createOrGetSession = async (req, res) => {
   try {
